@@ -58,6 +58,7 @@ export default function App() {
   const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
 
   const wsRef = useRef(null);
+  const lastTickAtRef = useRef(null);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -159,7 +160,9 @@ export default function App() {
   const processNewTick = (quoteNum) => {
     if (!Number.isFinite(quoteNum)) return;
     const quoteStr = quoteNum.toFixed(3);
-    setLastTickAt(Date.now());
+    const receivedAt = Date.now();
+    lastTickAtRef.current = receivedAt;
+    setLastTickAt(receivedAt);
     setFeedStatus('LIVE');
     const lastChar = quoteStr.slice(-1);
     const nextDigit = parseInt(lastChar, 10);
@@ -228,6 +231,7 @@ export default function App() {
     let disposed = false;
     let staleTimer;
     let ws;
+    const feedStartedAt = Date.now();
     setFeedStatus('CONNECTING');
     try {
       ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
@@ -257,7 +261,8 @@ export default function App() {
       ws.onerror = () => { if (!disposed) setFeedStatus('ERROR'); };
       ws.onclose = () => { if (!disposed) setFeedStatus('DISCONNECTED'); };
       staleTimer = setInterval(() => {
-        if (lastTickAt && Date.now() - lastTickAt > 10000) setFeedStatus('STALE');
+        const mostRecentTick = lastTickAtRef.current || feedStartedAt;
+        if (Date.now() - mostRecentTick > 10000) setFeedStatus('STALE');
       }, 2000);
     } catch (error) {
       setFeedStatus('ERROR');
