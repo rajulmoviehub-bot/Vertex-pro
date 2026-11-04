@@ -305,6 +305,16 @@ export default function App() {
         </div>
       </header>
 
+      <section aria-label="Permanent bot sale notice" className="bg-amber-950/50 border-b border-amber-700 px-3 py-2">
+        <p className="text-xs font-black text-amber-200">VELTEX pro BOT SALE</p>
+        <p className="text-lg font-black text-white">KSh 60,000 · approx. US$461.72</p>
+        <p className="text-[11px] text-amber-100">Previous price KSh 64,000 · approx. US$492.50. USD estimate only; exchange rates vary.</p>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <button onClick={() => setActiveTab('INFO')} className="rounded bg-amber-500 text-black text-xs font-bold py-2">BOT SALE DETAILS</button>
+          <button onClick={() => { setAccountMode('REAL'); setActiveTab('WITHDRAW'); }} className="rounded bg-emerald-700 text-white text-xs font-bold py-2">WITHDRAW MAIN WALLET</button>
+        </div>
+      </section>
+
       <section className="bg-[#0d131f] border-b border-gray-800 px-3 py-2" aria-label="Account mode">
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-2">
@@ -609,6 +619,18 @@ export default function App() {
         </div>
       )}
 
+      {activeTab === 'ACCOUNT' && (
+        <main className="p-4 max-w-lg mx-auto w-full space-y-3">
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
+            <h2 className="text-lg font-black text-white">Account management</h2>
+            <p className="text-sm text-gray-300">Manage the account identifier linked to your VELTEX pro licence.</p>
+            <p className="text-xs text-amber-200">⚠️ Account sharing/linking is not connected yet. A buyer should authorize their own broker account through the broker's official secure connection. No broker password or OTP is needed or should be collected here.</p>
+            <p className="text-xs text-gray-400">The bot owner controls the bot password. Do not put that password in a public message or share it with buyers. Account ID entry alone will not connect a broker in this version.</p>
+            <button onClick={() => alert('Account management is a preview only. Secure account linking and licence transfer have not been connected.')} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3">Check account connection</button>
+          </section>
+        </main>
+      )}
+
       {/* PRODUCT, LIVE EDUCATION AND LEGAL INFORMATION */}
       {activeTab === 'INFO' && (
         <main className="p-4 space-y-4 max-w-2xl mx-auto w-full text-sm">
@@ -667,6 +689,7 @@ export default function App() {
                 ['TRADE','Trade'],['DEPOSIT','Deposit'],['WITHDRAW','Withdraw'],['HISTORY','History'],['INFO','Info & Terms']
               ].map(([tab,label]) => <button key={tab} onClick={() => { setActiveTab(tab); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">{label}</button>)}
               <button onClick={() => { setAccountMode('DEMO'); setBotActive(false); setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
+              <button onClick={() => { setActiveTab('ACCOUNT'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
               <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300">Reset demo balance</button>
               <button onClick={() => { setMenuOpen(false); setActiveTab('TRADE'); runDeepScan(); }} disabled={isScanning} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-300">Deep scan market</button>
               <button onClick={() => { setMenuOpen(false); setActiveTab('TRADE'); if (accountMode === 'REAL') { alert('Bot is DEMO-only. Real-money trading is disabled.'); return; } if (!scannedSignal) { runDeepScan(); setBotStatusText('Run AI scan first, then start the demo bot.'); return; } setBotActive(v => !v); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-emerald-300">{botActive ? 'Stop demo bot' : 'Start demo bot'}</button>
