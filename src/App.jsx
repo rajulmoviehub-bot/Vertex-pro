@@ -628,6 +628,31 @@ export default function App() {
             <p className="text-xs text-gray-400">The bot owner controls the bot password. Do not put that password in a public message or share it with buyers. Account ID entry alone will not connect a broker in this version.</p>
             <button onClick={() => alert('Account management is a preview only. Secure account linking and licence transfer have not been connected.')} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3">Check account connection</button>
           </section>
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
+            <h3 className="text-base font-black text-white">50/50 profit-sharing rules</h3>
+            <p className="text-sm text-gray-300">If both parties separately agree in writing, net realized profits are split 50% to the account owner and 50% to the bot owner.</p>
+            <p className="text-xs text-gray-400">Net profit means the amount remaining after agreed trading fees and charges. The split applies to profits only; it does not guarantee returns or reimburse losses. The account owner keeps ownership and authorizes all withdrawals. These terms are a proposal until both parties accept them.</p>
+          </section>
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-base font-black text-white">Account trade history</h3>
+              <button onClick={() => setActiveTab('HISTORY')} className="rounded bg-cyan-700 px-3 py-2 text-xs font-bold text-white">OPEN FULL HISTORY</button>
+            </div>
+            <p className="text-xs text-amber-200">This list shows trades recorded in this browser's current demo session only. It is not a broker statement and is not shared with another account.</p>
+            {trades.length === 0 ? (
+              <p className="rounded-lg bg-[#090d14] p-4 text-sm text-gray-400">No demo trades recorded yet.</p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto" aria-label="Recent demo trades">
+                {trades.slice(0, 10).map(t => (
+                  <div key={t.id} className="rounded-lg border border-gray-800 bg-[#090d14] p-3 text-xs">
+                    <p className="font-bold text-white">{t.status} · {t.prediction} · {t.duration} ticks</p>
+                    <p className="mt-1 text-gray-400">{t.time} · Entry {t.entryDigit} to exit {t.exitDigit}</p>
+                    <p className={`mt-1 font-mono font-bold ${t.payout >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>Stake: ${t.stake.toFixed(2)} · Result: ${t.payout >= 0 ? '+' : '-'}${Math.abs(t.payout).toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </main>
       )}
 
