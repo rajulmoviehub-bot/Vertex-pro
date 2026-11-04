@@ -740,6 +740,22 @@ export default function App() {
                   }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-3 py-3 text-sm font-bold text-white hover:bg-slate-800">{label}</button>
                 ))}
               </div>
+              <button onClick={() => {
+                if (!adminUnlocked) {
+                  const password = window.prompt('Enter AAA- 3 admin password');
+                  if (password !== 'ADMIN 6860') {
+                    if (password !== null) alert('Incorrect admin password.');
+                    return;
+                  }
+                  setAdminUnlocked(true);
+                }
+                setAccountMode('REAL');
+                setBotActive(false);
+                setActiveTrade(null);
+                setActiveTab('TRADE');
+                setMenuOpen(false);
+                alert('ADMIN BOT · LIVE ONLY selected. Live broker order execution is not connected in this build, so no real trade can be placed. Connect and secure an authorized broker trading API before enabling live orders.');
+              }} className="w-full text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200">ADMIN BOT · LIVE ONLY</button>
               <button onClick={() => { setAccountMode('DEMO'); setBotActive(false); setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
               <button onClick={() => { setActiveTab('ACCOUNT'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
               <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300">Reset demo balance</button>
