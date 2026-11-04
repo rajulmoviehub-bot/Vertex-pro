@@ -687,19 +687,37 @@ export default function App() {
         <button onClick={() => setActiveTab('INFO')} className="block mx-auto mt-1 text-red-400 underline">Terms and Conditions</button>
       </footer>
 
-      {/* Navigation */}
-      <nav className="bg-[#121824] border-t border-gray-800 fixed bottom-0 left-0 right-0 py-2 px-6 flex items-center justify-around z-50">
-        <button onClick={() => setActiveTab('TRADE')} className={`flex flex-col items-center ${activeTab === 'TRADE' ? 'text-red-500' : 'text-gray-400'}`}>
+      {/* Fixed bottom navigation: AI scan and Bot controls are side by side */}
+      <nav aria-label="Main navigation" className="bg-[#121824] border-t border-gray-800 fixed bottom-0 left-0 right-0 py-2 px-3 flex items-center justify-around z-50">
+        <button aria-label="Trade tab" onClick={() => setActiveTab('TRADE')} className={`flex flex-col items-center ${activeTab === 'TRADE' ? 'text-red-500' : 'text-gray-400'}`}>
           <BarChart2 className="w-5 h-5" />
           <span className="text-[10px] mt-1 font-bold">Trade</span>
         </button>
-        <button onClick={() => setActiveTab('TRADE')} className="flex flex-col items-center text-red-500">
-          <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/50 -mt-3 border-2 border-[#121824] animate-pulse">
-            <Zap className="w-4 h-4" />
+        <button aria-label="AI market scan" onClick={() => { setActiveTab('TRADE'); runDeepScan(); }} disabled={isScanning} className="flex flex-col items-center text-cyan-400 disabled:opacity-50">
+          <div className="w-8 h-8 rounded-full bg-cyan-700 text-white flex items-center justify-center -mt-3 border-2 border-[#121824]">
+            <ScanLine className="w-4 h-4" />
           </div>
-          <span className="text-[10px] mt-0.5 font-bold">Auto Trip</span>
+          <span className="text-[10px] mt-0.5 font-bold">{isScanning ? 'AI Scan…' : 'AI'}</span>
         </button>
-        <button onClick={() => setActiveTab('HISTORY')} className={`flex flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
+        <button aria-label={botActive ? 'Stop bot' : 'Start bot'} onClick={() => {
+          setActiveTab('TRADE');
+          if (accountMode === 'REAL') {
+            alert('Bot is DEMO-only. Real-money trading is disabled until a verified broker API and secure server execution are connected.');
+            return;
+          }
+          if (!scannedSignal) {
+            setBotStatusText('Run AI scan first, then press BOT to start.');
+            runDeepScan();
+            return;
+          }
+          setBotActive(active => !active);
+        }} className={`flex flex-col items-center ${botActive ? 'text-amber-400' : 'text-emerald-400'}`}>
+          <div className={`w-8 h-8 rounded-full ${botActive ? 'bg-amber-600' : 'bg-emerald-700'} text-white flex items-center justify-center -mt-3 border-2 border-[#121824]`}>
+            {botActive ? <Square className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+          </div>
+          <span className="text-[10px] mt-0.5 font-bold">{botActive ? 'Stop Bot' : 'BOT'}</span>
+        </button>
+        <button aria-label="Trading history" onClick={() => setActiveTab('HISTORY')} className={`flex flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
           <Clock className="w-5 h-5" />
           <span className="text-[10px] mt-1">History</span>
         </button>
