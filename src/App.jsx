@@ -28,6 +28,7 @@ export default function App() {
   const [stopLoss, setStopLoss] = useState(999);
   const [multiplier, setMultiplier] = useState(2);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [loginWelcome, setLoginWelcome] = useState(false);
 
   const [isScanning, setIsScanning] = useState(false);
   const [scannedSignal, setScannedSignal] = useState(null);
@@ -57,6 +58,12 @@ export default function App() {
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(10);
   const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
+
+  useEffect(() => {
+    if (!loginWelcome) return undefined;
+    const timer = setTimeout(() => setLoginWelcome(false), 3000);
+    return () => clearTimeout(timer);
+  }, [loginWelcome]);
 
   const wsRef = useRef(null);
   const lastTickAtRef = useRef(null);
@@ -375,6 +382,7 @@ export default function App() {
         if (error) throw error;
         if (data.session) {
           setUser({ loggedIn: true, email: data.user?.email || email, refCode: 'VELTEX-7892' });
+        setLoginWelcome(true);
           alert('Your account was created. Your wallet will show once the database migration is applied.');
         } else {
           alert('Registration submitted. Check your email and verify your address before logging in.');
@@ -935,6 +943,20 @@ export default function App() {
             </div>
             <p className="text-[11px] text-gray-500 mt-5">Trading and payment integrations are not connected. Demo only.</p>
           </aside>
+        </div>
+      )}
+
+      {loginWelcome && (
+        <div role="status" aria-live="polite" className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#050b10]/95 px-5 text-center">
+          <div className="w-full max-w-md animate-[fadeIn_0.35s_ease-out] rounded-2xl border border-emerald-500/50 bg-[#071b18] p-6 shadow-2xl">
+            <p className="text-lg font-black text-emerald-200">السلام عليكم ورحمة الله وبركاته</p>
+            <p className="mt-2 text-2xl font-black tracking-wide text-white">WELCOME BACK, {displayUserName.toUpperCase()}!</p>
+            <div className="my-6 flex h-28 items-end justify-center gap-2" aria-label="Animated candlestick welcome">
+              {[38,68,48,88,58,76,44,96,62,82,52,72].map((height,index) => <span key={index} className="relative w-3 rounded-sm bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.35)] animate-pulse" style={{height:height+'%',animationDelay:(index*70)+'ms'}}><i className="absolute left-1/2 top-[-9px] h-3 w-px -translate-x-1/2 bg-emerald-200"/><i className="absolute bottom-[-8px] left-1/2 h-3 w-px -translate-x-1/2 bg-emerald-200"/></span>)}
+            </div>
+            <p className="text-sm font-bold text-emerald-100">Alhamdulillah — welcome to VELTEX PRO BINARY.</p>
+            <p className="mt-2 text-xs text-emerald-200/80">Bismillah. Trade with patience, wisdom and discipline. InshaAllah.</p>
+          </div>
         </div>
       )}
 
