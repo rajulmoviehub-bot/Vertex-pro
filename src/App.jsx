@@ -52,6 +52,7 @@ export default function App() {
   const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(10);
+  const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
 
   const wsRef = useRef(null);
 
@@ -247,6 +248,18 @@ export default function App() {
 
   const handleAuth = () => {
     alert('Secure registration, login and email verification are not connected yet. No account has been created or signed in.');
+  };
+
+  const checkDerivAccount = async () => {
+    setDerivCheck({ loading: true, result: null, error: '' });
+    try {
+      const response = await fetch('/api/deriv/account', { method: 'GET', cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || 'Deriv account verification failed');
+      setDerivCheck({ loading: false, result: data.account, error: '' });
+    } catch (error) {
+      setDerivCheck({ loading: false, result: null, error: error.message || 'Could not verify Deriv account' });
+    }
   };
 
   const minPrice = Math.min(...priceHistory);
@@ -620,7 +633,9 @@ export default function App() {
             <p className="text-sm text-gray-300">Manage the account identifier linked to your AUTO VELTEX PRIME BOT licence.</p>
             <p className="text-xs text-amber-200">⚠️ Account sharing/linking is not connected yet. A buyer should authorize their own broker account through the broker's official secure connection. No broker password or OTP is needed or should be collected here.</p>
             <p className="text-xs text-gray-400">The bot owner controls the bot password. Do not put that password in a public message or share it with buyers. Account ID entry alone will not connect a broker in this version.</p>
-            <button onClick={() => alert('Account management is a preview only. Secure account linking and licence transfer have not been connected.')} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3">Check account connection</button>
+            <button onClick={checkDerivAccount} disabled={derivCheck.loading} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3 disabled:opacity-60">{derivCheck.loading ? 'Checking Deriv connection…' : 'Verify Deriv account connection'}</button>
+            {derivCheck.result && <div role="status" className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-xs text-emerald-200 space-y-1"><p className="font-bold">Deriv account verified · Read-only check</p><p>Account: {derivCheck.result.loginid}</p><p>Type: {derivCheck.result.account_type === 'demo' ? 'Demo' : 'Real'}</p><p>Currency: {derivCheck.result.currency || 'Not provided'}</p><p className="text-amber-200">This check does not place trades or enable live execution.</p></div>}
+            {derivCheck.error && <p role="alert" className="text-xs text-red-300">Deriv connection check failed: {derivCheck.error}</p>}
           </section>
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
             <h3 className="text-base font-black text-white">50/50 profit-sharing rules</h3>
