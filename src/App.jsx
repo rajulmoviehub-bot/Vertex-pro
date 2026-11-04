@@ -238,6 +238,7 @@ export default function App() {
   };
 
   const handleDeposit = () => {
+    if (accountMode === 'DEMO') { alert('Demo mode cannot deposit real money. Switch to REAL WALLET first.'); return; }
     if (depositAmount < 5) { alert("Minimum deposit is $5"); return; }
     setMainWallet(prev => prev + Number(depositAmount));
     setTransactions(prev => [{ id: 'DEP-' + Date.now().toString().slice(-6), type: 'DEPOSIT', method: depositMethod, amount: depositAmount, status: 'APPROVED', time: new Date().toLocaleTimeString() }, ...prev]);
@@ -246,9 +247,10 @@ export default function App() {
   };
 
   const handleWithdrawal = () => {
+    if (accountMode === 'DEMO') { alert('Demo mode cannot withdraw real money. Switch to REAL WALLET first.'); return; }
     if (withdrawAmount < 5) { alert("Minimum withdrawal is $5"); return; }
-    if (withdrawAmount > mainWallet) { alert("Insufficient wallet balance!"); return; }
-    setMainWallet(prev => prev - Number(withdrawAmount));
+    if (withdrawAmount > activeWallet) { alert("Insufficient wallet balance!"); return; }
+    updateActiveWallet(-Number(withdrawAmount));
     setTransactions(prev => [{ id: 'WTH-' + Date.now().toString().slice(-6), type: 'WITHDRAWAL', method: withdrawMethod, amount: withdrawAmount, account: withdrawAccount, status: 'PENDING (Approved in 2hrs)', time: new Date().toLocaleTimeString() }, ...prev]);
     alert(`Withdrawal request submitted! Approved in 2 hours.`);
     setActiveTab('TRADE');
