@@ -309,7 +309,7 @@ export default function App() {
     });
   };
 
-  // AUTO VELTEX PRIME BOT automatic demo logic
+  // VELTEX PRO BINARY automatic demo logic
   useEffect(() => {
     if (!botActive || !scannedSignal || activeTrade) return;
 
