@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { 
   TrendingUp, TrendingDown, RefreshCw, Zap, ShieldAlert, Award, Bot, 
   Activity, DollarSign, Settings, ChevronRight, Play, Square, History, BarChart2, MessageSquare, Clock, Volume2, VolumeX, Menu, Bell, UserCheck, LogIn, UserPlus, CreditCard, ArrowDownLeft, ArrowUpRight, Share2, ScanLine, Wallet
 } from 'lucide-react';
 
 export default function App() {
-  const [mainWallet, setMainWallet] = useState(100.00); // separate local wallet; not a connected broker balance
+  const [mainWallet, setMainWallet] = useState(0); // loaded from the authenticated VELTEX wallet
   const [demoWallet, setDemoWallet] = useState(10000.00);
   const [accountMode, setAccountMode] = useState('DEMO');
   const activeWallet = accountMode === 'DEMO' ? demoWallet : mainWallet;
@@ -55,6 +56,72 @@ export default function App() {
   const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
 
   const wsRef = useRef(null);
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let mounted = true;
+
+    const syncSession = async (session) => {
+      if (!mounted) return;
+      if (!session?.user) {
+        setUser({ loggedIn: false, email: '', refCode: 'VELTEX-7892' });
+        setMainWallet(0);
+        return;
+      }
+      setUser({ loggedIn: true, email: session.user.email || '', refCode: 'VELTEX-7892' });
+      const { data, error } = await supabase
+        .from('wallets')
+        .select('available_balance')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      if (!mounted) return;
+      if (error) {
+        console.error('VELTEX wallet could not be loaded:', error.message);
+        setMainWallet(0);
+        return;
+      }
+      setMainWallet(Number(data?.available_balance || 0));
+    };
+
+    supabase.auth.getSession().then(({ data }) => syncSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      Promise.resolve().then(() => syncSession(session));
+    });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const unlockAdmin = async () => {
+    if (!supabase) {
+      alert('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel.');
+      return false;
+    }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      alert('Please sign in with your admin account first.');
+      setAuthModal('login');
+      return false;
+    }
+    try {
+      const response = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store'
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) {
+        alert(result.error || 'This account does not have admin access.');
+        return false;
+      }
+      setAdminUnlocked(true);
+      return true;
+    } catch {
+      alert('Could not verify admin access. Please try again.');
+      return false;
+    }
+  };
 
   const playSound = (type) => {
     if (!soundEnabled) return;
@@ -246,8 +313,55 @@ export default function App() {
   };
 
 
-  const handleAuth = () => {
-    alert('Secure registration, login and email verification are not connected yet. No account has been created or signed in.');
+  const handleAuth = async () => {
+    if (!supabase) {
+      alert('Secure login is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel, then redeploy.');
+      return;
+    }
+    const email = authInput.email.trim();
+    const password = authInput.password;
+    if (!email || !password) {
+      alert('Enter your email and password.');
+      return;
+    }
+    try {
+      if (authModal === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { referral_code: authInput.ref.trim() || null }
+          }
+        });
+        if (error) throw error;
+        if (data.session) {
+          setUser({ loggedIn: true, email: data.user?.email || email, refCode: 'VELTEX-7892' });
+          alert('Your account was created. Your wallet will show once the database migration is applied.');
+        } else {
+          alert('Registration submitted. Check your email and verify your address before logging in.');
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        setUser({ loggedIn: true, email: data.user?.email || email, refCode: 'VELTEX-7892' });
+        const { data: wallet, error: walletError } = await supabase
+          .from('wallets')
+          .select('available_balance')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+        if (walletError) {
+          alert('Signed in, but the VELTEX wallet could not load. Confirm that the database migration is applied.');
+          setMainWallet(0);
+        } else {
+          setMainWallet(Number(wallet?.available_balance || 0));
+        }
+      }
+      setAuthModal(null);
+      setAuthInput({ email: '', password: '', ref: '' });
+    } catch (error) {
+      alert(error?.message || 'Authentication failed. Please try again.');
+    }
   };
 
   const checkDerivAccount = async () => {
@@ -740,30 +854,16 @@ export default function App() {
                   ['CENTRAL','Central Wallet Withdrawal'],
                   ['SHARING','Bot Sharing / Licence Transfer']
                 ].map(([section,label]) => (
-                  <button key={section} onClick={() => {
-                    if (!adminUnlocked) {
-                      const password = window.prompt('Enter AAA- 3 admin password');
-                      if (password !== 'ADMIN 6860') {
-                        if (password !== null) alert('Incorrect admin password.');
-                        return;
-                      }
-                      setAdminUnlocked(true);
-                    }
+                  <button key={section} onClick={async () => {
+                    if (!adminUnlocked && !(await unlockAdmin())) return;
                     setAdminSection(section);
                     setActiveTab('ADMIN');
                     setMenuOpen(false);
                   }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-3 py-3 text-sm font-bold text-white hover:bg-slate-800">{label}</button>
                 ))}
               </div>
-              <button onClick={() => {
-                if (!adminUnlocked) {
-                  const password = window.prompt('Enter AAA- 3 admin password');
-                  if (password !== 'ADMIN 6860') {
-                    if (password !== null) alert('Incorrect admin password.');
-                    return;
-                  }
-                  setAdminUnlocked(true);
-                }
+              <button onClick={async () => {
+                if (!adminUnlocked && !(await unlockAdmin())) return;
                 setAccountMode('REAL');
                 setBotActive(false);
                 setActiveTrade(null);
@@ -805,10 +905,10 @@ export default function App() {
                 <input type="text" placeholder="VELTEX-XXXX" value={authInput.ref} onChange={(e) => setAuthInput({ ...authInput, ref: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-mono" />
               </div>
             )}
-            <p className="text-[11px] text-amber-300">Email OTP verification and secure account storage are not configured yet. This form will not create an account.</p>
+            <p className="text-[11px] text-amber-300">Registration and login use secure Supabase authentication. New customers must verify their email before signing in.</p>
             <div className="flex gap-2 pt-2">
               <button onClick={() => setAuthModal(null)} className="w-1/2 bg-gray-800 text-gray-300 text-xs font-bold py-2 rounded-lg">Cancel</button>
-              <button onClick={() => handleAuth(authModal)} className="w-1/2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-2 rounded-lg shadow">Check setup</button>
+              <button onClick={handleAuth} className="w-1/2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-2 rounded-lg shadow">Continue</button>
             </div>
           </div>
         </div>
