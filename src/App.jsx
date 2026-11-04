@@ -204,7 +204,7 @@ export default function App() {
     });
   };
 
-  // VELTEX pro automatic demo logic
+  // AUTO VELTEX PRIME BOT automatic demo logic
   useEffect(() => {
     if (!botActive || !scannedSignal || activeTrade) return;
 
@@ -300,7 +300,7 @@ export default function App() {
       </header>
 
       <section aria-label="Permanent bot sale notice" className="bg-amber-950/50 border-b border-amber-700 px-3 py-2">
-        <p className="text-xs font-black text-amber-200">VELTEX pro BOT SALE</p>
+        <p className="text-xs font-black text-amber-200">AUTO VELTEX PRIME BOT BOT SALE</p>
         <p className="text-lg font-black text-white">KSh 60,000 · approx. US$461.72</p>
         <p className="text-[11px] text-amber-100">Previous price KSh 64,000 · approx. US$492.50. USD estimate only; exchange rates vary.</p>
         <div className="mt-2">
@@ -347,7 +347,7 @@ export default function App() {
           <div className="p-3 bg-[#0d131f] border-b border-gray-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ScanLine className="w-4 h-4 text-red-500 animate-pulse" />
-              <span className="text-xs font-bold text-gray-200">VELTEX pro Bot:</span>
+              <span className="text-xs font-bold text-gray-200">AUTO VELTEX PRIME BOT Bot:</span>
               <span className="text-[11px] font-mono text-yellow-400">{botStatusText}</span>
             </div>
             <button 
@@ -372,7 +372,7 @@ export default function App() {
                   onClick={() => setBotActive(!botActive)}
                   className={`text-xs font-bold px-3.5 py-1.5 rounded shadow disabled:opacity-40 ${botActive ? 'bg-amber-600 text-white animate-pulse' : 'bg-emerald-600 text-white'}`}
                 >
-                  {accountMode === 'REAL' ? 'REAL TRADING OFF' : botActive ? 'Stop Bot' : 'Start VELTEX pro Demo'}
+                  {accountMode === 'REAL' ? 'REAL TRADING OFF' : botActive ? 'Stop Bot' : 'Start AUTO VELTEX PRIME BOT Demo'}
                 </button>
               </div>
             </div>
@@ -617,7 +617,7 @@ export default function App() {
         <main className="p-4 max-w-lg mx-auto w-full space-y-3">
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
             <h2 className="text-lg font-black text-white">Account management</h2>
-            <p className="text-sm text-gray-300">Manage the account identifier linked to your VELTEX pro licence.</p>
+            <p className="text-sm text-gray-300">Manage the account identifier linked to your AUTO VELTEX PRIME BOT licence.</p>
             <p className="text-xs text-amber-200">⚠️ Account sharing/linking is not connected yet. A buyer should authorize their own broker account through the broker's official secure connection. No broker password or OTP is needed or should be collected here.</p>
             <p className="text-xs text-gray-400">The bot owner controls the bot password. Do not put that password in a public message or share it with buyers. Account ID entry alone will not connect a broker in this version.</p>
             <button onClick={() => alert('Account management is a preview only. Secure account linking and licence transfer have not been connected.')} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3">Check account connection</button>
@@ -654,13 +654,13 @@ export default function App() {
       {activeTab === 'INFO' && (
         <main className="p-4 space-y-4 max-w-2xl mx-auto w-full text-sm">
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
-            <h2 className="text-lg font-black text-white">VELTEX pro</h2>
+            <h2 className="text-lg font-black text-white">AUTO VELTEX PRIME BOT</h2>
             <p className="text-gray-300">Trading education and a demo practice interface. The current build does not execute live broker trades or predict guaranteed outcomes.</p>
             <p className="text-amber-300 font-bold">Never deposit money you cannot afford to lose. There are no guaranteed profits.</p>
-            <p className="text-gray-300">VELTEX pro offer price: KSh 60,000. Previous/standard price: KSh 64,000. For purchase enquiries, contact the seller directly and confirm the buyer licence and verified payment details before paying. Payments are not accepted inside this app yet.</p>
+            <p className="text-gray-300">AUTO VELTEX PRIME BOT offer price: KSh 60,000. Previous/standard price: KSh 64,000. For purchase enquiries, contact the seller directly and confirm the buyer licence and verified payment details before paying. Payments are not accepted inside this app yet.</p>
           </section>
           <section className="bg-emerald-950/40 border border-emerald-600 rounded-xl p-4 space-y-3">
-            <h3 className="text-base font-black text-emerald-300">BUY VELTEX pro</h3>
+            <h3 className="text-base font-black text-emerald-300">BUY AUTO VELTEX PRIME BOT</h3>
             <p className="text-2xl font-black text-white">KSh 60,000</p>
             <p className="text-xs text-gray-300">Educational trading tool with demo practice and English-only TikTok LIVE education sessions. It does not guarantee profit. The current version is demo-only and does not place live broker trades.</p>
             <p className="text-xs text-amber-200">Interested customers should contact the seller directly to confirm availability, licence terms and verified payment details. No payment is processed by this website yet.</p>
@@ -706,7 +706,7 @@ export default function App() {
           <button aria-label="Close navigation menu" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-black/70 w-full h-full" />
           <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-[#121824] border-r border-gray-700 p-4 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <div><p className="text-white font-black">VELTEX pro</p><p className="text-xs text-gray-400">Navigation · {displayUserName}</p></div>
+              <div><p className="text-white font-black">AUTO VELTEX PRIME BOT</p><p className="text-xs text-gray-400">Navigation · {displayUserName}</p></div>
               <button aria-label="Close menu" onClick={() => setMenuOpen(false)} className="text-gray-300 text-2xl px-2">×</button>
             </div>
             <div className="space-y-2">
@@ -800,7 +800,7 @@ export default function App() {
       )}
 
       <footer className="px-4 py-4 mb-16 text-center text-[10px] text-gray-500 border-t border-gray-800">
-        VELTEX pro · Demo only · Trading involves risk · BCLB licence status unverified
+        AUTO VELTEX PRIME BOT · Demo only · Trading involves risk · BCLB licence status unverified
         <button onClick={() => setActiveTab('INFO')} className="block mx-auto mt-1 text-red-400 underline">Terms and Conditions</button>
       </footer>
 
@@ -816,11 +816,11 @@ export default function App() {
           </div>
           <span className="text-[10px] mt-0.5 font-bold">{isScanning ? 'AI Scan…' : 'AI'}</span>
         </button>
-        <button aria-label="VELTEX pro purchase information" onClick={() => setActiveTab('INFO')} className="flex flex-col items-center text-emerald-400">
+        <button aria-label="AUTO VELTEX PRIME BOT purchase information" onClick={() => setActiveTab('INFO')} className="flex flex-col items-center text-emerald-400">
           <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center -mt-3 border-2 border-[#121824]">
             <Bot className="w-4 h-4" />
           </div>
-          <span className="text-[10px] mt-0.5 font-bold">VELTEX pro</span>
+          <span className="text-[10px] mt-0.5 font-bold">AUTO VELTEX PRIME BOT</span>
         </button>
         <button aria-label="Trading history" onClick={() => setActiveTab('HISTORY')} className={`flex flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
           <Clock className="w-5 h-5" />
