@@ -35,12 +35,14 @@ export default function App() {
   const [botStatusText, setBotStatusText] = useState('Idle: Click Deep Scan Market');
   const [activeTrade, setActiveTrade] = useState(null);
 
-  const [priceHistory, setPriceHistory] = useState([9450.400, 9450.415, 9450.390, 9450.432, 9450.420, 9450.401]);
-  const [lastDigit, setLastDigit] = useState(5);
-  const [currentPrice, setCurrentPrice] = useState('9450.401');
-  const [stats, setStats] = useState({ 0: 10.2, 1: 8.8, 2: 11.4, 3: 7.9, 4: 11.1, 5: 10.6, 6: 11.8, 7: 11.5, 8: 9.2, 9: 9.2 });
-  const [digitCounts, setDigitCounts] = useState({ 0: 10, 1: 9, 2: 11, 3: 8, 4: 11, 5: 10, 6: 11, 7: 11, 8: 9, 9: 9 });
-  const [totalTicks, setTotalTicks] = useState(100);
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [lastDigit, setLastDigit] = useState(0);
+  const [currentPrice, setCurrentPrice] = useState('Waiting for verified feed');
+  const [feedStatus, setFeedStatus] = useState('CONNECTING');
+  const [lastTickAt, setLastTickAt] = useState(null);
+  const [stats, setStats] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
+  const [digitCounts, setDigitCounts] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
+  const [totalTicks, setTotalTicks] = useState(0);
   const [sessionPL, setSessionPL] = useState(0.00);
 
   const [trades, setTrades] = useState([]);
@@ -155,7 +157,10 @@ export default function App() {
   };
 
   const processNewTick = (quoteNum) => {
+    if (!Number.isFinite(quoteNum)) return;
     const quoteStr = quoteNum.toFixed(3);
+    setLastTickAt(Date.now());
+    setFeedStatus('LIVE');
     const lastChar = quoteStr.slice(-1);
     const nextDigit = parseInt(lastChar, 10);
 
@@ -218,43 +223,62 @@ export default function App() {
     });
   };
 
-  // WebSocket connection & live tick feed with fallback interval to keep graph & circle moving
+  // External reference feed only: never fabricate ticks when the provider is unavailable.
   useEffect(() => {
-    const ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ ticks: '1HZ10V', subscribe: 1 }));
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.tick) {
-        processNewTick(data.tick.quote);
-      }
-    };
-
-    // Fallback tick generator every 1 second to guarantee continuous graph & circle movement
-    const fallbackInterval = setInterval(() => {
-      const randomDelta = (Math.random() - 0.5) * 0.1;
-      setPriceHistory(prev => {
-        const lastVal = prev[prev.length - 1] || 9450.400;
-        const newVal = lastVal + randomDelta;
-        processNewTick(newVal);
-        return prev;
-      });
-    }, 1000);
-
+    let disposed = false;
+    let staleTimer;
+    let ws;
+    setFeedStatus('CONNECTING');
+    try {
+      ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
+      wsRef.current = ws;
+      ws.onopen = () => {
+        if (disposed) return;
+        setFeedStatus('SUBSCRIBING');
+        ws.send(JSON.stringify({ ticks: '1HZ10V', subscribe: 1 }));
+      };
+      ws.onmessage = (event) => {
+        if (disposed) return;
+        try {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            setFeedStatus('ERROR');
+            console.error('Market feed error:', data.error.message || 'Provider error');
+            return;
+          }
+          if (data.tick && Number.isFinite(Number(data.tick.quote))) {
+            processNewTick(Number(data.tick.quote));
+          }
+        } catch (error) {
+          console.error('Invalid market feed message:', error);
+          setFeedStatus('ERROR');
+        }
+      };
+      ws.onerror = () => { if (!disposed) setFeedStatus('ERROR'); };
+      ws.onclose = () => { if (!disposed) setFeedStatus('DISCONNECTED'); };
+      staleTimer = setInterval(() => {
+        if (lastTickAt && Date.now() - lastTickAt > 10000) setFeedStatus('STALE');
+      }, 2000);
+    } catch (error) {
+      setFeedStatus('ERROR');
+      console.error('Could not open market feed:', error);
+    }
     return () => {
-      clearInterval(fallbackInterval);
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ forget_all: 'ticks' }));
+      disposed = true;
+      if (staleTimer) clearInterval(staleTimer);
+      if (ws) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        ws.onclose = null;
+        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ forget_all: 'ticks' }));
         ws.close();
       }
     };
   }, [duration, initialStake, multiplier, contractType, accountMode]);
 
   const executeTrade = (type) => {
+    if (feedStatus !== 'LIVE' || !lastTickAt || Date.now() - lastTickAt > 10000) { alert('Market feed is unavailable or stale. No trade was opened.'); setBotActive(false); return; }
     if (accountMode === 'REAL') { alert('Real-money trading is disabled until a verified broker API and secure server execution are connected. Use DEMO to practise.'); setBotActive(false); return; }
     if (activeTrade) return;
     if (activeWallet < stake) {
@@ -376,8 +400,8 @@ export default function App() {
     }
   };
 
-  const minPrice = Math.min(...priceHistory);
-  const maxPrice = Math.max(...priceHistory);
+  const minPrice = priceHistory.length ? Math.min(...priceHistory) : 0;
+  const maxPrice = priceHistory.length ? Math.max(...priceHistory) : 1;
   const priceRange = maxPrice - minPrice || 0.001;
   const svgPoints = priceHistory.map((p, i) => {
     const x = (i / (priceHistory.length - 1)) * 400;
@@ -511,12 +535,13 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="bg-[#1a2233] text-red-400 text-xs font-mono font-bold px-2 py-1 rounded border border-gray-700">1T</span>
                 <div className="bg-[#1a2233] border border-gray-700 px-2.5 py-1 rounded flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className={`w-2 h-2 rounded-full ${feedStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
                   <span className="text-xs font-bold text-white">{market}</span>
                   <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-400' : 'text-amber-300'}`} role="status">{feedStatus === 'LIVE' ? 'LIVE REFERENCE FEED' : `FEED ${feedStatus}`}</span>
                 <span className="bg-[#1a2233] border border-gray-700 text-gray-300 font-mono text-xs px-2 py-1 rounded font-bold">50%</span>
                 <button className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded shadow">View</button>
               </div>
@@ -526,7 +551,7 @@ export default function App() {
               <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d_1px,transparent_1px),linear-gradient(to_bottom,#1f293d_1px,transparent_1px)] bg-[size:40px_35px] opacity-30"></div>
               
               <div className="absolute right-4 top-1/3 bg-white text-black font-mono font-bold text-xs px-2.5 py-1 rounded shadow-2xl flex items-center gap-1.5 z-10">
-                {currentPrice} <span className="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
+                {currentPrice} {feedStatus === 'LIVE' && <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>}
               </div>
 
               <svg className="absolute inset-0 w-full h-full text-red-500 overflow-visible" preserveAspectRatio="none" viewBox="0 0 400 150">
