@@ -512,7 +512,7 @@ export default function App() {
             <p className="text-sm font-black text-emerald-200">السلام عليكم ورحمة الله وبركاته · Assalamu Alaikum</p>
             <p className="text-sm font-bold text-white">{user.loggedIn ? `Welcome back, ${displayUserName}!` : 'Welcome to VELTEX PRO BINARY!'}</p>
             <p className="text-xs text-emerald-100">Alhamdulillah for a new day. Begin with Bismillah, trade with patience and discipline, and remember: InshaAllah, make wise decisions. Trading carries risk; no profit is guaranteed.</p>
-            <p className="text-[11px] text-gray-300">Need help? Contact VELTEX Support: <a href="mailto:rajulmoviehub@gmail.com" className="text-emerald-300 underline">Email Support</a></p>
+            <p className="text-[11px] text-gray-300">Need help? Contact VELTEX Support.</p>
           </section>
           {/* Deep Scan & Trip Bar */}
           <div className="p-3 bg-[#0d131f] border-b border-gray-800 flex items-center justify-between">
