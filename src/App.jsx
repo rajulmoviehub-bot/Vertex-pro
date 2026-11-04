@@ -236,7 +236,7 @@ export default function App() {
         tripDigit: tripTarget
       });
       setIsScanning(false);
-      setBotStatusText(`Ready: Trip on [${tripTarget}] for ${predictedType}`);
+      setBotStatusText(`Experimental demo estimate: ${predictedType}; may be wrong.`);
     }, 1000);
   };
 
@@ -369,8 +369,8 @@ export default function App() {
           {scannedSignal && (
             <div className="mx-3 mt-3 p-3 bg-red-950/40 border border-red-500/60 rounded-xl flex items-center justify-between">
               <div>
-                <span className="text-[10px] text-red-400 font-bold block uppercase">VELTEX pro learning signal</span>
-                <span className="text-xs text-cyan-300 font-bold block mt-1">Scan score: {scannedSignal.confidence}% statistical split (not win probability)</span>
+                <span className="text-[10px] text-red-400 font-bold block uppercase">Experimental demo signal</span>
+                <span className="text-xs text-cyan-300 font-bold block mt-1">Observed digit split: {scannedSignal.confidence}% (not win probability or accuracy)</span><span className="text-[11px] text-amber-200 block mt-1">This experimental estimate may be wrong. It is for demo education only and is not a validated trading prediction.</span>
                 <span className="text-sm font-black text-white">Target: <span className="text-emerald-400">{scannedSignal.prediction}</span> | Trip Digit: <span className="text-yellow-400 font-mono underline font-bold text-base">{scannedSignal.tripDigit}</span></span>
               </div>
               <div>
