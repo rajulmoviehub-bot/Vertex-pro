@@ -904,20 +904,27 @@ export default function App() {
                 ))}
               </div>
               )}
-              <button onClick={async () => {
+              {isOwner && <button onClick={async () => {
                 if (!adminUnlocked && !(await unlockAdmin())) return;
                 setAccountMode('REAL');
                 setBotActive(false);
                 setActiveTrade(null);
                 setActiveTab('TRADE');
                 setMenuOpen(false);
-                alert('ADMIN BOT · LIVE ONLY selected. Live broker order execution is not connected in this build, so no real trade can be placed. Connect and secure an authorized broker trading API before enabling live orders.');
-              }} className="w-full text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200">ADMIN BOT · LIVE ONLY</button>
+                alert('ADMIN BOT · LIVE ONLY selected. Live broker order execution is not connected in this build, so no real trade can be placed.');
+              }} className="w-full text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200">ADMIN BOT · LIVE ONLY</button>}
               <button onClick={() => { setAccountMode('DEMO'); setBotActive(false); setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
               <button onClick={() => { setActiveTab('ACCOUNT'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
               <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300">Reset demo balance</button>
               <button onClick={() => { setMenuOpen(false); setActiveTab('TRADE'); runDeepScan(); }} disabled={isScanning} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-300">Deep scan market</button>
-              <button onClick={() => { setMenuOpen(false); setActiveTab('TRADE'); if (accountMode === 'REAL') { alert('Bot is DEMO-only. Real-money trading is disabled.'); return; } if (!scannedSignal) { runDeepScan(); setBotStatusText('Run AI scan first, then start the demo bot.'); return; } setBotActive(v => !v); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-emerald-300">{botActive ? 'Stop demo bot' : 'Start demo bot'}</button>
+              <button onClick={() => {
+                setMenuOpen(false);
+                if (!isOwner) { alert('AUTO VELTEX PRIME BOT access is paid. Please contact the VELTEX owner for verified payment instructions. Your access will be activated after payment is confirmed.'); return; }
+                setActiveTab('TRADE');
+                if (accountMode === 'REAL') { alert('Bot is DEMO-only. Real-money trading is disabled.'); return; }
+                if (!scannedSignal) { runDeepScan(); setBotStatusText('Run AI scan first, then start the demo bot.'); return; }
+                setBotActive(v => !v);
+              }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-emerald-300">{isOwner ? (botActive ? 'Stop demo bot' : 'AUTO VELTEX PRIME BOT') : 'AUTO VELTEX PRIME BOT'}</button>
               {!user.loggedIn ? <><button onClick={() => { setMenuOpen(false); setAuthModal('login'); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">Login</button><button onClick={() => { setMenuOpen(false); setAuthModal('signup'); }} className="w-full text-left rounded-lg bg-red-700 px-4 py-3 text-sm font-bold text-white">Sign up</button></> : <button onClick={async () => { try { const { error } = await supabase.auth.signOut(); if (error) throw error; setUser({ loggedIn: false, email: '', refCode: 'VELTEX-7892' }); setMainWallet(0); setAdminUnlocked(false); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); setActiveTab('TRADE'); } catch (error) { alert(error?.message || 'Could not sign out. Please try again.'); } }} className="w-full flex items-center gap-2 text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200"><LogOut className="w-4 h-4" /> Log out</button>}
             </div>
             <p className="text-[11px] text-gray-500 mt-5">Trading and payment integrations are not connected. Demo only.</p>
@@ -973,7 +980,10 @@ export default function App() {
           </div>
           <span className="text-[10px] mt-0.5 font-bold">{isScanning ? 'AI Scan…' : 'AI'}</span>
         </button>
-        <button aria-label="AUTO VELTEX PRIME BOT purchase information" onClick={() => setActiveTab('INFO')} className="flex flex-col items-center text-emerald-400">
+        <button aria-label="AUTO VELTEX PRIME BOT" onClick={() => {
+          if (!isOwner) { alert('AUTO VELTEX PRIME BOT access is paid. Please contact the VELTEX owner for verified payment instructions. Your access will be activated after payment is confirmed.'); return; }
+          setActiveTab('INFO');
+        }} className="flex flex-col items-center text-emerald-400">
           <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center -mt-3 border-2 border-[#121824]">
             <Bot className="w-4 h-4" />
           </div>
