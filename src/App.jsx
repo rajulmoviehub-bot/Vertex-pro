@@ -185,6 +185,7 @@ export default function App() {
   }, [duration, initialStake, multiplier, contractType, accountMode]);
 
   const executeTrade = (type) => {
+    if (accountMode === 'REAL') { alert('Real-money trading is disabled until a verified broker API and secure server execution are connected. Use DEMO to practise.'); setBotActive(false); return; }
     if (activeTrade) return;
     if (activeWallet < stake) {
       alert("Insufficient main wallet balance!");
@@ -238,34 +239,15 @@ export default function App() {
   };
 
   const handleDeposit = () => {
-    if (accountMode === 'DEMO') { alert('Demo mode cannot deposit real money. Switch to REAL WALLET first.'); return; }
-    if (depositAmount < 5) { alert("Minimum deposit is $5"); return; }
-    setMainWallet(prev => prev + Number(depositAmount));
-    setTransactions(prev => [{ id: 'DEP-' + Date.now().toString().slice(-6), type: 'DEPOSIT', method: depositMethod, amount: depositAmount, status: 'APPROVED', time: new Date().toLocaleTimeString() }, ...prev]);
-    alert(`Deposit of $${depositAmount} successful!`);
-    setActiveTab('TRADE');
+    alert('M-Pesa and other payment gateways are not connected yet. No payment was taken and no balance was credited.');
   };
 
   const handleWithdrawal = () => {
-    if (accountMode === 'DEMO') { alert('Demo mode cannot withdraw real money. Switch to REAL WALLET first.'); return; }
-    if (withdrawAmount < 5) { alert("Minimum withdrawal is $5"); return; }
-    if (withdrawAmount > activeWallet) { alert("Insufficient wallet balance!"); return; }
-    updateActiveWallet(-Number(withdrawAmount));
-    setTransactions(prev => [{ id: 'WTH-' + Date.now().toString().slice(-6), type: 'WITHDRAWAL', method: withdrawMethod, amount: withdrawAmount, account: withdrawAccount, status: 'PENDING (Approved in 2hrs)', time: new Date().toLocaleTimeString() }, ...prev]);
-    alert(`Withdrawal request submitted! Approved in 2 hours.`);
-    setActiveTab('TRADE');
+    alert('M-Pesa and bank payout services are not connected yet. No withdrawal was submitted and no balance was deducted.');
   };
 
-  const handleAuth = (type) => {
-    if (!authInput.email) { alert("Please enter email"); return; }
-    setUser({ loggedIn: true, email: authInput.email, refCode: 'VELTEX-' + Math.floor(1000 + Math.random() * 9000) });
-    if (type === 'signup') {
-      setMainWallet(prev => prev + 1.00);
-      alert("Sign up successful! $1.00 referral bonus credited!");
-    } else {
-      alert("Logged in successfully!");
-    }
-    setAuthModal(null);
+  const handleAuth = () => {
+    alert('Secure registration, login and email verification are not connected yet. No account has been created or signed in.');
   };
 
   const minPrice = Math.min(...priceHistory);
@@ -289,8 +271,8 @@ export default function App() {
         <div className="flex items-center gap-2.5">
           <button className="text-gray-300"><Menu className="w-5 h-5" /></button>
           <div className="flex items-center text-base font-bold tracking-tight">
-            <span className="text-white">VELTEX</span>
-            <span className="text-red-500 font-black">pro</span>
+            <span className="text-white">VELTEX PRIME</span>
+            <span className="text-red-500 font-black">V6</span>
           </div>
         </div>
 
@@ -335,7 +317,7 @@ export default function App() {
 
       {/* Tabs */}
       <div className="bg-[#121824] grid grid-cols-4 border-b border-gray-800 text-center">
-        {['TRADE', 'DEPOSIT', 'WITHDRAW', 'HISTORY'].map((tab) => (
+        {['TRADE', 'DEPOSIT', 'WITHDRAW', 'HISTORY', 'INFO'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -626,6 +608,50 @@ export default function App() {
         </div>
       )}
 
+      {/* PRODUCT, LIVE EDUCATION AND LEGAL INFORMATION */}
+      {activeTab === 'INFO' && (
+        <main className="p-4 space-y-4 max-w-2xl mx-auto w-full text-sm">
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
+            <h2 className="text-lg font-black text-white">VELTEX PRIME V6 AUTO BOT</h2>
+            <p className="text-gray-300">Trading education and a demo practice interface. The current build does not execute live broker trades or predict guaranteed outcomes.</p>
+            <p className="text-amber-300 font-bold">Never deposit money you cannot afford to lose. There are no guaranteed profits.</p>
+            <p className="text-gray-300">Offer discussed: KSh 50,000. Standard price discussed: KSh 64,000. Confirm the final price and buyer licence directly with the seller before payment.</p>
+          </section>
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
+            <h3 className="font-bold text-white">TikTok LIVE learning schedule</h3>
+            <p className="text-gray-300">Planned sessions: daily, 8:00 PM–10:00 PM East Africa Time (EAT), subject to the host going live.</p>
+            <p className="text-gray-400">Host plan: welcome viewers by their displayed TikTok names when the authorized LIVE connection provides them; explain risk, demo mode, digit statistics, deposits and withdrawals; answer common questions. TikTok account access and automated viewer-name/Q&A integration are not connected in this build.</p>
+          </section>
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
+            <h3 className="font-bold text-white">Common questions</h3>
+            <p><strong className="text-white">How do I practise?</strong> Select DEMO. It starts at $10,000 and can be reset. Demo results are simulated and are not cash.</p>
+            <p><strong className="text-white">Can I deposit with Safaricom M-Pesa?</strong> M-Pesa STK Push and confirmation pop-ups are planned, but Daraja is not connected. Do not send money based on this screen.</p>
+            <p><strong className="text-white">Can I withdraw?</strong> M-Pesa payout requests and confirmations are not connected. This app does not currently send withdrawals.</p>
+            <p><strong className="text-white">Does it copy another trader?</strong> No copy-trading feature is offered.</p>
+            <p><strong className="text-white">Does the scanner guarantee a win?</strong> No. Digit statistics and the current scanner are informational/simulated only and do not establish a reliable prediction.</p>
+          </section>
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
+            <h3 className="font-bold text-white">Licence and owner controls</h3>
+            <p className="text-gray-300">BCLB licence status has not been verified. No licence number or certificate was provided, so this product must not be advertised as BCLB-licensed.</p>
+            <p className="text-gray-300">AA-43 owner management, buyer-number licence transfer, permanent old-device revocation and single-buyer account binding require authenticated server-side controls. They are not active in this frontend. Do not share passwords, OTPs or broker credentials.</p>
+          </section>
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
+            <h3 className="font-bold text-white">Terms and conditions</h3>
+            <ol className="list-decimal pl-5 space-y-1 text-gray-300">
+              <li>Use the DEMO account to practise; its $10,000 balance is virtual and has no cash value.</li>
+              <li>REAL WALLET is currently a display-only local balance. No live broker execution, custody, deposits or withdrawals are enabled.</li>
+              <li>Trading involves substantial risk and you may lose all money committed. Past or simulated results do not predict future results.</li>
+              <li>No profit, income, accuracy, recovery or return is promised or guaranteed.</li>
+              <li>Do not share your account, passwords, verification codes, device access or broker credentials. No copy trading is provided.</li>
+              <li>Payment must only be made through a verified, officially enabled payment channel. This build does not currently accept payments.</li>
+              <li>Any buyer licence transfer must be processed through a secure, verified owner service. A transfer must revoke the previous activation before the new buyer is activated; this enforcement is not yet live.</li>
+              <li>Users are responsible for complying with applicable laws and the rules of their broker and payment providers.</li>
+              <li>Regulatory licensing is not claimed. BCLB status is unverified until valid documentation is supplied and checked.</li>
+            </ol>
+          </section>
+        </main>
+      )}
+
       {/* LOGIN MODAL */}
       {authModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
@@ -648,13 +674,19 @@ export default function App() {
                 <input type="text" placeholder="VELTEX-XXXX" value={authInput.ref} onChange={(e) => setAuthInput({ ...authInput, ref: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-mono" />
               </div>
             )}
+            <p className="text-[11px] text-amber-300">Email OTP verification and secure account storage are not configured yet. This form will not create an account.</p>
             <div className="flex gap-2 pt-2">
               <button onClick={() => setAuthModal(null)} className="w-1/2 bg-gray-800 text-gray-300 text-xs font-bold py-2 rounded-lg">Cancel</button>
-              <button onClick={() => handleAuth(authModal)} className="w-1/2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-2 rounded-lg shadow">{authModal === 'login' ? 'Login' : 'Sign Up'}</button>
+              <button onClick={() => handleAuth(authModal)} className="w-1/2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-2 rounded-lg shadow">Check setup</button>
             </div>
           </div>
         </div>
       )}
+
+      <footer className="px-4 py-4 mb-16 text-center text-[10px] text-gray-500 border-t border-gray-800">
+        VELTEX PRIME V6 AUTO BOT · Demo only · Trading involves risk · BCLB licence status unverified
+        <button onClick={() => setActiveTab('INFO')} className="block mx-auto mt-1 text-red-400 underline">Terms and Conditions</button>
+      </footer>
 
       {/* Navigation */}
       <nav className="bg-[#121824] border-t border-gray-800 fixed bottom-0 left-0 right-0 py-2 px-6 flex items-center justify-around z-50">
