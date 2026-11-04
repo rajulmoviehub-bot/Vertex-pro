@@ -29,6 +29,8 @@ export default function App() {
   const [multiplier, setMultiplier] = useState(2);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [loginWelcome, setLoginWelcome] = useState(false);
+  const [startAfterScan, setStartAfterScan] = useState(false);
+  const [showTargetAchieved, setShowTargetAchieved] = useState(false);
 
   const [isScanning, setIsScanning] = useState(false);
   const [scannedSignal, setScannedSignal] = useState(null);
@@ -317,9 +319,20 @@ export default function App() {
     });
   };
 
+  // Stop the demo bot as soon as the configured session target is reached.
+  useEffect(() => {
+    if (accountMode !== 'DEMO' || !botActive || sessionPL < Number(target)) return undefined;
+    setBotActive(false);
+    setStartAfterScan(false);
+    setShowTargetAchieved(true);
+    playSound('win');
+    const timer = setTimeout(() => setShowTargetAchieved(false), 5000);
+    return () => clearTimeout(timer);
+  }, [accountMode, botActive, sessionPL, target]);
+
   // VELTEX PRO BINARY automatic demo logic
   useEffect(() => {
-    if (!botActive || !scannedSignal || activeTrade) return;
+    if (!botActive || accountMode !== 'DEMO' || sessionPL >= Number(target) || !scannedSignal || activeTrade) return;
 
     const targetPred = scannedSignal.prediction; 
     const tripDigit = scannedSignal.tripDigit; 
@@ -330,7 +343,7 @@ export default function App() {
     } else {
       setBotStatusText(`Scanning... Waiting for trip on digit [${tripDigit}] | Current: ${lastDigit}`);
     }
-  }, [lastDigit, botActive, scannedSignal, activeTrade, duration]);
+  }, [lastDigit, botActive, scannedSignal, activeTrade, duration, accountMode, sessionPL, target]);
 
   const runDeepScan = () => {
     setIsScanning(true);
@@ -349,8 +362,40 @@ export default function App() {
         tripDigit: tripTarget
       });
       setIsScanning(false);
+      if (startAfterScan) {
+        setStartAfterScan(false);
+        setBotActive(true);
+        setBotStatusText('Demo bot ON — waiting for trip digit.');
+      }
       setBotStatusText(`Experimental demo estimate: ${predictedType}; may be wrong.`);
     }, 1000);
+  };
+
+  const toggleDemoBot = () => {
+    if (accountMode !== 'DEMO') {
+      setBotActive(false);
+      alert('LIVE broker trading is disabled. Switch to DEMO to use the free demo bot.');
+      return;
+    }
+    if (botActive || startAfterScan) {
+      setBotActive(false);
+      setStartAfterScan(false);
+      setBotStatusText('Demo bot stopped by user.');
+      return;
+    }
+    if (!user.loggedIn) {
+      alert('Please log in to use your free demo bot.');
+      setAuthModal('login');
+      return;
+    }
+    if (!scannedSignal) {
+      setStartAfterScan(true);
+      runDeepScan();
+      setBotStatusText('Preparing demo scan, then the bot will start.');
+      return;
+    }
+    setBotActive(true);
+    setBotStatusText('Demo bot ON — waiting for trip digit.');
   };
 
   const handleDeposit = () => {
@@ -516,12 +561,6 @@ export default function App() {
 
       {activeTab === 'TRADE' && (
         <>
-          <section aria-label="VELTEX welcome and Islamic greeting" className="mx-3 mt-3 rounded-xl border border-emerald-800 bg-emerald-950/30 p-3 space-y-1">
-            <p className="text-sm font-black text-emerald-200">السلام عليكم ورحمة الله وبركاته · Assalamu Alaikum</p>
-            <p className="text-sm font-bold text-white">{user.loggedIn ? `Welcome back, ${displayUserName}!` : 'Welcome to VELTEX PRO BINARY!'}</p>
-            <p className="text-xs text-emerald-100">Alhamdulillah for a new day. Begin with Bismillah, trade with patience and discipline, and remember: InshaAllah, make wise decisions. Trading carries risk; no profit is guaranteed.</p>
-            <p className="text-[11px] text-gray-300">Need help? Contact VELTEX Support.</p>
-          </section>
           {/* Deep Scan & Trip Bar */}
           <div className="p-3 bg-[#0d131f] border-b border-gray-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -548,7 +587,7 @@ export default function App() {
               <div>
                 <button 
                   disabled={accountMode === 'REAL'}
-                  onClick={() => setBotActive(!botActive)}
+                  onClick={toggleDemoBot}
                   className={`text-xs font-bold px-3.5 py-1.5 rounded shadow disabled:opacity-40 ${botActive ? 'bg-amber-600 text-white animate-pulse' : 'bg-emerald-600 text-white'}`}
                 >
                   {accountMode === 'REAL' ? 'REAL TRADING OFF' : botActive ? 'Stop Bot' : 'Start AUTO VELTEX PRIME BOT Demo'}
@@ -933,12 +972,9 @@ export default function App() {
               <button onClick={() => { setMenuOpen(false); setActiveTab('TRADE'); runDeepScan(); }} disabled={isScanning} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-300">Deep scan market</button>
               <button onClick={() => {
                 setMenuOpen(false);
-                if (!isOwner) { alert('AUTO VELTEX PRIME BOT access is paid. Please contact the VELTEX owner for verified payment instructions. Your access will be activated after payment is confirmed.'); return; }
                 setActiveTab('TRADE');
-                if (accountMode === 'REAL') { alert('Bot is DEMO-only. Real-money trading is disabled.'); return; }
-                if (!scannedSignal) { runDeepScan(); setBotStatusText('Run AI scan first, then start the demo bot.'); return; }
-                setBotActive(v => !v);
-              }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-emerald-300">{isOwner ? (botActive ? 'Stop demo bot' : 'AUTO VELTEX PRIME BOT') : 'AUTO VELTEX PRIME BOT'}</button>
+                toggleDemoBot();
+              }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-emerald-300">{botActive || startAfterScan ? 'Stop demo bot' : 'FREE DEMO BOT'}</button>
               {!user.loggedIn ? <><button onClick={() => { setMenuOpen(false); setAuthModal('login'); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">Login</button><button onClick={() => { setMenuOpen(false); setAuthModal('signup'); }} className="w-full text-left rounded-lg bg-red-700 px-4 py-3 text-sm font-bold text-white">Sign up</button></> : <button onClick={async () => { try { const { error } = await supabase.auth.signOut(); if (error) throw error; setUser({ loggedIn: false, email: '', refCode: 'VELTEX-7892' }); setMainWallet(0); setAdminUnlocked(false); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); setActiveTab('TRADE'); } catch (error) { alert(error?.message || 'Could not sign out. Please try again.'); } }} className="w-full flex items-center gap-2 text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200"><LogOut className="w-4 h-4" /> Log out</button>}
             </div>
             <p className="text-[11px] text-gray-500 mt-5">Trading and payment integrations are not connected. Demo only.</p>
@@ -946,6 +982,12 @@ export default function App() {
         </div>
       )}
 
+      {showTargetAchieved && (
+        <div role="alert" aria-live="assertive" className="fixed inset-x-4 top-20 z-[110] mx-auto max-w-md rounded-2xl border border-amber-400 bg-emerald-950 px-5 py-4 text-center text-lg font-black text-amber-200 shadow-2xl">
+          Mashallah 🕌💫 TARGET ACHIEVED!
+          <p className="mt-1 text-xs font-medium text-emerald-100">Demo bot stopped. Your session target was reached.</p>
+        </div>
+      )}
       {loginWelcome && (
         <div role="status" aria-live="polite" className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#050b10]/95 px-5 text-center">
           <div className="w-full max-w-md animate-[fadeIn_0.35s_ease-out] rounded-2xl border border-emerald-500/50 bg-[#071b18] p-6 shadow-2xl">
@@ -1009,8 +1051,8 @@ export default function App() {
           <span className="text-[10px] mt-0.5 font-bold">{isScanning ? 'AI Scan…' : 'AI'}</span>
         </button>
         <button aria-label="AUTO VELTEX PRIME BOT" onClick={() => {
-          if (!isOwner) { alert('AUTO VELTEX PRIME BOT access is paid. Please contact the VELTEX owner for verified payment instructions. Your access will be activated after payment is confirmed.'); return; }
-          setActiveTab('INFO');
+          setActiveTab('TRADE');
+          toggleDemoBot();
         }} className="flex flex-col items-center text-emerald-400">
           <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center -mt-3 border-2 border-[#121824]">
             <Bot className="w-4 h-4" />
