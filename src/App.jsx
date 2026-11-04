@@ -204,7 +204,7 @@ export default function App() {
     });
   };
 
-  // Auto Trip Bot Logic
+  // VELTEX pro automatic demo logic
   useEffect(() => {
     if (!botActive || !scannedSignal || activeTrade) return;
 
@@ -379,7 +379,7 @@ export default function App() {
                   onClick={() => setBotActive(!botActive)}
                   className={`text-xs font-bold px-3.5 py-1.5 rounded shadow disabled:opacity-40 ${botActive ? 'bg-amber-600 text-white animate-pulse' : 'bg-emerald-600 text-white'}`}
                 >
-                  {accountMode === 'REAL' ? 'REAL TRADING OFF' : botActive ? 'Stop Bot' : 'Start Demo Trip Bot'}
+                  {accountMode === 'REAL' ? 'REAL TRADING OFF' : botActive ? 'Stop Bot' : 'Start VELTEX pro Demo'}
                 </button>
               </div>
             </div>
@@ -668,7 +668,7 @@ export default function App() {
           <section className="bg-emerald-950/40 border border-emerald-600 rounded-xl p-4 space-y-3">
             <h3 className="text-base font-black text-emerald-300">BUY VELTEX pro</h3>
             <p className="text-2xl font-black text-white">KSh 60,000</p>
-            <p className="text-xs text-gray-300">Educational trading tool with demo practice and planned English-only TikTok LIVE lessons. It does not guarantee profit. The current version is demo-only and does not place live broker trades.</p>
+            <p className="text-xs text-gray-300">Educational trading tool with demo practice and English-only TikTok LIVE education sessions. It does not guarantee profit. The current version is demo-only and does not place live broker trades.</p>
             <p className="text-xs text-amber-200">Interested customers should contact the seller directly to confirm availability, licence terms and verified payment details. No payment is processed by this website yet.</p>
           </section>
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
