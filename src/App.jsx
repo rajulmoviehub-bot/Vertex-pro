@@ -271,8 +271,7 @@ export default function App() {
         <div className="flex items-center gap-2.5">
           <button className="text-gray-300"><Menu className="w-5 h-5" /></button>
           <div className="flex items-center text-base font-bold tracking-tight">
-            <span className="text-white">VELTEX PRIME</span>
-            <span className="text-red-500 font-black">V6</span>
+            <span className="text-white">VELTEX</span><span className="text-red-500 font-black"> pro</span>
           </div>
         </div>
 
@@ -611,7 +610,7 @@ export default function App() {
       {activeTab === 'INFO' && (
         <main className="p-4 space-y-4 max-w-2xl mx-auto w-full text-sm">
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
-            <h2 className="text-lg font-black text-white">VELTEX PRIME V6 AUTO BOT</h2>
+            <h2 className="text-lg font-black text-white">VELTEX pro</h2>
             <p className="text-gray-300">Trading education and a demo practice interface. The current build does not execute live broker trades or predict guaranteed outcomes.</p>
             <p className="text-amber-300 font-bold">Never deposit money you cannot afford to lose. There are no guaranteed profits.</p>
             <p className="text-gray-300">Offer discussed: KSh 50,000. Standard price discussed: KSh 64,000. Confirm the final price and buyer licence directly with the seller before payment.</p>
@@ -683,7 +682,7 @@ export default function App() {
       )}
 
       <footer className="px-4 py-4 mb-16 text-center text-[10px] text-gray-500 border-t border-gray-800">
-        VELTEX PRIME V6 AUTO BOT · Demo only · Trading involves risk · BCLB licence status unverified
+        VELTEX pro · Demo only · Trading involves risk · BCLB licence status unverified
         <button onClick={() => setActiveTab('INFO')} className="block mx-auto mt-1 text-red-400 underline">Terms and Conditions</button>
       </footer>
 
