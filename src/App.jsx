@@ -1,39 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   TrendingUp, TrendingDown, RefreshCw, Zap, ShieldAlert, Award, Bot, 
-  Activity, DollarSign, Settings, ChevronRight, Play, Square, History, BarChart2
+  Activity, DollarSign, Settings, ChevronRight, Play, Square, History, BarChart2, MessageSquare, Clock
 } from 'lucide-react';
 
 export default function App() {
-  const [balance, setBalance] = useState(1000.00);
+  const [balance, setBalance] = useState(0.00);
   const [stake, setStake] = useState(10);
-  const [market, setMarket] = useState('1HZ10V'); // Volatility 10 (1s) Index symbol
+  const [market, setMarket] = useState('Volatility 10 (1s) Index');
   const [contractType, setContractType] = useState('Even/Odd');
+  const [tradeMode, setTradeMode] = useState('AUTO'); // 'AUTO' or 'MANUAL'
   const [prediction, setPrediction] = useState('Even');
   const [duration, setDuration] = useState(2);
-  const [autoTrading, setAutoTrading] = useState(false);
+  const [target, setTarget] = useState(200);
+  const [stopLoss, setStopLoss] = useState(999);
+  const [multiplier, setMultiplier] = useState(2);
   
-  const [digits, setDigits] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-  const [lastDigit, setLastDigit] = useState(0);
-  const [currentPrice, setCurrentPrice] = useState('0.00');
-  const [stats, setStats] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
+  const [digits, setDigits] = useState([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const [lastDigit, setLastDigit] = useState(5);
+  const [currentPrice, setCurrentPrice] = useState('9449.845');
+  const [stats, setStats] = useState({ 0: 10.3, 1: 8.8, 2: 9.0, 3: 9.0, 4: 10.6, 5: 10.6, 6: 11.8, 7: 11.5, 8: 9.2, 9: 9.2 });
   const [trades, setTrades] = useState([]);
-  const [sessionPL, setSessionPL] = useState(0);
+  const [sessionPL, setSessionPL] = useState(0.00);
   const [isConnected, setIsConnected] = useState(false);
 
   const wsRef = useRef(null);
 
   // Connect to Deriv Public WebSocket Feed
   useEffect(() => {
-    // Deriv App ID 1089 is public demo app id
     const ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
     wsRef.current = ws;
 
     ws.onopen = () => {
       setIsConnected(true);
-      // Subscribe to Volatility 10 (1s) Index ticks
       ws.send(JSON.stringify({
-        ticks: market,
+        ticks: '1HZ10V',
         subscribe: 1
       }));
     };
@@ -41,14 +42,13 @@ export default function App() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.tick) {
-        const quoteStr = data.tick.quote.toFixed(data.tick.pip_size || 2);
+        const quoteStr = data.tick.quote.toFixed(3);
         const lastChar = quoteStr.slice(-1);
         const nextDigit = parseInt(lastChar, 10);
 
         setCurrentPrice(quoteStr);
         setLastDigit(nextDigit);
         setDigits(prev => [...prev.slice(1), nextDigit]);
-        setStats(prev => ({ ...prev, [nextDigit]: (prev[nextDigit] || 0) + 1 }));
       }
     };
 
@@ -62,12 +62,11 @@ export default function App() {
         ws.close();
       }
     };
-  }, [market]);
+  }, []);
 
   // Execute Trade Contract
-  const executeTrade = (typeOverride) => {
-    const activeType = typeOverride || prediction;
-    const isWin = lastDigit % 2 === 0 ? activeType === 'Even' : activeType === 'Odd';
+  const executeTrade = (type) => {
+    const isWin = lastDigit % 2 === 0 ? type === 'Even' : type === 'Odd';
     const payout = isWin ? stake * 0.95 : -stake;
     
     setBalance(prev => prev + payout);
@@ -77,52 +76,53 @@ export default function App() {
       id: Date.now(),
       time: new Date().toLocaleTimeString(),
       type: contractType,
-      prediction: activeType,
+      prediction: type,
       stake: stake,
       payout: payout,
-      status: isWin ? 'WIN' : 'LOSS'
     };
     
     setTrades(prev => [newTrade, ...prev]);
   };
 
   return (
-    <div className="min-h-screen bg-[#0c1017] text-gray-100 font-sans flex flex-col">
-      {/* Top Navigation */}
-      <header className="bg-[#121824] border-b border-gray-800 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center font-extrabold text-2xl shadow-lg shadow-red-900/40 text-white">
-            V
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-wider flex items-center gap-1.5">
-              VERTEX <span className="text-red-500 font-black text-xs uppercase tracking-widest px-1.5 py-0.5 bg-red-500/10 border border-red-500/30 rounded">pro</span>
-            </h1>
-            <p className="text-[10px] text-gray-400 font-mono uppercase tracking-wider">High Frequency Options</p>
-          </div>
+    <div className="min-h-screen bg-[#0c1017] text-gray-100 font-sans flex flex-col pb-16">
+      {/* Top Header Bar */}
+      <header className="bg-[#121824] border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <button className="text-gray-300">
+            <Activity className="w-5 h-5" />
+          </button>
+          <h1 className="text-base font-bold tracking-wide flex items-center gap-1">
+            VELTEX<span className="text-red-500 font-black">pro</span>
+          </h1>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="bg-[#0c1017] border border-gray-800 rounded-lg px-4 py-1.5 flex items-center gap-3">
-            <span className="text-xs text-gray-400 font-medium">Balance:</span>
-            <span className="text-lg font-bold font-mono text-emerald-400">${balance.toFixed(2)}</span>
+        <div className="flex items-center gap-2">
+          <div className="bg-[#161d2b] border border-gray-800 rounded-full px-3 py-1 flex items-center gap-2">
+            <span className="w-4 h-4 rounded-full bg-red-600 text-white font-bold text-[10px] flex items-center justify-center">R</span>
+            <span className="text-sm font-mono font-bold text-gray-200">${balance.toFixed(2)}</span>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
           </div>
-          <button className="bg-red-600 hover:bg-red-500 text-white font-semibold text-xs px-4 py-2 rounded-lg transition-all shadow-md shadow-red-900/30">
+          <button className="text-gray-300">
+            <span className="sr-only">Sound</span>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+          </button>
+          <button className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-md transition-all shadow-md shadow-red-900/30">
             Deposit
           </button>
         </div>
       </header>
 
-      {/* Contract Selector Bar */}
-      <div className="bg-[#161d2b] border-b border-gray-800 px-6 py-2 flex items-center gap-4">
+      {/* Contract Sub-Nav */}
+      <div className="bg-[#161d2b] border-b border-gray-800 px-4 py-2 flex items-center justify-between">
         {['Matches/Differs', 'Even/Odd', 'Over/Under'].map((type) => (
           <button
             key={type}
             onClick={() => setContractType(type)}
-            className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+            className={`text-xs font-semibold px-3 py-1.5 rounded transition-all ${
               contractType === type 
-                ? 'bg-red-600/20 text-red-400 border border-red-500/40' 
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
+                : 'text-gray-400 hover:text-gray-200'
             }`}
           >
             {type}
@@ -130,193 +130,167 @@ export default function App() {
         ))}
       </div>
 
-      {/* Main Trading Workspace */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4">
-        
-        {/* Left Column: Charts & Digits (3 cols) */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
-          
-          {/* Main Display Box */}
-          <div className="bg-[#121824] border border-gray-800 rounded-xl p-5 flex flex-col gap-6 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Deriv Live Feed</span>
-                <h2 className="text-lg font-bold text-white flex items-center gap-3">
-                  Volatility 10 (1s) Index 
-                  <span className="text-sm font-mono text-red-400 bg-red-950/40 px-2 py-0.5 rounded border border-red-900/50">
-                    {currentPrice}
-                  </span>
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
-                <span className={`text-xs font-mono ${isConnected ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {isConnected ? 'LIVE FEED ACTIVE' : 'CONNECTING...'}
-                </span>
-              </div>
-            </div>
-
-            {/* Live Digit Display Monitor */}
-            <div className="flex items-center justify-center gap-3 py-8 bg-[#0c1017]/60 rounded-xl border border-gray-800/80">
-              {digits.map((digit, idx) => (
-                <div 
-                  key={idx}
-                  className={`w-12 h-16 rounded-lg flex items-center justify-center font-mono text-2xl font-bold transition-all duration-300 ${
-                    idx === digits.length - 1 
-                      ? 'bg-red-600 text-white scale-110 shadow-lg shadow-red-600/40 ring-2 ring-red-400' 
-                      : 'bg-[#182030] text-gray-400 border border-gray-800'
-                  }`}
-                >
-                  {digit}
-                </div>
-              ))}
-            </div>
-
-            {/* Last Digit Distribution Stats */}
-            <div>
-              <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                <span className="font-medium">Digit Frequency Distribution</span>
-                <span>Live Stream</span>
-              </div>
-              <div className="grid grid-cols-10 gap-1.5">
-                {Object.entries(stats).map(([digit, count]) => (
-                  <div key={digit} className="flex flex-col items-center gap-1">
-                    <div className="w-full bg-[#0c1017] rounded h-16 flex flex-col justify-end p-1 border border-gray-800">
-                      <div 
-                        className={`w-full rounded-sm transition-all duration-300 ${
-                          Number(digit) === lastDigit ? 'bg-red-500' : 'bg-emerald-500/40'
-                        }`}
-                        style={{ height: `${Math.min(count * 4, 100)}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-xs font-mono text-gray-400">{digit}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Trade Execution History */}
-          <div className="bg-[#121824] border border-gray-800 rounded-xl p-4 flex-1 flex flex-col">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
-              <History className="w-4 h-4 text-red-500" /> Recent Positions
-            </h3>
-            <div className="overflow-y-auto max-h-48 flex-1">
-              {trades.length === 0 ? (
-                <div className="text-center text-xs text-gray-500 py-8">No executed contracts yet.</div>
-              ) : (
-                <table className="w-full text-left text-xs font-mono">
-                  <thead className="text-gray-400 border-b border-gray-800">
-                    <tr>
-                      <th className="pb-2">Time</th>
-                      <th className="pb-2">Type</th>
-                      <th className="pb-2">Prediction</th>
-                      <th className="pb-2">Stake</th>
-                      <th className="pb-2 text-right">Profit/Loss</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800/40">
-                    {trades.map((t) => (
-                      <tr key={t.id} className="hover:bg-gray-800/30">
-                        <td className="py-2 text-gray-400">{t.time}</td>
-                        <td className="py-2">{t.type}</td>
-                        <td className="py-2 font-bold text-gray-200">{t.prediction}</td>
-                        <td className="py-2">${t.stake}</td>
-                        <td className={`py-2 text-right font-bold ${t.payout >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {t.payout >= 0 ? `+$${t.payout.toFixed(2)}` : `-$${Math.abs(t.payout).toFixed(2)}`}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-
-        </div>
-
-        {/* Right Column: Order Control Panel (1 col) */}
-        <div className="bg-[#121824] border border-gray-800 rounded-xl p-5 flex flex-col justify-between gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-              <span className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Settings className="w-4 h-4 text-red-500" /> Contract Config
-              </span>
-            </div>
-
-            {/* Stake Input */}
-            <div>
-              <label className="text-xs text-gray-400 block mb-1.5">Stake Amount ($)</label>
-              <input
-                type="number"
-                value={stake}
-                onChange={(e) => setStake(Number(e.target.value))}
-                className="w-full bg-[#0c1017] border border-gray-800 rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-red-500 transition-colors"
-              />
-            </div>
-
-            {/* Duration Selector */}
-            <div>
-              <label className="text-xs text-gray-400 block mb-1.5">Ticks Duration</label>
-              <div className="grid grid-cols-5 gap-1.5">
-                {[1, 2, 3, 4, 5].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setDuration(t)}
-                    className={`py-1.5 text-xs font-mono rounded border ${
-                      duration === t 
-                        ? 'bg-red-600 text-white border-red-500' 
-                        : 'bg-[#0c1017] text-gray-400 border-gray-800 hover:border-gray-700'
-                    }`}
-                  >
-                    {t}t
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Session Stats */}
-            <div className="bg-[#0c1017] p-3 rounded-lg border border-gray-800 space-y-2 font-mono text-xs">
-              <div className="flex justify-between text-gray-400">
-                <span>Session P/L:</span>
-                <span className={sessionPL >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
-                  {sessionPL >= 0 ? `+$${sessionPL.toFixed(2)}` : `-$${Math.abs(sessionPL).toFixed(2)}`}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Execution Action Buttons */}
-          <div className="space-y-3">
-            {contractType === 'Even/Odd' && (
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => executeTrade('Even')}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-900/30 transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-1"
-                >
-                  Even
-                </button>
-                <button
-                  onClick={() => executeTrade('Odd')}
-                  className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-red-900/30 transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-1"
-                >
-                  Odd
-                </button>
-              </div>
-            )}
-
-            {contractType !== 'Even/Odd' && (
-              <button
-                onClick={() => executeTrade(prediction)}
-                className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-900/40 transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2"
-              >
-                <Zap className="w-4 h-4" /> Purchase Contract
-              </button>
-            )}
-          </div>
-        </div>
-
+      <div className="px-4 py-1 text-[11px] text-gray-400 flex items-center justify-between">
+        <span>How to trade Even/Odd?</span>
+        <ChevronRight className="w-3.5 h-3.5" />
       </div>
+
+      {/* Chart Section */}
+      <div className="bg-[#121824] border-y border-gray-800 p-4 relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="bg-[#1c2436] text-red-400 text-xs font-mono font-bold px-2 py-1 rounded border border-gray-700">1T</span>
+            <div className="bg-[#1c2436] border border-gray-700 px-3 py-1 rounded flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span className="text-xs font-bold text-white">Volatility 10 (1s) Index</span>
+              <span className="text-xs font-mono text-red-400">{currentPrice}</span>
+              <ChevronRight className="w-3.5 h-3.5 text-gray-400 rotate-90" />
+            </div>
+          </div>
+          <button className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded">View</button>
+        </div>
+
+        {/* Simulated SVG Wave Chart matching screenshot */}
+        <div className="h-44 w-full relative flex items-end justify-between overflow-hidden border-b border-gray-800 pb-2">
+          <div className="absolute right-4 top-1/3 bg-white text-black font-mono font-bold text-xs px-2 py-1 rounded shadow-lg flex items-center gap-1">
+            {currentPrice} <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping"></span>
+          </div>
+          <svg className="absolute inset-0 w-full h-full text-red-500 overflow-visible" preserveAspectRatio="none" viewBox="0 0 400 150">
+            <path d="M 0,120 Q 30,100 60,130 T 120,80 T 180,40 T 240,90 T 300,50 T 360,30 L 400,65" fill="none" stroke="currentColor" strokeWidth="2.5" />
+            <circle cx="360" cy="30" r="4" fill="#ffffff" stroke="#ef4444" strokeWidth="3" />
+          </svg>
+        </div>
+
+        {/* Digit Distribution Bar Row */}
+        <div className="grid grid-cols-10 gap-1 mt-4 pt-2">
+          {Object.entries(stats).map(([digit, val]) => (
+            <div key={digit} className="flex flex-col items-center gap-1">
+              <span className="text-[10px] text-gray-400 font-mono">{val}%</span>
+              <div className={`w-full h-10 rounded flex flex-col justify-end p-0.5 border ${Number(digit) === lastDigit ? 'bg-red-950/40 border-red-500' : 'bg-[#0c1017] border-gray-800'}`}>
+                <div className={`w-full rounded-sm ${Number(digit) === lastDigit ? 'bg-red-600' : 'bg-gray-700'}`} style={{ height: `${val * 2.5}%` }}></div>
+              </div>
+              <span className={`text-xs font-mono font-bold ${Number(digit) === lastDigit ? 'text-red-500' : 'text-gray-300'}`}>{digit}</span>
+              {Number(digit) === lastDigit && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 -mt-1"></span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Auto / Manual Mode Switch */}
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-2 bg-[#121824] p-1 rounded-xl border border-gray-800">
+          <button 
+            onClick={() => setTradeMode('AUTO')}
+            className={`py-2 text-xs font-bold rounded-lg transition-all ${tradeMode === 'AUTO' ? 'bg-red-600 text-white shadow-md' : 'text-gray-400'}`}
+          >
+            AUTO
+          </button>
+          <button 
+            onClick={() => setTradeMode('MANUAL')}
+            className={`py-2 text-xs font-bold rounded-lg transition-all ${tradeMode === 'MANUAL' ? 'bg-red-600 text-white shadow-md' : 'text-gray-400'}`}
+          >
+            MANUAL
+          </button>
+        </div>
+
+        {/* Duration */}
+        <div className="bg-[#121824] border border-gray-800 rounded-xl p-3">
+          <div className="flex justify-between text-xs text-gray-400 mb-2">
+            <span>DURATION</span>
+            <span className="font-bold text-white font-mono">{duration} ticks</span>
+          </div>
+          <div className="grid grid-cols-10 gap-1">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((d) => (
+              <button
+                key={d}
+                onClick={() => setDuration(d)}
+                className={`py-1.5 text-xs font-mono rounded font-bold border ${duration === d ? 'bg-red-600 text-white border-red-500' : 'bg-[#0c1017] text-gray-400 border-gray-800'}`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Stake & Session P/L */}
+        <div className="grid grid-cols-2 gap-3 bg-[#121824] border border-gray-800 rounded-xl p-3 items-center">
+          <div>
+            <span className="text-[10px] text-gray-400 block uppercase">Stake</span>
+            <div className="flex items-center gap-2 mt-1">
+              <button onClick={() => setStake(Math.max(1, stake - 1))} className="w-7 h-7 bg-gray-800 rounded flex items-center justify-center text-lg font-bold">-</button>
+              <span className="font-mono font-bold text-base text-red-500">${stake}</span>
+              <button onClick={() => setStake(stake + 1)} className="w-7 h-7 bg-gray-800 rounded flex items-center justify-center text-lg font-bold">+</button>
+            </div>
+          </div>
+          <div className="border-l border-gray-800 pl-3">
+            <span className="text-[10px] text-gray-400 block uppercase">Session P/L</span>
+            <span className={`font-mono font-bold text-base mt-1 block ${sessionPL >= 0 ? 'text-gray-200' : 'text-red-400'}`}>
+              {sessionPL >= 0 ? `+$${sessionPL.toFixed(2)}` : `-$${Math.abs(sessionPL).toFixed(2)}`}
+            </span>
+          </div>
+        </div>
+
+        {/* Target, Stop Loss, Multiplier */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-[#121824] border border-gray-800 rounded-xl p-2.5 text-center">
+            <span className="text-[9px] text-gray-400 block">🎯 TARGET</span>
+            <span className="font-mono font-bold text-sm text-white">${target}</span>
+          </div>
+          <div className="bg-[#121824] border border-gray-800 rounded-xl p-2.5 text-center">
+            <span className="text-[9px] text-gray-400 block">🛑 STOP LOSS</span>
+            <span className="font-mono font-bold text-sm text-white">${stopLoss}</span>
+          </div>
+          <div className="bg-[#121824] border border-gray-800 rounded-xl p-2.5 text-center">
+            <span className="text-[9px] text-gray-400 block">⚡ MULT</span>
+            <span className="font-mono font-bold text-sm text-white">x {multiplier}</span>
+          </div>
+        </div>
+
+        {/* Prediction Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <button 
+            onClick={() => executeTrade('Even')}
+            className="bg-[#121824] hover:bg-[#1c2436] border border-gray-800 rounded-xl p-3 text-left transition-all relative overflow-hidden group"
+          >
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-bold text-white text-sm">Even</span>
+              <span className="font-mono font-bold text-emerald-400 text-sm">$19.52</span>
+            </div>
+            <span className="text-[10px] text-gray-400 font-mono">95.20% payout</span>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
+          </button>
+
+          <button 
+            onClick={() => executeTrade('Odd')}
+            className="bg-[#121824] hover:bg-[#1c2436] border border-red-500/50 rounded-xl p-3 text-left transition-all relative overflow-hidden group shadow-lg shadow-red-950/40"
+          >
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-bold text-red-500 text-sm">Odd</span>
+              <span className="font-mono font-bold text-emerald-400 text-sm">$19.52</span>
+            </div>
+            <span className="text-[10px] text-gray-400 font-mono">95.20% payout</span>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-red-600"></div>
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom Mobile Navigation Bar matching screenshot */}
+      <nav className="bg-[#121824] border-t border-gray-800 fixed bottom-0 left-0 right-0 py-2.5 px-6 flex items-center justify-around z-50">
+        <button className="flex flex-col items-center text-gray-400 hover:text-white">
+          <MessageSquare className="w-5 h-5" />
+          <span className="text-[10px] mt-1">Live Chat</span>
+        </button>
+        <button className="flex flex-col items-center text-red-500">
+          <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/50 -mt-3 border-2 border-[#121824]">
+            <Zap className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] mt-0.5 font-bold">AI</span>
+        </button>
+        <button className="flex flex-col items-center text-gray-400 hover:text-white">
+          <Clock className="w-5 h-5" />
+          <span className="text-[10px] mt-1">Positions</span>
+        </button>
+      </nav>
     </div>
   );
 }
