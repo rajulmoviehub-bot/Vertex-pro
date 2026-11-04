@@ -5,7 +5,14 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [mainWallet, setMainWallet] = useState(100.00);
+  const [mainWallet, setMainWallet] = useState(100.00); // separate local wallet; not a connected broker balance
+  const [demoWallet, setDemoWallet] = useState(10000.00);
+  const [accountMode, setAccountMode] = useState('DEMO');
+  const activeWallet = accountMode === 'DEMO' ? demoWallet : mainWallet;
+  const updateActiveWallet = (delta) => {
+    if (accountMode === 'DEMO') setDemoWallet(prev => Math.max(0, prev + delta));
+    else setMainWallet(prev => Math.max(0, prev + delta));
+  };
   const [user, setUser] = useState({ loggedIn: false, email: '', refCode: 'VELTEX-7892' });
   const [authModal, setAuthModal] = useState(null);
   const [authInput, setAuthInput] = useState({ email: '', password: '', ref: '' });
@@ -110,7 +117,7 @@ export default function App() {
         const isWin = nextDigit % 2 === 0 ? trade.prediction === 'Even' : trade.prediction === 'Odd';
         const payout = isWin ? trade.stake * 0.95 : -trade.stake;
         
-        setMainWallet(prev => prev + payout);
+        updateActiveWallet(payout);
         setSessionPL(prev => prev + payout);
 
         if (isWin) {
@@ -175,11 +182,11 @@ export default function App() {
         ws.close();
       }
     };
-  }, [duration, initialStake, multiplier, contractType]);
+  }, [duration, initialStake, multiplier, contractType, accountMode]);
 
   const executeTrade = (type) => {
     if (activeTrade) return;
-    if (mainWallet < stake) {
+    if (activeWallet < stake) {
       alert("Insufficient main wallet balance!");
       setBotActive(false);
       setBotStatusText('Stopped: Insufficient Balance');
@@ -288,7 +295,7 @@ export default function App() {
         <div className="flex items-center gap-2">
           <button onClick={() => setActiveTab('WITHDRAW')} className="bg-[#182232] border border-gray-700/80 rounded-full px-3 py-1 flex items-center gap-2 hover:border-red-500 transition-all">
             <Wallet className="w-3.5 h-3.5 text-red-500" />
-            <span className="text-sm font-mono font-bold text-white">${mainWallet.toFixed(2)}</span>
+            <span className="text-sm font-mono font-bold text-white">${activeWallet.toFixed(2)}</span>
             <ChevronRight className="w-3.5 h-3.5 text-gray-400 rotate-90" />
           </button>
 
@@ -312,6 +319,17 @@ export default function App() {
           )}
         </div>
       </header>
+
+      <section className="bg-[#0d131f] border-b border-gray-800 px-3 py-2" aria-label="Account mode">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex gap-2">
+            <button onClick={() => { setAccountMode('DEMO'); setBotActive(false); setActiveTrade(null); }} aria-pressed={accountMode === 'DEMO'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'DEMO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>DEMO · $10,000 START</button>
+            <button onClick={() => { setAccountMode('REAL'); setBotActive(false); setActiveTrade(null); }} aria-pressed={accountMode === 'REAL'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'REAL' ? 'bg-red-600 text-white border-red-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>REAL WALLET</button>
+          </div>
+          {accountMode === 'DEMO' && <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); }} className="text-xs font-bold text-yellow-300 underline">Reset Demo $10,000</button>}
+        </div>
+        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? 'Practice mode: demo funds only. No real deposits or withdrawals.' : 'Separate local wallet view. Live broker trading and real-money execution are not connected.'}</p>
+      </section>
 
       {/* Tabs */}
       <div className="bg-[#121824] grid grid-cols-4 border-b border-gray-800 text-center">
