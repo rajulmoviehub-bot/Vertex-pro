@@ -53,6 +53,7 @@ export default function App() {
   const [adminSection, setAdminSection] = useState('OVERVIEW');
   const [shareCustomerNumber, setShareCustomerNumber] = useState('');
   const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
+  const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(10);
   const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
@@ -881,8 +882,9 @@ export default function App() {
               {[
                 ['TRADE','Trade'],['DEPOSIT','Deposit'],['HISTORY','History'],['INFO','Info & Terms']
               ].map(([tab,label]) => <button key={tab} onClick={() => { setActiveTab(tab); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">{label}</button>)}
+              {isOwner && (
               <div className="rounded-lg border border-slate-500 bg-slate-900/70 p-3 space-y-2">
-                <p className="text-xs font-black uppercase tracking-wider text-amber-300">AAA- 3 · Owner Admin</p>
+                <p className="text-xs font-black uppercase tracking-wider text-amber-300">VELTEX OWNER · ADMIN</p>
                 <p className="text-[11px] text-gray-400">Admin sections are grouped here in the left navigation.</p>
                 {[
                   ['OVERVIEW','Dashboard Overview'],
@@ -901,6 +903,7 @@ export default function App() {
                   }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-3 py-3 text-sm font-bold text-white hover:bg-slate-800">{label}</button>
                 ))}
               </div>
+              )}
               <button onClick={async () => {
                 if (!adminUnlocked && !(await unlockAdmin())) return;
                 setAccountMode('REAL');
