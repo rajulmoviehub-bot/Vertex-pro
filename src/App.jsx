@@ -316,7 +316,7 @@ export default function App() {
       </section>
 
       {/* Tabs */}
-      <div className="bg-[#121824] grid grid-cols-4 border-b border-gray-800 text-center">
+      <div className="bg-[#121824] grid grid-cols-5 border-b border-gray-800 text-center">
         {['TRADE', 'DEPOSIT', 'WITHDRAW', 'HISTORY', 'INFO'].map((tab) => (
           <button
             key={tab}
@@ -332,11 +332,9 @@ export default function App() {
       <div className="px-4 py-1.5 text-xs text-gray-300 flex items-center justify-between bg-[#0c1017] border-b border-gray-800">
         <div className="flex items-center gap-1.5">
           <Share2 className="w-3.5 h-3.5 text-red-500" />
-          <span>Refer & Earn <strong>$1.00</strong></span>
+          <span>Referral rewards not active yet</span>
         </div>
-        <button onClick={() => { navigator.clipboard.writeText(`https://green-dollar-ai-trader.vercel.app?ref=${user.refCode}`); alert("Referral link copied!"); }} className="text-red-400 hover:underline text-[11px] font-bold">
-          Code: {user.refCode}
-        </button>
+        <span className="text-gray-500 text-[11px]">Referral tracking pending</span>
       </div>
 
       {activeTab === 'TRADE' && (
@@ -365,10 +363,11 @@ export default function App() {
               </div>
               <div>
                 <button 
+                  disabled={accountMode === 'REAL'}
                   onClick={() => setBotActive(!botActive)}
-                  className={`text-xs font-bold px-3.5 py-1.5 rounded shadow ${botActive ? 'bg-amber-600 text-white animate-pulse' : 'bg-emerald-600 text-white'}`}
+                  className={`text-xs font-bold px-3.5 py-1.5 rounded shadow disabled:opacity-40 ${botActive ? 'bg-amber-600 text-white animate-pulse' : 'bg-emerald-600 text-white'}`}
                 >
-                  {botActive ? 'Stop Bot' : 'Start Trip Bot'}
+                  {accountMode === 'REAL' ? 'REAL TRADING OFF' : botActive ? 'Stop Bot' : 'Start Trip Bot'}
                 </button>
               </div>
             </div>
@@ -526,7 +525,7 @@ export default function App() {
                 <label className="text-xs text-gray-400 block mb-1 font-bold">Amount (USD)</label>
                 <input type="number" min="5" value={depositAmount} onChange={(e) => setDepositAmount(Number(e.target.value))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
               </div>
-              <button onClick={handleDeposit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3 rounded-lg shadow-lg">Pay ${depositAmount}</button>
+              <button onClick={handleDeposit} className="w-full bg-emerald-700 text-white font-bold text-sm py-3 rounded-lg shadow-lg">Check payment setup</button>
             </div>
           </div>
         </div>
@@ -559,7 +558,7 @@ export default function App() {
                 <label className="text-xs text-gray-400 block mb-1 font-bold">Account / Phone / Till</label>
                 <input type="text" placeholder="e.g. 0712345678" value={withdrawAccount} onChange={(e) => setWithdrawAccount(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-mono" />
               </div>
-              <button onClick={handleWithdrawal} className="w-full bg-red-600 hover:bg-red-500 text-white font-bold text-sm py-3 rounded-lg shadow-lg">Submit Withdrawal Request</button>
+              <button onClick={handleWithdrawal} className="w-full bg-red-700 text-white font-bold text-sm py-3 rounded-lg shadow-lg">Check payout setup</button>
             </div>
           </div>
         </div>
