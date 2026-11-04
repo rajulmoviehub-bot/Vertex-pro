@@ -47,6 +47,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('TRADE');
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [adminSection, setAdminSection] = useState('OVERVIEW');
+  const [shareCustomerNumber, setShareCustomerNumber] = useState('');
   const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(10);
@@ -582,14 +584,32 @@ export default function App() {
         <main className="p-4 max-w-lg mx-auto w-full space-y-3">
           <section className="bg-[#121824] border border-slate-600 rounded-xl p-4 space-y-3">
             <h2 className="text-lg font-black text-white">AAA- 3 Admin Panel</h2>
-            <p className="text-xs text-amber-200">Preview-only owner panel. This password check is inside the website code and is not secure authentication. Do not use it to protect real funds or customer data.</p>
+            <p className="text-xs text-amber-200">Owner dashboard preview. Customer registration, deposits, withdrawal requests, central wallet and licence sharing are not connected to a secure server yet. No money movement or approvals can be performed here.</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">Demo balance</p><p className="text-lg font-black text-white">${demoWallet.toFixed(2)}</p></div>
               <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">Session P/L</p><p className="text-lg font-black text-white">${sessionPL.toFixed(2)}</p></div>
             </div>
-            <p className="text-sm text-gray-300">Recorded demo trades: {trades.length}</p>
-            <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); }} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3">Reset demo account to $10,000</button>
-            <button onClick={() => { setAdminUnlocked(false); setActiveTab('TRADE'); }} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Lock Admin Panel</button>
+            <p className="text-sm text-gray-300">Demo trades recorded in this browser: {trades.length}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ['OVERVIEW','Dashboard overview'],
+                ['DEPOSITS','Customer deposits'],
+                ['REGISTRATIONS','Registered customers'],
+                ['WITHDRAWALS','Withdrawal approvals'],
+                ['ACCOUNTS','Account management'],
+                ['CENTRAL','Central wallet withdrawal'],
+                ['SHARING','Bot sharing / licence transfer']
+              ].map(([key,label]) => <button key={key} onClick={() => setAdminSection(key)} aria-pressed={adminSection === key} className={`rounded-lg border px-3 py-3 text-left text-xs font-bold ${adminSection === key ? 'bg-cyan-800 border-cyan-500 text-white' : 'bg-[#090d14] border-gray-700 text-gray-200'}`}>{label}</button>)}
+            </div>
+            {adminSection === 'OVERVIEW' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">System status</h3><p className="text-xs text-gray-300">Customer deposits: Not connected</p><p className="text-xs text-gray-300">Verified registrations: Not connected</p><p className="text-xs text-gray-300">Withdrawal requests: Not connected</p><p className="text-xs text-gray-300">Central wallet: Not connected</p><p className="text-xs text-gray-300">Bot licence transfer: Not connected</p></div>}
+            {adminSection === 'DEPOSITS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Customer deposits</h3><p className="text-xs text-amber-200">No customer deposit feed is connected. The records below, if any, are only local browser entries and are not proof of payment.</p>{transactions.filter(tx => tx.type === 'DEPOSIT').length === 0 ? <p className="text-sm text-gray-400">No local deposit entries.</p> : transactions.filter(tx => tx.type === 'DEPOSIT').map(tx => <p key={tx.id} className="text-xs text-gray-300">{tx.time} · ${tx.amount.toFixed(2)} · {tx.status}</p>)}</div>}
+            {adminSection === 'REGISTRATIONS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Registered customers</h3><p className="text-2xl font-black text-white">Unavailable</p><p className="text-xs text-gray-400">Email registration and verification are not connected to a customer database, so a real registration count and customer list cannot be shown yet.</p></div>}
+            {adminSection === 'WITHDRAWALS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Withdrawal request approvals</h3><p className="text-xs text-gray-300">No withdrawal request system or server-side approval queue is connected. No pending requests are available to review.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Approve request · unavailable</button><p className="text-[11px] text-amber-200">Approval controls will only be enabled after verified customer identity, request records and secure payout integration are implemented.</p></div>}
+            {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Account management</h3><p className="text-xs text-gray-300">Manage customer account links and trade-history access after secure sign-in and broker authorization are connected.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3">Open account management preview</button><p className="text-[11px] text-amber-200">No customer account records are currently available.</p></div>}
+            {adminSection === 'CENTRAL' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Central wallet withdrawal</h3><p className="text-xs text-gray-300">Central wallet balance: Not connected. No business wallet or payout provider is linked.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Request central withdrawal · unavailable</button><p className="text-[11px] text-amber-200">This panel cannot access or move customer or company funds.</p></div>}
+            {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Bot sharing / licence transfer</h3><label className="block text-xs text-gray-300" htmlFor="share-customer-number">Customer phone number</label><input id="share-customer-number" value={shareCustomerNumber} onChange={e => setShareCustomerNumber(e.target.value)} placeholder="e.g. 07XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={!shareCustomerNumber.trim()} onClick={() => alert('Licence transfer is not connected. No customer was activated and no previous licence was revoked.')} className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 disabled:opacity-50">Transfer bot licence · unavailable</button><p className="text-[11px] text-amber-200">No bot is shared by this form. A secure server must verify payment, activate the buyer and revoke the previous activation atomically.</p></div>}
+            {adminSection === 'OVERVIEW' && <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); }} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3">Reset demo account to $10,000</button>}
+            <button onClick={() => { setAdminUnlocked(false); setAdminSection('OVERVIEW'); setActiveTab('TRADE'); }} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Lock Admin Panel</button>
           </section>
         </main>
       )}
