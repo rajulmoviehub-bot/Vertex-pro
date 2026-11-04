@@ -44,6 +44,19 @@ export default async function handler(req, res) {
       return res.status(401).json({ ok: false, error: "Could not verify signed-in user" });
     }
 
+    // The explicitly designated platform owner is the only account granted admin access.
+    const ownerEmail = "rajulmoviehub@gmail.com";
+    const signedInEmail = String(authUser.email || "").trim().toLowerCase();
+    const emailVerified = Boolean(authUser.email_confirmed_at || authUser.confirmed_at);
+    if (signedInEmail === ownerEmail && emailVerified) {
+      return res.status(200).json({
+        ok: true,
+        userId: authUser.id,
+        role: "admin",
+        owner: true
+      });
+    }
+
     const profileUrl = new URL(`${supabaseUrl}/rest/v1/profiles`);
     profileUrl.searchParams.set("select", "role");
     profileUrl.searchParams.set("id", `eq.${authUser.id}`);
