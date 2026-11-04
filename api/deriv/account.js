@@ -8,6 +8,10 @@ export default async function handler(req, res) {
   }
 
   const token = process.env.DERIV_API_TOKEN;
+  const appId = process.env.DERIV_APP_ID;
+  if (!appId) {
+    return res.status(503).json({ ok: false, error: "Deriv App ID is not configured" });
+  }
   if (!token) {
     return res.status(503).json({ ok: false, error: "Deriv server token is not configured" });
   }
@@ -29,7 +33,7 @@ export default async function handler(req, res) {
       };
 
       const timer = setTimeout(() => finish(new Error("Deriv connection timed out")), 12000);
-      socket = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+      socket = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(appId)}`);
 
       socket.addEventListener("open", () => {
         socket.send(JSON.stringify({ authorize: token }));
