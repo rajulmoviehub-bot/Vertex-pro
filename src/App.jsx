@@ -59,6 +59,7 @@ export default function App() {
 
   const wsRef = useRef(null);
   const lastTickAtRef = useRef(null);
+  const marketSequenceRef = useRef(0);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -232,7 +233,7 @@ export default function App() {
     let disposed = false;
     let busy = false;
     let staleTimer;
-    let lastSequence = 0;
+    let lastSequence = marketSequenceRef.current;
     const feedStartedAt = Date.now();
     setFeedStatus('CONNECTING');
 
@@ -261,6 +262,7 @@ export default function App() {
         for (const tick of newTicks) {
           processNewTick(Number(tick.quote));
           lastSequence = tick.sequence;
+          marketSequenceRef.current = tick.sequence;
         }
         if (newTicks.length) setFeedStatus('LIVE');
         else if (!lastSequence) setFeedStatus('CONNECTING');
