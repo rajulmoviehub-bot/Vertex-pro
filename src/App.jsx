@@ -67,6 +67,29 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [loginWelcome]);
 
+  // Welcome returning signed-in customers when they reopen the site or return to its tab.
+  useEffect(() => {
+    if (!user.loggedIn) return undefined;
+    let wasHidden = document.visibilityState === 'hidden';
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        wasHidden = true;
+      } else if (wasHidden) {
+        wasHidden = false;
+        setLoginWelcome(true);
+      }
+    };
+    const handlePageShow = (event) => {
+      if (event.persisted) setLoginWelcome(true);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [user.loggedIn]);
+
   const wsRef = useRef(null);
   const lastTickAtRef = useRef(null);
   const marketSequenceRef = useRef(0);
@@ -436,6 +459,7 @@ export default function App() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         setUser({ loggedIn: true, email: data.user?.email || email, refCode: 'VELTEX-7892' });
+        setLoginWelcome(true);
         const { data: wallet, error: walletError } = await supabase
           .from('wallets')
           .select('available_balance')
