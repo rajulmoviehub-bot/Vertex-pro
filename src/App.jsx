@@ -46,12 +46,10 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('TRADE');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
   const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(10);
-  const [withdrawMethod, setWithdrawMethod] = useState('M-PESA TILL');
-  const [withdrawAmount, setWithdrawAmount] = useState(10);
-  const [withdrawAccount, setWithdrawAccount] = useState('');
 
   const wsRef = useRef(null);
 
@@ -244,9 +242,6 @@ export default function App() {
     alert('M-Pesa and other payment gateways are not connected yet. No payment was taken and no balance was credited.');
   };
 
-  const handleWithdrawal = () => {
-    alert('M-Pesa and bank payout services are not connected yet. No withdrawal was submitted and no balance was deducted.');
-  };
 
   const handleAuth = () => {
     alert('Secure registration, login and email verification are not connected yet. No account has been created or signed in.');
@@ -278,19 +273,17 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => setActiveTab('WITHDRAW')} className="bg-[#182232] border border-gray-700/80 rounded-full px-3 py-1 flex items-center gap-2 hover:border-red-500 transition-all">
-            <Wallet className="w-3.5 h-3.5 text-red-500" />
+          <div aria-label="Current practice balance" className="bg-[#182232] border border-gray-700/80 rounded-full px-3 py-1 flex items-center gap-2">
+            <Wallet className="w-3.5 h-3.5 text-emerald-400" />
             <span className="text-sm font-mono font-bold text-white">${activeWallet.toFixed(2)}</span>
-            <ChevronRight className="w-3.5 h-3.5 text-gray-400 rotate-90" />
-          </button>
+          </div>
 
           <button onClick={() => setSoundEnabled(!soundEnabled)} className="text-gray-400 hover:text-white p-1">
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-red-500" />}
           </button>
 
-          <button onClick={() => setActiveTab('DEPOSIT')} className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-md shadow-md">
-            Deposit
-          </button>
+          <button onClick={() => setActiveTab('DEPOSIT')} className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-md shadow-md">Deposit</button>
+          <button onClick={() => { const password = window.prompt('Enter AAA- 3 admin password'); if (password === 'ADMIN 6860') { setAdminUnlocked(true); setActiveTab('ADMIN'); } else if (password !== null) { alert('Incorrect admin password.'); } }} className="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-md">AAA- 3</button>
 
           {user.loggedIn ? (
             <span className="bg-red-950/60 border border-red-500/40 text-red-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -309,9 +302,8 @@ export default function App() {
         <p className="text-xs font-black text-amber-200">VELTEX pro BOT SALE</p>
         <p className="text-lg font-black text-white">KSh 60,000 · approx. US$461.72</p>
         <p className="text-[11px] text-amber-100">Previous price KSh 64,000 · approx. US$492.50. USD estimate only; exchange rates vary.</p>
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          <button onClick={() => setActiveTab('INFO')} className="rounded bg-amber-500 text-black text-xs font-bold py-2">BOT SALE DETAILS</button>
-          <button onClick={() => { setAccountMode('REAL'); setActiveTab('WITHDRAW'); }} className="rounded bg-emerald-700 text-white text-xs font-bold py-2">WITHDRAW MAIN WALLET</button>
+        <div className="mt-2">
+          <button onClick={() => setActiveTab('INFO')} className="w-full rounded bg-amber-500 text-black text-xs font-bold py-2">BOT SALE DETAILS</button>
         </div>
       </section>
 
@@ -327,8 +319,8 @@ export default function App() {
       </section>
 
       {/* Tabs */}
-      <div className="bg-[#121824] grid grid-cols-5 border-b border-gray-800 text-center">
-        {['TRADE', 'DEPOSIT', 'WITHDRAW', 'HISTORY', 'INFO'].map((tab) => (
+      <div className="bg-[#121824] grid grid-cols-4 border-b border-gray-800 text-center">
+        {['TRADE', 'DEPOSIT', 'HISTORY', 'INFO'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -543,39 +535,6 @@ export default function App() {
         </div>
       )}
 
-      {/* WITHDRAW VIEW */}
-      {activeTab === 'WITHDRAW' && (
-        <div className="p-4 space-y-4 max-w-md mx-auto w-full">
-          <div className="bg-[#121824] border border-gray-800 rounded-xl p-4">
-            <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2"><ArrowUpRight className="w-5 h-5 text-red-500" /> Withdraw Funds</h2>
-            <p className="text-xs text-gray-400 mb-4">Minimum $5.00. Approved in <strong>2 Hours</strong>.</p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-gray-400 block mb-1 font-bold">Destination</label>
-                <select value={withdrawMethod} onChange={(e) => setWithdrawMethod(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-bold">
-                  <option value="M-PESA TILL">M-Pesa Till Number</option>
-                  <option value="M-PESA PHONE">M-Pesa Phone Number</option>
-                  <option value="PAYBILL">M-Pesa Paybill</option>
-                  <option value="BANK">Bank Account</option>
-                  <option value="AIRTEL MONEY">Airtel Money</option>
-                  <option value="WORLDCOIN">Worldcoin</option>
-                  <option value="CRYPTO USDT P2P">Crypto USDT P2P</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 block mb-1 font-bold">Amount (USD)</label>
-                <input type="number" min="5" value={withdrawAmount} onChange={(e) => setWithdrawAmount(Number(e.target.value))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 block mb-1 font-bold">Account / Phone / Till</label>
-                <input type="text" placeholder="e.g. 0712345678" value={withdrawAccount} onChange={(e) => setWithdrawAccount(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-mono" />
-              </div>
-              <button onClick={handleWithdrawal} className="w-full bg-red-700 text-white font-bold text-sm py-3 rounded-lg shadow-lg">Check payout setup</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* HISTORY VIEW */}
       {activeTab === 'HISTORY' && (
         <div className="p-4 space-y-4 max-w-lg mx-auto w-full">
@@ -617,6 +576,22 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'ADMIN' && adminUnlocked && (
+        <main className="p-4 max-w-lg mx-auto w-full space-y-3">
+          <section className="bg-[#121824] border border-slate-600 rounded-xl p-4 space-y-3">
+            <h2 className="text-lg font-black text-white">AAA- 3 Admin Panel</h2>
+            <p className="text-xs text-amber-200">Preview-only owner panel. This password check is inside the website code and is not secure authentication. Do not use it to protect real funds or customer data.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">Demo balance</p><p className="text-lg font-black text-white">${demoWallet.toFixed(2)}</p></div>
+              <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">Session P/L</p><p className="text-lg font-black text-white">${sessionPL.toFixed(2)}</p></div>
+            </div>
+            <p className="text-sm text-gray-300">Recorded demo trades: {trades.length}</p>
+            <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); }} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3">Reset demo account to $10,000</button>
+            <button onClick={() => { setAdminUnlocked(false); setActiveTab('TRADE'); }} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Lock Admin Panel</button>
+          </section>
+        </main>
       )}
 
       {activeTab === 'ACCOUNT' && (
@@ -680,7 +655,7 @@ export default function App() {
             <h3 className="font-bold text-white">Common questions</h3>
             <p><strong className="text-white">How do I practise?</strong> Select DEMO. It starts at $10,000 and can be reset. Demo results are simulated and are not cash.</p>
             <p><strong className="text-white">Can I deposit with Safaricom M-Pesa?</strong> M-Pesa STK Push and confirmation pop-ups are planned, but Daraja is not connected. Do not send money based on this screen.</p>
-            <p><strong className="text-white">Can I withdraw?</strong> M-Pesa payout requests and confirmations are not connected. This app does not currently send withdrawals.</p>
+            <p><strong className="text-white">Can I withdraw?</strong> The withdrawal feature has been removed from this version. No withdrawals can be requested through this app.</p>
             <p><strong className="text-white">Does it copy another trader?</strong> No copy-trading feature is offered.</p>
             <p><strong className="text-white">Does the scanner guarantee a win?</strong> No. Digit statistics and the current scanner are informational/simulated only and do not establish a reliable prediction.</p>
           </section>
@@ -693,7 +668,7 @@ export default function App() {
             <h3 className="font-bold text-white">Terms and conditions</h3>
             <ol className="list-decimal pl-5 space-y-1 text-gray-300">
               <li>Use the DEMO account to practise; its $10,000 balance is virtual and has no cash value.</li>
-              <li>REAL WALLET is currently a display-only local balance. No live broker execution, custody, deposits or withdrawals are enabled.</li>
+              <li>The main-wallet withdrawal option has been removed. No live broker execution, custody, deposits or withdrawals are enabled.</li>
               <li>Trading involves substantial risk and you may lose all money committed. Past or simulated results do not predict future results.</li>
               <li>No profit, income, accuracy, recovery or return is promised or guaranteed.</li>
               <li>Do not share your account, passwords, verification codes, device access or broker credentials. No copy trading is provided.</li>
@@ -717,8 +692,9 @@ export default function App() {
             </div>
             <div className="space-y-2">
               {[
-                ['TRADE','Trade'],['DEPOSIT','Deposit'],['WITHDRAW','Withdraw'],['HISTORY','History'],['INFO','Info & Terms']
+                ['TRADE','Trade'],['DEPOSIT','Deposit'],['HISTORY','History'],['INFO','Info & Terms']
               ].map(([tab,label]) => <button key={tab} onClick={() => { setActiveTab(tab); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">{label}</button>)}
+              <button onClick={() => { const password = window.prompt('Enter AAA- 3 admin password'); if (password === 'ADMIN 6860') { setAdminUnlocked(true); setActiveTab('ADMIN'); setMenuOpen(false); } else if (password !== null) { alert('Incorrect admin password.'); } }} className="w-full text-left rounded-lg bg-slate-700 border border-slate-500 px-4 py-3 text-sm font-bold text-white">AAA- 3 Admin</button>
               <button onClick={() => { setAccountMode('DEMO'); setBotActive(false); setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
               <button onClick={() => { setActiveTab('ACCOUNT'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
               <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300">Reset demo balance</button>
