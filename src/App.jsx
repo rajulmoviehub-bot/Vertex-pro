@@ -45,6 +45,8 @@ export default function App() {
   const [trades, setTrades] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('TRADE');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(10);
   const [withdrawMethod, setWithdrawMethod] = useState('M-PESA TILL');
@@ -269,7 +271,7 @@ export default function App() {
       {/* Top Header */}
       <header className="bg-[#121824] border-b border-gray-800 px-3 py-2.5 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2.5">
-          <button className="text-gray-300"><Menu className="w-5 h-5" /></button>
+          <button aria-label="Open navigation menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)} className="text-gray-300 p-1"><Menu className="w-5 h-5" /></button>
           <div className="flex items-center text-base font-bold tracking-tight">
             <span className="text-white">VELTEX</span><span className="text-red-500 font-black"> pro</span>
           </div>
@@ -292,7 +294,7 @@ export default function App() {
 
           {user.loggedIn ? (
             <span className="bg-red-950/60 border border-red-500/40 text-red-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-              <UserCheck className="w-3 h-3" /> User
+              <UserCheck className="w-3 h-3" /> {displayUserName}
             </span>
           ) : (
             <div className="flex gap-1">
@@ -358,6 +360,7 @@ export default function App() {
             <div className="mx-3 mt-3 p-3 bg-red-950/40 border border-red-500/60 rounded-xl flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-red-400 font-bold block uppercase">AI Trip Trigger Signal</span>
+                <span className="text-xs text-cyan-300 font-bold block mt-1">Scan score: {scannedSignal.confidence}% statistical split (not win probability)</span>
                 <span className="text-sm font-black text-white">Target: <span className="text-emerald-400">{scannedSignal.prediction}</span> | Trip Digit: <span className="text-yellow-400 font-mono underline font-bold text-base">{scannedSignal.tripDigit}</span></span>
               </div>
               <div>
@@ -648,6 +651,30 @@ export default function App() {
             </ol>
           </section>
         </main>
+      )}
+
+
+      {menuOpen && (
+        <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Navigation menu">
+          <button aria-label="Close navigation menu" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-black/70 w-full h-full" />
+          <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-[#121824] border-r border-gray-700 p-4 shadow-2xl overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <div><p className="text-white font-black">VELTEX pro</p><p className="text-xs text-gray-400">Navigation · {displayUserName}</p></div>
+              <button aria-label="Close menu" onClick={() => setMenuOpen(false)} className="text-gray-300 text-2xl px-2">×</button>
+            </div>
+            <div className="space-y-2">
+              {[
+                ['TRADE','Trade'],['DEPOSIT','Deposit'],['WITHDRAW','Withdraw'],['HISTORY','History'],['INFO','Info & Terms']
+              ].map(([tab,label]) => <button key={tab} onClick={() => { setActiveTab(tab); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">{label}</button>)}
+              <button onClick={() => { setAccountMode('DEMO'); setBotActive(false); setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
+              <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300">Reset demo balance</button>
+              <button onClick={() => { setMenuOpen(false); setActiveTab('TRADE'); runDeepScan(); }} disabled={isScanning} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-300">Deep scan market</button>
+              <button onClick={() => { setMenuOpen(false); setActiveTab('TRADE'); if (accountMode === 'REAL') { alert('Bot is DEMO-only. Real-money trading is disabled.'); return; } if (!scannedSignal) { runDeepScan(); setBotStatusText('Run AI scan first, then start the demo bot.'); return; } setBotActive(v => !v); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-emerald-300">{botActive ? 'Stop demo bot' : 'Start demo bot'}</button>
+              {!user.loggedIn && <><button onClick={() => { setMenuOpen(false); setAuthModal('login'); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">Login</button><button onClick={() => { setMenuOpen(false); setAuthModal('signup'); }} className="w-full text-left rounded-lg bg-red-700 px-4 py-3 text-sm font-bold text-white">Sign up</button></>}
+            </div>
+            <p className="text-[11px] text-gray-500 mt-5">Trading and payment integrations are not connected. Demo only.</p>
+          </aside>
+        </div>
       )}
 
       {/* LOGIN MODAL */}
