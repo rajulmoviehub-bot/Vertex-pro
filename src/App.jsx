@@ -20,7 +20,7 @@ export default function App() {
 
   const [initialStake, setInitialStake] = useState(10);
   const [stake, setStake] = useState(10);
-  const [market, setMarket] = useState('Volatility 10 (1s) Index');
+  const [market, setMarket] = useState('VELTEX Synthetic Index');
   const [contractType, setContractType] = useState('Even/Odd');
   const [tradeMode, setTradeMode] = useState('AUTO'); 
   const [duration, setDuration] = useState(5); 
@@ -226,59 +226,65 @@ export default function App() {
     });
   };
 
-  // External reference feed only: never fabricate ticks when the provider is unavailable.
+  // Poll VELTEX's server-side deterministic synthetic demo market.
+  // The API discloses that these are simulated prices, not real-world quotes.
   useEffect(() => {
     let disposed = false;
+    let busy = false;
     let staleTimer;
-    let ws;
+    let lastSequence = 0;
     const feedStartedAt = Date.now();
     setFeedStatus('CONNECTING');
-    try {
-      ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
-      wsRef.current = ws;
-      ws.onopen = () => {
-        if (disposed) return;
-        setFeedStatus('SUBSCRIBING');
-        ws.send(JSON.stringify({ ticks: '1HZ10V', subscribe: 1 }));
-      };
-      ws.onmessage = (event) => {
-        if (disposed) return;
-        try {
-          const data = JSON.parse(event.data);
-          if (data.error) {
-            setFeedStatus('ERROR');
-            console.error('Market feed error:', data.error.message || 'Provider error');
-            return;
-          }
-          if (data.tick && Number.isFinite(Number(data.tick.quote))) {
-            processNewTick(Number(data.tick.quote));
-          }
-        } catch (error) {
-          console.error('Invalid market feed message:', error);
-          setFeedStatus('ERROR');
+
+    const pollMarket = async () => {
+      if (disposed || busy) return;
+      busy = true;
+      try {
+        const response = await fetch('/api/market/tick?limit=30', {
+          method: 'GET',
+          cache: 'no-store',
+          headers: { Accept: 'application/json' }
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok || !Array.isArray(payload.ticks) || !payload.tick) {
+          throw new Error(payload.error || 'VELTEX market feed returned an invalid response');
         }
-      };
-      ws.onerror = () => { if (!disposed) setFeedStatus('ERROR'); };
-      ws.onclose = () => { if (!disposed) setFeedStatus('DISCONNECTED'); };
-      staleTimer = setInterval(() => {
-        const mostRecentTick = lastTickAtRef.current || feedStartedAt;
-        if (Date.now() - mostRecentTick > 10000) setFeedStatus('STALE');
-      }, 2000);
-    } catch (error) {
-      setFeedStatus('ERROR');
-      console.error('Could not open market feed:', error);
-    }
+        const newTicks = payload.ticks.filter(tick =>
+          Number.isSafeInteger(tick.sequence) &&
+          tick.sequence > lastSequence &&
+          Number.isFinite(Number(tick.quote))
+        );
+        if (lastSequence && newTicks.length && newTicks[0].sequence > lastSequence + 1) {
+          setFeedStatus('GAP');
+          throw new Error('Market tick gap detected; waiting for a continuous feed');
+        }
+        for (const tick of newTicks) {
+          processNewTick(Number(tick.quote));
+          lastSequence = tick.sequence;
+        }
+        if (newTicks.length) setFeedStatus('LIVE');
+        else if (!lastSequence) setFeedStatus('CONNECTING');
+      } catch (error) {
+        if (!disposed) {
+          setFeedStatus('ERROR');
+          console.error('VELTEX synthetic market feed error:', error);
+        }
+      } finally {
+        busy = false;
+      }
+    };
+
+    pollMarket();
+    const pollInterval = setInterval(pollMarket, 1000);
+    staleTimer = setInterval(() => {
+      const mostRecentTick = lastTickAtRef.current || feedStartedAt;
+      if (Date.now() - mostRecentTick > 10000) setFeedStatus('STALE');
+    }, 2000);
+
     return () => {
       disposed = true;
+      clearInterval(pollInterval);
       if (staleTimer) clearInterval(staleTimer);
-      if (ws) {
-        ws.onopen = null;
-        ws.onmessage = null;
-        ws.onerror = null;
-        ws.onclose = null;
-        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ forget_all: 'ticks' }));
-        ws.close();
-      }
     };
   }, [duration, initialStake, multiplier, contractType, accountMode]);
 
@@ -546,13 +552,13 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-400' : 'text-amber-300'}`} role="status">{feedStatus === 'LIVE' ? 'DERIV REFERENCE · LIVE' : `FEED ${feedStatus}`}</span>
+                <span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-400' : 'text-amber-300'}`} role="status">{feedStatus === 'LIVE' ? 'VELTEX SIMULATED MARKET' : `FEED ${feedStatus}`}</span>
                 <span className="bg-[#1a2233] border border-gray-700 text-gray-300 font-mono text-xs px-2 py-1 rounded font-bold">50%</span>
                 <button className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded shadow">View</button>
               </div>
             </div>
 
-            <p className="text-[10px] text-amber-300 mb-2">External Deriv 1HZ10V reference prices · not an independently generated VELTEX market feed. Last tick: {lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : 'Waiting for first tick'}.</p>
+            <p className="text-[10px] text-amber-300 mb-2">VELTEX server-generated synthetic demo prices · not real-world asset prices. Last tick: {lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : 'Waiting for first tick'}.</p>
             <div className="h-48 w-full relative flex items-end justify-between overflow-hidden border-b border-gray-800/80 pb-2 bg-[#0c1017]/40">
               <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d_1px,transparent_1px),linear-gradient(to_bottom,#1f293d_1px,transparent_1px)] bg-[size:40px_35px] opacity-30"></div>
               
