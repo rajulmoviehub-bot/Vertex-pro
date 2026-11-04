@@ -16,7 +16,11 @@ export default function App() {
   const [multiplier, setMultiplier] = useState(2);
   const [soundEnabled, setSoundEnabled] = useState(true);
   
-  const [digits, setDigits] = useState([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const [pricePoints, setPricePoints] = useState([
+    { x: 0, y: 110 }, { x: 50, y: 70 }, { x: 100, y: 120 }, 
+    { x: 150, y: 85 }, { x: 200, y: 40 }, { x: 250, y: 95 }, 
+    { x: 300, y: 30 }, { x: 350, y: 65 }, { x: 400, y: 50 }
+  ]);
   const [lastDigit, setLastDigit] = useState(2);
   const [currentPrice, setCurrentPrice] = useState('9450.401');
   const [stats, setStats] = useState({ 0: 10.2, 1: 8.9, 2: 11.4, 3: 7.9, 4: 11.1, 5: 9.9, 6: 9.2, 7: 12.2, 8: 8.7, 9: 10.4 });
@@ -47,7 +51,14 @@ export default function App() {
 
         setCurrentPrice(quoteStr);
         setLastDigit(nextDigit);
-        setDigits(prev => [...prev.slice(1), nextDigit]);
+
+        // Append new sharp tick point for jagged chart
+        setPricePoints(prev => {
+          const updated = prev.map(p => ({ ...p, x: p.x - 50 }));
+          const nextY = Math.floor(Math.random() * 80) + 30;
+          const filtered = updated.filter(p => p.x >= 0);
+          return [...filtered, { x: 400, y: nextY }];
+        });
       }
     };
 
@@ -81,6 +92,9 @@ export default function App() {
     
     setTrades(prev => [newTrade, ...prev]);
   };
+
+  const polylinePoints = pricePoints.map(p => `${p.x},${p.y}`).join(' ');
+  const lastPoint = pricePoints[pricePoints.length - 1] || { x: 400, y: 50 };
 
   return (
     <div className="min-h-screen bg-[#090d14] text-gray-100 font-sans flex flex-col pb-20">
@@ -140,7 +154,7 @@ export default function App() {
         <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
       </div>
 
-      {/* Chart Section */}
+      {/* Market Chart Section with Sharp Jagged Polyline */}
       <div className="bg-[#121824] border-y border-gray-800 p-3.5 relative">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -157,7 +171,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Live Chart with grid lines */}
+        {/* Live Grid Chart with Jagged Polyline */}
         <div className="h-48 w-full relative flex items-end justify-between overflow-hidden border-b border-gray-800/80 pb-2 bg-[#0c1017]/40">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d_1px,transparent_1px),linear-gradient(to_bottom,#1f293d_1px,transparent_1px)] bg-[size:40px_35px] opacity-30"></div>
           
@@ -166,8 +180,13 @@ export default function App() {
           </div>
 
           <svg className="absolute inset-0 w-full h-full text-red-500 overflow-visible" preserveAspectRatio="none" viewBox="0 0 400 150">
-            <path d="M 0,130 Q 50,90 100,110 T 200,60 T 300,40 T 360,75 L 400,45" fill="none" stroke="currentColor" strokeWidth="2.5" />
-            <circle cx="360" cy="75" r="4.5" fill="#ffffff" stroke="#ef4444" strokeWidth="3" />
+            <polyline
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              points={polylinePoints}
+            />
+            <circle cx={lastPoint.x} cy={lastPoint.y} r="4.5" fill="#ffffff" stroke="#ef4444" strokeWidth="3" />
           </svg>
 
           {/* Chart Zoom Controls */}
