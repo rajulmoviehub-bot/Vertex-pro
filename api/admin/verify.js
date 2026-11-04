@@ -57,30 +57,12 @@ export default async function handler(req, res) {
       });
     }
 
-    const profileUrl = new URL(`${supabaseUrl}/rest/v1/profiles`);
-    profileUrl.searchParams.set("select", "role");
-    profileUrl.searchParams.set("id", `eq.${authUser.id}`);
-    profileUrl.searchParams.set("limit", "1");
-
-    const profileResponse = await fetch(profileUrl, {
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`
-      },
-      cache: "no-store"
-    });
-
-    if (!profileResponse.ok) {
-      return res.status(503).json({ ok: false, error: "Admin role table is unavailable" });
-    }
-
-    const profiles = await profileResponse.json();
-    const isAdmin = Array.isArray(profiles) && profiles[0]?.role === "admin";
-    return res.status(isAdmin ? 200 : 403).json({
-      ok: isAdmin,
+    // Every account other than the verified owner is always a customer.
+    return res.status(403).json({
+      ok: false,
       userId: authUser.id,
-      role: isAdmin ? "admin" : "customer",
-      error: isAdmin ? undefined : "Admin access is not assigned to this account"
+      role: "customer",
+      error: "Admin access is restricted to the verified platform owner"
     });
   } catch {
     return res.status(502).json({ ok: false, error: "Could not verify admin access" });
