@@ -367,7 +367,7 @@ export default function App() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: 'https://vertexpromax.vercel.app',
             data: { referral_code: authInput.ref.trim() || null }
           }
         });
