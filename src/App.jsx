@@ -285,7 +285,6 @@ export default function App() {
           </button>
 
           <button onClick={() => setActiveTab('DEPOSIT')} className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-md shadow-md">Deposit</button>
-          <button onClick={() => { const password = window.prompt('Enter AAA- 3 admin password'); if (password === 'ADMIN 6860') { setAdminUnlocked(true); setActiveTab('ADMIN'); } else if (password !== null) { alert('Incorrect admin password.'); } }} className="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-md">AAA- 3</button>
 
           {user.loggedIn ? (
             <span className="bg-red-950/60 border border-red-500/40 text-red-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -714,7 +713,33 @@ export default function App() {
               {[
                 ['TRADE','Trade'],['DEPOSIT','Deposit'],['HISTORY','History'],['INFO','Info & Terms']
               ].map(([tab,label]) => <button key={tab} onClick={() => { setActiveTab(tab); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">{label}</button>)}
-              <button onClick={() => { const password = window.prompt('Enter AAA- 3 admin password'); if (password === 'ADMIN 6860') { setAdminUnlocked(true); setActiveTab('ADMIN'); setMenuOpen(false); } else if (password !== null) { alert('Incorrect admin password.'); } }} className="w-full text-left rounded-lg bg-slate-700 border border-slate-500 px-4 py-3 text-sm font-bold text-white">AAA- 3 Admin</button>
+              <div className="rounded-lg border border-slate-500 bg-slate-900/70 p-3 space-y-2">
+                <p className="text-xs font-black uppercase tracking-wider text-amber-300">AAA- 3 · Owner Admin</p>
+                <p className="text-[11px] text-gray-400">Admin sections are grouped here in the left navigation.</p>
+                {[
+                  ['OVERVIEW','Dashboard Overview'],
+                  ['DEPOSITS','Customer Deposits'],
+                  ['CUSTOMERS','Registered Customers'],
+                  ['WITHDRAWALS','Withdrawal Approvals'],
+                  ['ACCOUNTS','Account Management'],
+                  ['CENTRAL','Central Wallet Withdrawal'],
+                  ['SHARING','Bot Sharing / Licence Transfer']
+                ].map(([section,label]) => (
+                  <button key={section} onClick={() => {
+                    if (!adminUnlocked) {
+                      const password = window.prompt('Enter AAA- 3 admin password');
+                      if (password !== 'ADMIN 6860') {
+                        if (password !== null) alert('Incorrect admin password.');
+                        return;
+                      }
+                      setAdminUnlocked(true);
+                    }
+                    setAdminSection(section);
+                    setActiveTab('ADMIN');
+                    setMenuOpen(false);
+                  }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-3 py-3 text-sm font-bold text-white hover:bg-slate-800">{label}</button>
+                ))}
+              </div>
               <button onClick={() => { setAccountMode('DEMO'); setBotActive(false); setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
               <button onClick={() => { setActiveTab('ACCOUNT'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
               <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300">Reset demo balance</button>
