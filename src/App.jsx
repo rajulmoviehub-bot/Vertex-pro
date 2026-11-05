@@ -1022,15 +1022,15 @@ export default function App() {
         </div>
       )}
       {loginWelcome && (
-        <div role="status" aria-live="polite" className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#050b10]/95 px-5 text-center">
-          <div className="w-full max-w-md animate-[fadeIn_0.35s_ease-out] rounded-2xl border border-emerald-500/50 bg-[#071b18] p-6 shadow-2xl">
-            <p className="text-lg font-black text-emerald-200">السلام عليكم ورحمة الله وبركاته</p>
+        <div role="status" aria-live="polite" className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#090d14]/95 px-5 text-center">
+          <div className="w-full max-w-md animate-[fadeIn_0.35s_ease-out] rounded-2xl border border-red-500/60 bg-[#121824] p-6 shadow-[0_0_35px_rgba(239,68,68,0.18)]">
+            <p className="text-lg font-black text-red-400">السلام عليكم ورحمة الله وبركاته</p>
             <p className="mt-2 text-2xl font-black tracking-wide text-white">WELCOME BACK, {displayUserName.toUpperCase()}!</p>
             <div className="my-6 flex h-28 items-end justify-center gap-2" aria-label="Animated candlestick welcome">
-              {[38,68,48,88,58,76,44,96,62,82,52,72].map((height,index) => <span key={index} className="relative w-3 rounded-sm bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.35)] animate-pulse" style={{height:height+'%',animationDelay:(index*70)+'ms'}}><i className="absolute left-1/2 top-[-9px] h-3 w-px -translate-x-1/2 bg-emerald-200"/><i className="absolute bottom-[-8px] left-1/2 h-3 w-px -translate-x-1/2 bg-emerald-200"/></span>)}
+              {[38,68,48,88,58,76,44,96,62,82,52,72].map((height,index) => <span key={index} className="relative w-3 rounded-sm bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.35)] animate-pulse" style={{height:height+'%',animationDelay:(index*70)+'ms'}}><i className="absolute left-1/2 top-[-9px] h-3 w-px -translate-x-1/2 bg-red-200"/><i className="absolute bottom-[-8px] left-1/2 h-3 w-px -translate-x-1/2 bg-red-200"/></span>)}
             </div>
-            <p className="text-sm font-bold text-emerald-100">Alhamdulillah — welcome to VELTEX PRO BINARY.</p>
-            <p className="mt-2 text-xs text-emerald-200/80">Bismillah. Trade with patience, wisdom and discipline. InshaAllah.</p>
+            <p className="text-sm font-bold text-gray-100">Alhamdulillah — welcome to VELTEX PRO BINARY.</p>
+            <p className="mt-2 text-xs text-gray-300">Bismillah. Trade with patience, wisdom and discipline. InshaAllah.</p>
           </div>
         </div>
       )}
