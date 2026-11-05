@@ -524,7 +524,6 @@ export default function App() {
             </span>
           ) : (
             <div className="flex gap-1">
-              <button onClick={() => setAuthModal('login')} className="bg-gray-800 text-xs text-white px-2 py-1 rounded">Login</button>
               <button onClick={() => setAuthModal('signup')} className="bg-red-600 text-xs text-white px-2 py-1 rounded font-bold">Sign Up</button>
             </div>
           )}
