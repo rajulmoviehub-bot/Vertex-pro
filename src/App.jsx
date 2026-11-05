@@ -349,7 +349,7 @@ export default function App() {
     setStartAfterScan(false);
     setShowTargetAchieved(true);
     playSound('win');
-    const timer = setTimeout(() => setShowTargetAchieved(false), 5000);
+    const timer = setTimeout(() => setShowTargetAchieved(false), 2000);
     return () => clearTimeout(timer);
   }, [accountMode, botActive, sessionPL, target]);
 
