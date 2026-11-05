@@ -37,6 +37,7 @@ export default function App() {
   const [deepScan, setDeepScan] = useState(null);
   const [deepScanning, setDeepScanning] = useState(false);
   const [deepScanMarket, setDeepScanMarket] = useState('Even / Odd');
+  const [selectedEntrySide, setSelectedEntrySide] = useState('EVEN');
   const [activeTrade, setActiveTrade] = useState(null);
 
   const [priceHistory, setPriceHistory] = useState([]);
@@ -741,6 +742,14 @@ export default function App() {
             <div className="space-y-2.5 p-3">
               <div className="rounded-lg bg-[#132331] p-2.5 text-[11px] leading-relaxed text-slate-300">Choose a market category. VELTEX scans the latest 12 observed ticks for EVEN/ODD patterns.</div>
               <div className="space-y-2"><label className="block text-xs font-bold text-slate-300">Market</label><select value={deepScanMarket} onChange={e => setDeepScanMarket(e.target.value)} className="w-full rounded-lg border border-slate-700 bg-[#08131d] p-2.5 text-xs font-bold text-white"><option>Even / Odd</option></select></div>
+              <div className="rounded-lg border border-slate-700 bg-[#101d29] p-3 space-y-2">
+                <div className="flex items-center justify-between"><span className="text-xs font-black text-white">CHOOSE ENTRY SIDE</span><span className="text-[9px] text-slate-400">Manual selection</span></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setSelectedEntrySide('EVEN')} aria-pressed={selectedEntrySide === 'EVEN'} className={`rounded-lg border py-3 text-sm font-black transition-all ${selectedEntrySide === 'EVEN' ? 'border-emerald-400 bg-emerald-900/50 text-emerald-200' : 'border-slate-700 bg-[#08131d] text-slate-300'}`}>EVEN</button>
+                  <button type="button" onClick={() => setSelectedEntrySide('ODD')} aria-pressed={selectedEntrySide === 'ODD'} className={`rounded-lg border py-3 text-sm font-black transition-all ${selectedEntrySide === 'ODD' ? 'border-rose-400 bg-rose-900/50 text-rose-200' : 'border-slate-700 bg-[#08131d] text-slate-300'}`}>ODD</button>
+                </div>
+                <p className="text-[10px] text-slate-400">Selected side: <strong className="text-white">{selectedEntrySide}</strong>. Choose manually before proceeding.</p>
+              </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-slate-300"><span>{deepScanning ? 'Scanning market ticks' : 'Ready to scan'}</span><span className="font-mono font-bold text-white">{Math.min(priceHistory.length, 12)}/12</span></div>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: (Math.min(priceHistory.length / 12, 1) * 100) + '%' }} /></div>
