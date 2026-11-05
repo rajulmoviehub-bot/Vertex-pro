@@ -614,6 +614,27 @@ export default function App() {
               </div>
             </div>
 
+            {/* Manual EVEN / ODD entry controls on the main market display */}
+            <div className="mx-3 mt-3 rounded-xl border border-slate-700 bg-[#101d29] p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-black text-white">MANUAL ENTRY</span>
+                <span className="text-[10px] text-slate-400">{deepScan ? `WAIT FOR DIGIT ${deepScan.digit}` : 'RUN DEEPSCAN FIRST'}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" disabled={!deepScan || lastDigit !== deepScan.digit || !!activeTrade || accountMode !== 'DEMO'} onClick={() => {
+                  if (!deepScan || lastDigit !== deepScan.digit || activeTrade || accountMode !== 'DEMO') return;
+                  if (demoWallet < stake) { alert('Insufficient demo balance for this stake.'); return; }
+                  setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake });
+                }} className="rounded-lg border border-emerald-500 bg-emerald-900/50 py-3 text-sm font-black text-emerald-200 disabled:cursor-not-allowed disabled:opacity-35">EVEN</button>
+                <button type="button" disabled={!deepScan || lastDigit !== deepScan.digit || !!activeTrade || accountMode !== 'DEMO'} onClick={() => {
+                  if (!deepScan || lastDigit !== deepScan.digit || activeTrade || accountMode !== 'DEMO') return;
+                  if (demoWallet < stake) { alert('Insufficient demo balance for this stake.'); return; }
+                  setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake });
+                }} className="rounded-lg border border-rose-500 bg-rose-900/50 py-3 text-sm font-black text-rose-200 disabled:cursor-not-allowed disabled:opacity-35">ODD</button>
+              </div>
+              <p className="text-[10px] leading-relaxed text-slate-400">{deepScan ? `When digit ${deepScan.digit} appears in the live display, choose EVEN or ODD. Demo simulation only; live broker orders are not connected.` : 'Open DeepScan and scan first. Buttons activate when the scanned digit appears.'}</p>
+            </div>
+
             {/* Live Dynamic 0-9 Digit Highlights */}
             <div className="grid grid-cols-10 gap-1 mt-3 pt-1">
               {Object.entries(stats).map(([digit, val]) => (
