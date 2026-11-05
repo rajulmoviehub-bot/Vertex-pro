@@ -56,11 +56,6 @@ export default function App() {
   const [adminSection, setAdminSection] = useState('OVERVIEW');
   const [shareCustomerNumber, setShareCustomerNumber] = useState('');
   const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
-  // Report observed results from completed demo trades; never manufacture an accuracy figure.
-  const completedTradeCount = trades.length;
-  const completedWins = trades.filter(trade => trade.status === 'WIN').length;
-  const observedWinRate = completedTradeCount ? (completedWins / completedTradeCount) * 100 : null;
-  const winRateGoalReached = observedWinRate !== null && observedWinRate >= 89;
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(10);
@@ -387,15 +382,20 @@ export default function App() {
     setScannedSignal(null);
     setBotStatusText('Analyzing live tick patterns...');
     setTimeout(() => {
-      const evenCount = [0, 2, 4, 6, 8].reduce((acc, d) => acc + (stats[d] || 0), 0);
-      const oddCount = [1, 3, 5, 7, 9].reduce((acc, d) => acc + (stats[d] || 0), 0);
+      // Estimate a short-term demo bias from the latest observed synthetic-feed digits.
+      // This frequency scan is descriptive, not a validated prediction of the next tick.
+      const recentDigits = priceHistory.slice(-20).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
+      const evenCount = recentDigits.filter(digit => digit % 2 === 0).length;
+      const oddCount = recentDigits.length - evenCount;
       const predictedType = evenCount > oddCount ? 'EVEN' : 'ODD';
-      const confidence = Math.max(evenCount, oddCount).toFixed(1);
+      const sampleSize = recentDigits.length;
+      const observedShare = sampleSize ? (Math.max(evenCount, oddCount) / sampleSize * 100).toFixed(0) : '—';
       const triggerDigits = predictedType === 'EVEN' ? [0, 2, 4, 6, 8] : [1, 3, 5, 7, 9];
 
       setScannedSignal({
         prediction: predictedType,
-        confidence: confidence,
+        confidence: observedShare,
+        sampleSize,
         triggerDigits
       });
       setIsScanning(false);
@@ -615,29 +615,16 @@ export default function App() {
             </button>
           </div>
 
-          <section className="mx-3 mt-3 rounded-xl border border-amber-500/40 bg-[#121824] p-3 space-y-2" aria-label="Verified performance and premium status">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-black uppercase tracking-wide text-white">Observed demo performance</span>
-              <span className="text-[10px] font-bold text-amber-300">89% GOAL · NOT GUARANTEED</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg bg-[#090d14] p-2"><div className="text-lg font-black text-white">{observedWinRate === null ? '—' : observedWinRate.toFixed(1) + '%'}</div><div className="text-[9px] text-gray-400">Actual win rate</div></div>
-              <div className="rounded-lg bg-[#090d14] p-2"><div className="text-lg font-black text-emerald-300">{completedWins}</div><div className="text-[9px] text-gray-400">Wins</div></div>
-              <div className="rounded-lg bg-[#090d14] p-2"><div className="text-lg font-black text-white">{completedTradeCount}</div><div className="text-[9px] text-gray-400">Completed trades</div></div>
-            </div>
-            <p className={`text-[11px] ${winRateGoalReached ? 'text-emerald-300' : 'text-gray-300'}`}>{observedWinRate === null ? 'No completed trades yet. Performance will appear after demo trades settle.' : winRateGoalReached ? 'Observed demo results have reached the 89% benchmark for this browser session.' : 'Observed results are below the 89% benchmark. The bot does not force or fake winning outcomes.'}</p>
-            <div className="border-t border-gray-700 pt-2 flex items-center justify-between gap-2">
-              <div><div className="text-xs font-bold text-amber-200">VELTEX PREMIUM</div><div className="text-[10px] text-gray-400">Premium execution and buyer licences require secure server-side payment and entitlement verification.</div></div>
-              <span className="shrink-0 rounded-md border border-amber-500/40 px-2 py-1 text-[10px] font-black text-amber-200">LOCKED</span>
-            </div>
-            <p className="text-[10px] text-gray-500">DEMO statistics are local to this browser and are not independently audited. Live broker execution remains disabled.</p>
-          </section>
+          <div className="mx-3 mt-2 rounded-xl border border-emerald-500/40 bg-[#071b16] px-3 py-2 flex items-center justify-between gap-3" aria-live="polite">
+            <div><span className="text-[10px] uppercase tracking-wide text-emerald-200 font-bold block">Total demo profit / loss</span><span className={`text-xl font-black font-mono ${sessionPL >= 0 ? "text-emerald-300" : "text-red-300"}`}>{sessionPL >= 0 ? "+" : "-"}${Math.abs(sessionPL).toFixed(2)}</span></div>
+            <div className="text-right"><span className="text-[10px] text-gray-400 block">{activeTrade ? "TRADE IN PROGRESS" : botActive ? "BOT SCANNING" : "SESSION TOTAL"}</span><span className="text-xs font-bold text-white">{activeTrade ? `${activeTrade.prediction} · ${activeTrade.ticksElapsed}/${duration} ticks` : botActive ? "Waiting for matching digit" : "DEMO ONLY"}</span></div>
+          </div>
 
           {scannedSignal && (
             <div className="mx-3 mt-3 p-3 bg-red-950/40 border border-red-500/60 rounded-xl flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-red-400 font-bold block uppercase">Experimental demo signal</span>
-                <span className="text-xs text-cyan-300 font-bold block mt-1">Observed digit split: {scannedSignal.confidence}% (not win probability or accuracy)</span><span className="text-[11px] text-amber-200 block mt-1">This experimental estimate may be wrong. It is for demo education only and is not a validated trading prediction.</span>
+                <span className="text-xs text-cyan-300 font-bold block mt-1">Recent sample bias: {scannedSignal.confidence}% of {scannedSignal.sampleSize || 0} recent ticks (not win probability)</span><span className="text-[11px] text-amber-200 block mt-1">Recent digit frequency is descriptive only; it cannot identify or guarantee the next winning wave.</span>
                 <span className="text-sm font-black text-white">Target: <span className="text-emerald-400">{scannedSignal.prediction}</span> | Scanning digits: <span className="text-yellow-400 font-mono font-bold text-base">{(scannedSignal.triggerDigits || []).join(', ')}</span></span>
               </div>
               <div>
@@ -741,7 +728,7 @@ export default function App() {
                 </div>
               </div>
               <div className="border-l border-gray-800 pl-3">
-                <span className="text-[10px] text-gray-400 block uppercase font-medium">SESSION P/L</span>
+                <span className="text-[10px] text-gray-400 block uppercase font-medium">TOTAL PROFIT / LOSS</span>
                 <span className={`font-mono font-bold text-base mt-1 block ${sessionPL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {sessionPL >= 0 ? `+$${sessionPL.toFixed(2)}` : `-$${Math.abs(sessionPL).toFixed(2)}`}
                 </span>
