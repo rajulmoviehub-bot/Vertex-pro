@@ -576,7 +576,7 @@ export default function App() {
       {activeTab === 'TRADE' && (
         <>
 
-          {/* Deriv-Style Dynamic Chart */}
+          {/* VELTEX Dynamic Market Chart */}
           <div className="bg-[#121824] border-y border-gray-800 p-3.5 relative mt-2">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
