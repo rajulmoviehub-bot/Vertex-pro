@@ -410,39 +410,9 @@ export default function App() {
             </div>
           )}
 
-          {/* Rebuilt DeepScan launcher */}
-          <section className="mx-3 mt-3 rounded-xl border border-cyan-600 bg-[#101c2a] p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-300">
-                <ScanLine className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-black text-cyan-300">VELTEX DEEPSCAN</h3>
-                <p className="text-[10px] text-gray-400">Analyze 20 observed ticks. You place trades manually.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowDeepScanModal(true)}
-                className="shrink-0 rounded-lg bg-cyan-600 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-cyan-950/40 active:scale-95"
-              >
-                DEEPSCAN
-              </button>
-            </div>
-            {scannedSignal && (
-              <p className="mt-2 text-xs text-gray-300">
-                Latest selection: <strong className="text-cyan-300">{scannedSignal.bestDigit} – {scannedSignal.prediction}</strong>
-              </p>
-            )}
-          </section>
 
-          {/* Controls */}
           <div className="p-3.5 space-y-3">
-            <div className="rounded-xl border border-cyan-800 bg-[#101c2a] p-3 text-xs text-cyan-200">
-              <strong>MANUAL TRADE MODE</strong>
-              <p className="mt-1 text-gray-300">DeepScan displays the selected digit, its EVEN/ODD side and the observed frequency. Watch the live tick and make your own trading decision. VELTEX does not place trades.</p>
-            </div>
 
-            <div className="bg-[#121824] border border-gray-800 rounded-xl p-3">
               <div className="flex justify-between text-xs text-gray-400 mb-2 font-medium">
                 <span>DURATION</span>
                 <span className="font-bold text-white font-mono">{duration} ticks</span>
@@ -486,100 +456,8 @@ export default function App() {
               </div>
             </div>
 
-            <div className={`rounded-xl border p-4 text-center ${signalDigitVisible ? 'border-emerald-500 bg-emerald-950/40' : 'border-slate-700 bg-[#121824]'}`}>
-              <p className="text-[10px] uppercase tracking-widest text-slate-400">Selected analysis</p>
-              <p className="mt-2 text-2xl font-black text-cyan-300">{scannedSignal?.bestDigit ?? '—'} – {scannedSignal?.prediction ?? '—'}</p>
-              <p className="mt-2 text-xs text-slate-300">{signalDigitVisible ? `PRESS ${scannedSignal.prediction} NOW — digit ${scannedSignal.bestDigit} is on this tick` : `Waiting for digit ${scannedSignal.bestDigit}. Latest tick: ${lastDigit}`}</p>
-              <p className="mt-2 text-sm font-bold text-white">Observed digit frequency: {scannedSignal?.digitFrequency ?? '—'}%</p>
-              <p className="mt-1 text-[9px] text-slate-400">Observed demo-feed frequency only; not a verified win probability.</p>
-            </div>
-          </div>
-        </>      {/* DeepScan Modal */}
-      {showDeepScanModal && (
-        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 px-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="DeepScan">
-          <div className="w-full max-w-sm max-h-[88vh] overflow-y-auto rounded-2xl border border-slate-700 bg-[#0c1824] shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-slate-700 px-3 py-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500 text-white">
-                <ScanLine className="h-5 w-5" />
-              </div>
-              <h2 className="flex-1 text-base font-black text-slate-100">VELTEX DEEPSCAN</h2>
-              <button onClick={() => setShowDeepScanModal(false)} aria-label="Close DeepScan" className="px-2 text-xl text-slate-400">×</button>
-            </div>
 
-            <div className="space-y-3 p-3">
-              <p className="rounded-lg bg-[#132331] p-2.5 text-xs leading-relaxed text-slate-300">
-                DeepScan analyzes recent observed digits and displays a selected digit with its EVEN/ODD side.
-              </p>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-slate-200">Market</label>
-                <select
-                  value={scanCategory}
-                  onChange={e => setScanCategory(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-[#08121c] px-3 py-2.5 text-xs font-semibold text-slate-100"
-                >
-                  <option>Even / Odd</option>
-                  <option>Digits 0–9</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm text-slate-300">
-                  <span>{isScanning ? 'Analyzing observed digits…' : 'Ready to scan'}</span>
-                  <span className="font-mono font-bold">{scannedSignal?.sampleSize || 0}/20</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                  <div
-                    className="h-full rounded-full bg-red-500 transition-all"
-                    style={{ width: isScanning ? '55%' : scannedSignal ? '100%' : '0%' }}
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={runDeepScan}
-                disabled={isScanning || feedStatus !== 'LIVE'}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-3 py-2.5 text-xs font-black text-white disabled:opacity-50"
-              >
-                <ScanLine className="h-5 w-5" />
-                {isScanning ? 'SCANNING…' : 'DEEPSCAN'}
-              </button>
-
-              {scannedSignal && (
-                <div className="rounded-lg border border-cyan-700/70 bg-[#08121c] p-3 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Selected analysis</p>
-                  <p className="mt-1 text-3xl font-black text-cyan-300">
-                    {scannedSignal.bestDigit} – {scannedSignal.prediction}
-                  </p>
-                  <p className="mt-2 text-xs text-slate-300">
-                    {signalDigitVisible
-                      ? `Digit ${scannedSignal.bestDigit} detected on the latest tick.`
-                      : `Latest tick: ${lastDigit}`}
-                  </p>
-                  <p className="mt-2 text-sm font-bold text-white">
-                    Observed digit frequency: {scannedSignal.digitFrequency}%
-                  </p>
-                  <p className="mt-1 text-[9px] text-slate-400">
-                    Historical demo-feed frequency only; not a verified win probability.
-                  </p>
-                </div>
-              )}
-
-              <button
-                onClick={runDeepScan}
-                disabled={isScanning || feedStatus !== 'LIVE'}
-                className="w-full rounded-lg border border-slate-700 bg-[#101e2a] px-3 py-2.5 text-xs font-bold text-cyan-300 disabled:opacity-50"
-              >
-                SCAN AGAIN
-              </button>
-
-              <p className="text-[10px] leading-relaxed text-amber-300">
-                The trader independently decides whether to place a trade through their broker. VELTEX does not submit broker orders. The current market feed is simulated.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Login Modal */}
       {authModal && (
@@ -640,19 +518,7 @@ export default function App() {
           <span className="mt-1 text-[10px]">Trade</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('TRADE');
-            setShowDeepScanModal(true);
-          }}
-          className="flex flex-col items-center text-cyan-300"
-        >
-          <ScanLine className="h-5 w-5" />
-          <span className="mt-1 text-[10px]">DeepScan</span>
-        </button>
-
-        <button onClick={() => setActiveTab('HISTORY')} className="flex flex-col items-center text-gray-400">
+ className="flex flex-col items-center text-gray-400">
           <Clock className="h-5 w-5" />
           <span className="mt-1 text-[10px]">History</span>
         </button>
