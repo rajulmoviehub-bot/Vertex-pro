@@ -614,16 +614,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* DeepScan entry alert belongs on the main display, not inside the scanner panel. */}
-            {deepScan?.appeared && (
-              <div className="mx-3 mt-3 rounded-xl border border-emerald-500/70 bg-emerald-950/50 p-3 text-center shadow-lg shadow-emerald-950/30 animate-pulse">
-                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">DIGIT DETECTED</p>
-                <p className="mt-1 text-xl font-black text-white">{deepScan.digit} – {deepScan.side}</p>
-                <p className="mt-1 text-sm font-black text-emerald-200">PRESS {deepScan.side} NOW</p>
-                <p className="mt-1 text-[10px] text-emerald-100/70">Place the trade manually on your broker. VELTEX does not execute trades.</p>
-              </div>
-            )}
-
             {/* Live Dynamic 0-9 Digit Highlights */}
             <div className="grid grid-cols-10 gap-1 mt-3 pt-1">
               {Object.entries(stats).map(([digit, val]) => (
@@ -761,8 +751,8 @@ export default function App() {
                 <div className="space-y-2 rounded-xl border border-slate-700 bg-[#101d29] p-3">
                   <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="ml-auto text-right"><span className="block text-lg font-black text-cyan-200">{deepScan.percentage}%</span><span className={'inline-block rounded-md px-2 py-1 text-[9px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div></div>
                   <p className="text-[9px] leading-relaxed text-slate-400">Pattern score from the recent sample only; it is not a win probability or guarantee.</p>
-                  {deepScan.appeared && <div className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-sm font-black text-emerald-300">DIGIT {deepScan.digit} APPEARED · {deepScan.side}</div>}
-                  <button onClick={() => setActiveTab('TRADE')} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-2.5 text-xs font-black text-rose-300">Load Deep Scanner Bot</button>
+                  
+                  <button onClick={() => setActiveTab('TRADE')} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-2.5 text-xs font-black text-rose-300">LOAD SIGNAL · RETURN TO MARKET</button>
                 </div>
               )}
             </div>
