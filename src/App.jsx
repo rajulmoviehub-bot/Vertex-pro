@@ -33,6 +33,8 @@ export default function App() {
   const [showTargetAchieved, setShowTargetAchieved] = useState(false);
 
   const [isScanning, setIsScanning] = useState(false);
+  const [showDeepScanModal, setShowDeepScanModal] = useState(false);
+  const [scanCategory, setScanCategory] = useState('Even / Odd');
   const [accurateScanning, setAccurateScanning] = useState(false);
   const [accurateScan, setAccurateScan] = useState(null);
   const [scannedSignal, setScannedSignal] = useState(null);
@@ -679,37 +681,18 @@ export default function App() {
             </div>
           )}
 
-          {/* DeepScan: historical observed frequency, not a win-probability forecast */}
-          <section className="mx-3 mt-3 rounded-xl border border-cyan-700/70 bg-[#101c2a] p-3 space-y-3">
+          {/* DeepScan launcher; scanner opens in the requested full-screen modal */}
+          <section className="mx-3 mt-3 rounded-xl border border-cyan-700/70 bg-[#101c2a] p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-black text-cyan-300">VELTEX DEEPSCAN</h3>
-                <p className="text-[10px] text-gray-400">Checks the latest 20 simulated market digits</p>
+                <p className="text-[10px] text-gray-400">Open the market scanner</p>
               </div>
-              <button onClick={runDeepScan} disabled={isScanning || feedStatus !== 'LIVE'} className="rounded-lg bg-cyan-600 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
-                {isScanning ? 'SCANNING…' : 'DEEPSCAN'}
+              <button onClick={() => setShowDeepScanModal(true)} className="rounded-lg bg-red-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-red-900/30">
+                OPEN DEEPSCAN
               </button>
             </div>
-            {scannedSignal ? (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-[#090d14] p-2">
-                  <p className="text-[10px] text-gray-400">OBSERVED FREQUENCY</p>
-                  <p className="text-2xl font-black font-mono text-white">{scannedSignal.confidence}{scannedSignal.confidence === '—' ? '' : '%'}</p>
-                </div>
-                <div className="rounded-lg bg-[#090d14] p-2">
-                  <p className="text-[10px] text-gray-400">SCAN RESULT</p>
-                  <p className="text-lg font-black text-cyan-300">{scannedSignal.prediction}</p>
-                  <p className="text-[10px] text-gray-300">{scannedSignal.scanStrength}</p>
-                </div>
-                <div className="col-span-2 rounded-lg bg-[#090d14] p-2">
-                  <p className="text-[10px] text-gray-400">MATCHING DIGITS · SAMPLE {scannedSignal.sampleSize}</p>
-                  <p className="text-sm font-bold text-white">{scannedSignal.triggerDigits.join(' · ')}</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400">Tap DeepScan to calculate the observed EVEN/ODD frequency.</p>
-            )}
-            <p className="text-[10px] leading-relaxed text-amber-300">85–100% means strong historical frequency only; below 85% is shown as 50/50 / no strong bias. This is not a win probability or guarantee. At least 20 ticks are required for the strong-bias label.</p>
+            {scannedSignal && <p className="text-xs text-gray-300">Last scan: <strong className="text-cyan-300">{scannedSignal.prediction}</strong> · observed frequency {scannedSignal.confidence}{scannedSignal.confidence === '—' ? '' : '%'}</p>}
           </section>
 
           {/* Controls */}
@@ -1084,6 +1067,38 @@ export default function App() {
             </div>
             <p className="text-[11px] text-gray-500 mt-5">Trading and payment integrations are not connected. Demo only.</p>
           </aside>
+        </div>
+      )}
+
+      {showDeepScanModal && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 px-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Entry Scanner">
+          <div className="w-full max-w-xl overflow-hidden rounded-[22px] border border-slate-700 bg-[#0c1824] shadow-2xl shadow-black/60">
+            <div className="flex items-center gap-3 border-b border-slate-700 px-5 py-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500 text-white shadow-lg shadow-red-900/40"><ScanLine className="h-6 w-6" /></div>
+              <h2 className="flex-1 text-lg font-black text-slate-100">Entry Scanner</h2>
+              <button onClick={() => setShowDeepScanModal(false)} aria-label="Close Entry Scanner" className="px-2 text-2xl text-slate-400">×</button>
+            </div>
+            <div className="space-y-5 p-5">
+              <p className="rounded-xl bg-[#132331] p-4 text-sm leading-relaxed text-slate-300">Pick the market category you want to scan. The deep scanner reviews recent observed demo-feed digits and displays the historical frequency for that category.</p>
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-slate-200" htmlFor="veltex-scan-category">Market</label>
+                <select id="veltex-scan-category" value={scanCategory} onChange={e => setScanCategory(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#08121c] px-4 py-4 text-sm font-semibold text-slate-100 outline-none">
+                  <option>Even / Odd</option>
+                  <option>Digits 0–9</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm text-slate-300"><span>{isScanning ? 'Scanning observed digits…' : 'Ready to scan'}</span><span className="font-mono font-bold">{scannedSignal?.sampleSize || 0}/20</span></div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-red-500 transition-all" style={{width: isScanning ? '55%' : scannedSignal ? '100%' : '0%'}} /></div>
+              </div>
+              <button onClick={() => { runDeepScan(); }} disabled={isScanning || feedStatus !== 'LIVE'} className="flex w-full items-center justify-center gap-3 rounded-xl bg-red-500 px-4 py-4 text-sm font-black text-white shadow-lg shadow-red-900/40 disabled:opacity-50">
+                <ScanLine className="h-5 w-5" />{isScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}
+              </button>
+              {scannedSignal && <div className="rounded-xl border border-slate-700 bg-[#08121c] p-3 text-center"><p className="text-xs text-slate-400">OBSERVED HISTORICAL FREQUENCY · NOT A WIN PROBABILITY</p><p className="mt-1 text-xl font-black text-cyan-300">{scannedSignal.prediction} · {scannedSignal.confidence}{scannedSignal.confidence === '—' ? '' : '%'}</p><p className="mt-1 text-xs text-slate-300">Matching digits: {scannedSignal.triggerDigits.join(' · ')}</p></div>}
+              <button onClick={() => { setShowDeepScanModal(false); toggleDemoBot(); }} className="w-full rounded-xl border border-slate-700 bg-[#101e2a] px-4 py-4 text-sm font-bold text-red-300 hover:bg-[#172938]">{botActive || startAfterScan ? 'Stop Deep Scanner Bot' : 'Load Deep Scanner Bot'}</button>
+              <p className="text-[10px] leading-relaxed text-amber-300">This build uses simulated demo-feed data. Historical frequency is not a prediction, guaranteed accuracy or financial advice. The bot only operates in DEMO; live broker execution is not connected.</p>
+            </div>
+          </div>
         </div>
       )}
 
