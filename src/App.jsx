@@ -398,18 +398,10 @@ export default function App() {
       const oddCount = recentDigits.length - evenCount;
       const predictedType = evenCount > oddCount ? 'EVEN' : 'ODD';
       const sampleSize = recentDigits.length;
-      // Decorative demo-only score. It is deliberately not used as a probability,
-      // prediction, trade trigger, or claim of a winning outcome.
-      const simulatedScore = Math.floor(Math.random() * 26) + 75;
-      const scanStrength = simulatedScore >= 85
-        ? 'HIGH SIMULATED SCORE · NOT A WIN'
-        : 'MODERATE SIMULATED SCORE · NOT A WIN';
       const triggerDigits = predictedType === 'EVEN' ? [0, 2, 4, 6, 8] : [1, 3, 5, 7, 9];
 
       setScannedSignal({
         prediction: predictedType,
-        confidence: String(simulatedScore),
-        scanStrength,
         sampleSize,
         triggerDigits
       });
