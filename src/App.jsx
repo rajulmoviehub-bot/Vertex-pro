@@ -38,13 +38,13 @@ export default function App() {
   const [accurateScanning, setAccurateScanning] = useState(false);
   const [accurateScan, setAccurateScan] = useState(null);
   const [scannedSignal, setScannedSignal] = useState(null);
-  const signalDigitVisible = Boolean(scannedSignal && Number(scannedSignal.bestDigit) === Number(lastDigit));
   const [botActive, setBotActive] = useState(false);
   const [botStatusText, setBotStatusText] = useState('Idle: Click Deep Scan Market');
   const [activeTrade, setActiveTrade] = useState(null);
 
   const [priceHistory, setPriceHistory] = useState([]);
   const [lastDigit, setLastDigit] = useState(0);
+  const signalDigitVisible = Boolean(scannedSignal && Number(scannedSignal.bestDigit) === Number(lastDigit));
   const [currentPrice, setCurrentPrice] = useState('Waiting for verified feed');
   const [feedStatus, setFeedStatus] = useState('CONNECTING');
   const [lastTickAt, setLastTickAt] = useState(null);
