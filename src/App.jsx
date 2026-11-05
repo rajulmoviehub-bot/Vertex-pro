@@ -34,6 +34,8 @@ export default function App() {
 
   const [accurateScanning, setAccurateScanning] = useState(false);
   const [accurateScan, setAccurateScan] = useState(null);
+  const [deepScan, setDeepScan] = useState(null);
+  const [deepScanning, setDeepScanning] = useState(false);
   const [activeTrade, setActiveTrade] = useState(null);
 
   const [priceHistory, setPriceHistory] = useState([]);
@@ -63,6 +65,13 @@ export default function App() {
   const [depositAmount, setDepositAmount] = useState(5);
   const [withdrawAmount, setWithdrawAmount] = useState(5);
   const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
+
+  useEffect(() => {
+    if (!deepScan || deepScan.appeared || totalTicks <= deepScan.scanTick) return;
+    if (lastDigit === deepScan.digit) {
+      setDeepScan(previous => previous ? { ...previous, appeared: true } : previous);
+    }
+  }, [totalTicks, lastDigit, deepScan]);
 
   useEffect(() => {
     if (!loginWelcome) return undefined;
@@ -349,6 +358,33 @@ export default function App() {
       setAccurateScanning(false);
     }, 900);
   };
+  const runDeepScan = () => {
+    setDeepScanning(true);
+    setDeepScan(null);
+    setTimeout(() => {
+      const digits = priceHistory.slice(-20).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
+      if (digits.length < 20) {
+        setDeepScanning(false);
+        return;
+      }
+      const counts = Array.from({ length: 10 }, (_, digit) => ({
+        digit,
+        side: digit % 2 === 0 ? 'EVEN' : 'ODD',
+        count: digits.filter(value => value === digit).length
+      }));
+      counts.sort((a, b) => b.count - a.count || a.digit - b.digit);
+      const selected = counts[0];
+      setDeepScan({
+        ...selected,
+        percentage: Math.round((selected.count / digits.length) * 100),
+        sampleSize: digits.length,
+        scanTick: totalTicks,
+        appeared: false
+      });
+      setDeepScanning(false);
+    }, 700);
+  };
+
   const handleDeposit = () => {
     alert('M-Pesa and other payment gateways are not connected yet. No payment was taken and no balance was credited.');
   };
@@ -703,6 +739,36 @@ export default function App() {
         </div>
       )}
 
+      {activeTab === 'DEEPSCAN' && (
+        <div className="p-4 pb-24 space-y-4 max-w-lg mx-auto w-full">
+          <div className="rounded-xl border border-violet-700/60 bg-[#121824] p-4 space-y-3">
+            <div className="flex items-center gap-2"><ScanLine className="w-5 h-5 text-violet-300" /><h2 className="text-base font-black text-white">VELTEX DEEPSCAN</h2></div>
+            <p className="text-xs text-gray-300">Analyzes the latest 20 observed market digits and selects the most frequent digit with its EVEN/ODD side.</p>
+            <p className="text-[11px] text-amber-300">The percentage is historical frequency in this sample, not a guaranteed win probability. Feed data may be simulated.</p>
+            <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 20} className="w-full rounded-lg bg-violet-700 hover:bg-violet-600 disabled:opacity-50 py-3 text-sm font-black text-white">
+              {deepScanning ? 'SCANNING 20 TICKS…' : 'START DEEPSCAN'}
+            </button>
+            {priceHistory.length < 20 && <p className="text-[11px] text-gray-400 text-center">Collecting ticks: {priceHistory.length}/20</p>}
+          </div>
+          {deepScan && (
+            <div className="rounded-xl border border-violet-600/70 bg-[#121824] p-4 space-y-3">
+              <div className="text-[10px] font-bold tracking-widest text-violet-300">SELECTED DIGIT</div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-baseline gap-2"><span className="text-5xl font-black text-white">{deepScan.digit}</span><span className={'text-lg font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-red-300')}>{deepScan.side}</span></div>
+                <div className="text-right"><span className="text-2xl font-black text-violet-200">{deepScan.percentage}%</span><p className="text-[10px] text-gray-400">Sample frequency</p></div>
+              </div>
+              <p className="text-xs text-gray-400">Appears {deepScan.count} times in the last {deepScan.sampleSize} ticks.</p>
+              {deepScan.appeared ? (
+                <div className="rounded-lg border border-emerald-600/60 bg-emerald-950/40 p-3 text-sm font-black text-emerald-300">DIGIT {deepScan.digit} APPEARED · {deepScan.side}</div>
+              ) : (
+                <div className="rounded-lg border border-gray-700 bg-[#0c1017] p-3 text-xs text-gray-300">Watching for digit {deepScan.digit}. You decide whether to trade or wait.</div>
+              )}
+              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 20} className="w-full rounded-lg bg-violet-700 hover:bg-violet-600 disabled:opacity-50 py-3 text-sm font-black text-white">SCAN AGAIN</button>
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'ACCURATE' && (
         <div className="p-4 pb-24 space-y-4 max-w-lg mx-auto w-full">
           <div className="rounded-xl border border-cyan-700/60 bg-[#121824] p-4 space-y-2">
@@ -1032,6 +1098,10 @@ export default function App() {
         <button aria-label="Trade tab" onClick={() => setActiveTab('TRADE')} className={`flex flex-col items-center ${activeTab === 'TRADE' ? 'text-red-500' : 'text-gray-400'}`}>
           <BarChart2 className="w-5 h-5" />
           <span className="text-[10px] mt-1 font-bold">Trade</span>
+        </button>
+        <button aria-label="DeepScan analysis" onClick={() => setActiveTab('DEEPSCAN')} className={`flex flex-col items-center ${activeTab === 'DEEPSCAN' ? 'text-violet-300' : 'text-gray-400'}`}>
+          <ScanLine className="w-5 h-5" />
+          <span className="text-[10px] mt-1 font-bold">DeepScan</span>
         </button>
         <button aria-label="Accurate Bot analysis" onClick={() => setActiveTab('ACCURATE')} className={`flex flex-col items-center ${activeTab === 'ACCURATE' ? 'text-cyan-300' : 'text-gray-400'}`}>
           <ScanLine className="w-5 h-5" />
