@@ -1203,6 +1203,13 @@ export default function App() {
         </div>
       )}
 
+      <section className="mx-4 mb-4 rounded-xl border border-emerald-700/70 bg-[#101e2a] p-4 text-center">
+        <p className="text-base font-black tracking-wide text-white">FREE BINARY TRADING CLASS</p>
+        <p className="mt-1 text-xs text-gray-300">Join our free WhatsApp class group to learn about binary trading and how to use the VELTEX demo bot.</p>
+        <a href="https://chat.whatsapp.com/I5oC5sjgo9HNAvSwdvNcD?s=cl&p=a&mlu=4&ilr=4&iam=2" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-3 text-sm font-black text-white hover:bg-emerald-500">JOIN FREE WHATSAPP CLASS</a>
+        <p className="mt-2 text-[10px] text-gray-400">Educational content only. Trading involves risk; no profits are guaranteed.</p>
+      </section>
+
       <footer className="px-4 py-4 mb-16 text-center text-[10px] text-gray-500 border-t border-gray-800">
         AUTO VELTEX PRIME BOT · Demo only · Trading involves risk · BCLB licence status unverified
         <button onClick={() => setActiveTab('INFO')} className="block mx-auto mt-1 text-red-400 underline">Terms and Conditions</button>
