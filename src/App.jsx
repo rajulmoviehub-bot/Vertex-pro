@@ -358,7 +358,7 @@ export default function App() {
     setStartAfterScan(false);
     setShowTargetAchieved(true);
     playSound('win');
-    const timer = setTimeout(() => setShowTargetAchieved(false), 1000);
+    const timer = setTimeout(() => setShowTargetAchieved(false), 500);
     return () => clearTimeout(timer);
   }, [accountMode, botActive, sessionPL, target]);
 
@@ -418,11 +418,6 @@ export default function App() {
       setBotActive(false);
       setStartAfterScan(false);
       setBotStatusText('Demo bot stopped by user.');
-      return;
-    }
-    if (!user.loggedIn) {
-      alert('Please log in to use your free demo bot.');
-      setAuthModal('login');
       return;
     }
     if (!scannedSignal) {
@@ -555,12 +550,12 @@ export default function App() {
         </div>
       </header>
 
-      <section aria-label="Permanent bot sale notice" className="bg-amber-950/50 border-b border-amber-700 px-3 py-2">
-        <p className="text-xs font-black text-amber-200">AUTO VELTEX PRIME BOT BOT SALE</p>
-        <p className="text-lg font-black text-white">KSh 60,000 · approx. US$461.72</p>
-        <p className="text-[11px] text-amber-100">Previous price KSh 64,000 · approx. US$492.50. USD estimate only; exchange rates vary.</p>
+      <section aria-label="Permanent bot sale notice" className="bg-amber-950/50 border-b border-amber-700 px-3 py-1.5 animate-pulse">
+        <p className="text-[11px] font-black text-amber-200">VELTEX PRIME V6 AUTO BOT · SALE</p>
+        <p className="text-base font-black text-white">KSh 50,000</p>
+        <p className="text-[10px] text-amber-100">Previous price KSh 64,000 · Limited offer</p>
         <div className="mt-2">
-          <button onClick={() => setActiveTab('INFO')} className="w-full rounded bg-amber-500 text-black text-xs font-bold py-2">BOT SALE DETAILS</button>
+          <button onClick={() => setActiveTab('INFO')} className="rounded bg-amber-500 text-black text-[11px] font-bold px-3 py-1.5">BOT SALE DETAILS</button>
         </div>
       </section>
 
@@ -624,8 +619,9 @@ export default function App() {
             <div className="mx-3 mt-3 p-3 bg-red-950/40 border border-red-500/60 rounded-xl flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-red-400 font-bold block uppercase">Experimental demo signal</span>
-                <span className="text-xs text-cyan-300 font-bold block mt-1">Recent sample bias: {scannedSignal.confidence}% of {scannedSignal.sampleSize || 0} recent ticks (not win probability)</span><span className="text-[11px] text-amber-200 block mt-1">Recent digit frequency is descriptive only; it cannot identify or guarantee the next winning wave.</span>
-                <span className="text-sm font-black text-white">Target: <span className="text-emerald-400">{scannedSignal.prediction}</span> | Scanning digits: <span className="text-yellow-400 font-mono font-bold text-base">{(scannedSignal.triggerDigits || []).join(', ')}</span></span>
+                <span className={`text-xs font-bold block mt-1 ${Number(scannedSignal.confidence) >= 85 ? 'text-emerald-300' : 'text-cyan-300'}`}>Observed EVEN/ODD frequency: {scannedSignal.confidence}% of {scannedSignal.sampleSize || 0} recent ticks — NOT win probability</span><span className="text-[11px] text-amber-200 block mt-1">Recent digit frequency is descriptive only; it cannot identify or guarantee the next winning wave.</span>
+                <span className="text-sm font-black text-white">Observed bias: <span className="text-emerald-400">{scannedSignal.prediction}</span> | Matching digits: <span className="text-yellow-400 font-mono font-bold">{(scannedSignal.triggerDigits || []).join(', ')}</span></span>
+                <span className="mt-2 flex flex-wrap gap-1" aria-label="Digits zero to nine">{Array.from({ length: 10 }, (_, digit) => <span key={digit} className={`rounded px-1.5 py-0.5 text-[10px] font-mono ${digit % 2 === 0 ? 'bg-cyan-950 text-cyan-200' : 'bg-amber-950 text-amber-200'}`}>{digit}</span>)}</span>
               </div>
               <div>
                 <button 
@@ -922,11 +918,11 @@ export default function App() {
             <h2 className="text-lg font-black text-white">AUTO VELTEX PRIME BOT</h2>
             <p className="text-gray-300">Trading education and a demo practice interface. The current build does not execute live broker trades or predict guaranteed outcomes.</p>
             <p className="text-amber-300 font-bold">Never deposit money you cannot afford to lose. There are no guaranteed profits.</p>
-            <p className="text-gray-300">AUTO VELTEX PRIME BOT offer price: KSh 60,000. Previous/standard price: KSh 64,000. For purchase enquiries, contact the seller directly and confirm the buyer licence and verified payment details before paying. Payments are not accepted inside this app yet.</p>
+            <p className="text-gray-300">VELTEX PRIME V6 AUTO BOT offer price: KSh 50,000. Previous/standard price: KSh 64,000. For purchase enquiries, contact the seller directly and confirm the buyer licence and verified payment details before paying. Payments are not accepted inside this app yet.</p>
           </section>
           <section className="bg-emerald-950/40 border border-emerald-600 rounded-xl p-4 space-y-3">
-            <h3 className="text-base font-black text-emerald-300">BUY AUTO VELTEX PRIME BOT</h3>
-            <p className="text-2xl font-black text-white">KSh 60,000</p>
+            <h3 className="text-base font-black text-emerald-300">BUY VELTEX PRIME V6 AUTO BOT</h3>
+            <p className="text-2xl font-black text-white">KSh 50,000</p>
             <p className="text-xs text-gray-300">Educational trading tool with demo practice and English-only TikTok LIVE education sessions. It does not guarantee profit. The current version is demo-only and does not place live broker trades.</p>
             <p className="text-xs text-amber-200">Interested customers should contact the seller directly to confirm availability, licence terms and verified payment details. No payment is processed by this website yet.</p>
           </section>
@@ -1099,7 +1095,7 @@ export default function App() {
           <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center -mt-3 border-2 border-[#121824]">
             <Bot className="w-4 h-4" />
           </div>
-          <span className="text-[10px] mt-0.5 font-bold">AUTO VELTEX PRIME BOT</span>
+          <span className="text-[10px] mt-0.5 font-bold">Auto Bot</span>
         </button>
         <button aria-label="Trading history" onClick={() => setActiveTab('HISTORY')} className={`flex flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
           <Clock className="w-5 h-5" />
