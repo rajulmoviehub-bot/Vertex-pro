@@ -60,12 +60,12 @@ export default function App() {
   const [capitalAmount, setCapitalAmount] = useState('5');
   const [capitalBusy, setCapitalBusy] = useState(false);
   // Use the account username (email prefix) consistently across sessions and welcome messages.
-  const displayUserName = user.loggedIn ? (user.email?.split('@')[0] || 'Customer') : 'Guest';
+  const displayUserName = user.loggedIn ? (user.fullName?.trim() || user.email?.split('@')[0] || 'Customer') : 'Guest';
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(5);
   const [withdrawAmount, setWithdrawAmount] = useState(5);
-  const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
+  const [startupShown, setStartupShown] = useState(false);
 
   useEffect(() => {
     if (!deepScan || deepScan.appeared || totalTicks <= deepScan.scanTick) return;
@@ -75,8 +75,15 @@ export default function App() {
   }, [totalTicks, lastDigit, deepScan]);
 
   useEffect(() => {
+    if (startupShown) return undefined;
+    setStartupShown(true);
+    setLoginWelcome(true);
+    return undefined;
+  }, [startupShown]);
+
+  useEffect(() => {
     if (!loginWelcome) return undefined;
-    const timer = setTimeout(() => setLoginWelcome(false), 3000);
+    const timer = setTimeout(() => setLoginWelcome(false), 5000);
     return () => clearTimeout(timer);
   }, [loginWelcome]);
 
@@ -472,18 +479,6 @@ export default function App() {
     }
   };
 
-  const checkDerivAccount = async () => {
-    setDerivCheck({ loading: true, result: null, error: '' });
-    try {
-      const response = await fetch('/api/deriv/account', { method: 'GET', cache: 'no-store' });
-      const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.error || 'Deriv account verification failed');
-      setDerivCheck({ loading: false, result: data.account, error: '' });
-    } catch (error) {
-      setDerivCheck({ loading: false, result: null, error: error.message || 'Could not verify Deriv account' });
-    }
-  };
-
   const minPrice = priceHistory.length ? Math.min(...priceHistory) : 0;
   const maxPrice = priceHistory.length ? Math.max(...priceHistory) : 1;
   const priceRange = maxPrice - minPrice || 0.001;
@@ -875,7 +870,7 @@ export default function App() {
               <p className="text-[11px] leading-relaxed text-amber-200">Admin credit only. It increases the selected customer's recorded wallet balance; it does not represent a customer deposit or external funds received. Every credit is ledger-recorded.</p>
             </div>}
             {adminSection === 'WITHDRAWALS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Withdrawal request approvals</h3><p className="text-xs text-gray-300">No withdrawal request system or server-side approval queue is connected. No pending requests are available to review.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Approve request · unavailable</button><p className="text-[11px] text-amber-200">Approval controls will only be enabled after verified customer identity, request records and secure payout integration are implemented.</p></div>}
-            {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">Account management</h3><p className="text-xs text-gray-300">Verify the Deriv connection for the broker account authorized by the owner. This check is read-only.</p><button onClick={checkDerivAccount} disabled={derivCheck.loading} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3 disabled:opacity-60">{derivCheck.loading ? 'Checking Deriv connection…' : 'Verify Deriv account connection'}</button>{derivCheck.result && <div role="status" className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-xs text-emerald-200 space-y-1"><p className="font-bold">Deriv account verified · Read-only check</p><p>Account: {derivCheck.result.loginid}</p><p>Type: {derivCheck.result.account_type === 'demo' ? 'Demo' : 'Real'}</p><p>Currency: {derivCheck.result.currency || 'Not provided'}</p><p className="text-amber-200">This check does not place trades or enable live execution.</p></div>}{derivCheck.error && <p role="alert" className="text-xs text-red-300">Deriv connection check failed: {derivCheck.error}</p>}<p className="text-[11px] text-amber-200">No customer account records are currently available. Broker trading and customer account linking are not enabled.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Open personal account details</button></div>}
+            {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VELTEX Account Management · Admin Only</h3><p className="text-xs text-gray-300">This section is for managing accounts registered on the VELTEX platform only. No broker account or external trading platform is used.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><p className="text-xs text-amber-200">Customer account directory and account actions must be connected to the secure VELTEX admin service before users can be listed, suspended, or edited here.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3">View my VELTEX account</button></div>}
             {adminSection === 'CENTRAL' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Central wallet withdrawal</h3><p className="text-xs text-gray-300">Central wallet balance: Not connected. No business wallet or payout provider is linked.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Request central withdrawal · unavailable</button><p className="text-[11px] text-amber-200">This panel cannot access or move customer or company funds.</p></div>}
             {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Bot sharing / licence transfer</h3><label className="block text-xs text-gray-300" htmlFor="share-customer-number">Customer phone number</label><input id="share-customer-number" value={shareCustomerNumber} onChange={e => setShareCustomerNumber(e.target.value)} placeholder="e.g. 07XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={!shareCustomerNumber.trim()} onClick={() => alert('Licence transfer is not connected. No customer was activated and no previous licence was revoked.')} className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 disabled:opacity-50">Transfer bot licence · unavailable</button><p className="text-[11px] text-amber-200">No bot is shared by this form. A secure server must verify payment, activate the buyer and revoke the previous activation atomically.</p></div>}
             {adminSection === 'OVERVIEW' && <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]);  setActiveTrade(null); }} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3">Reset demo account to $10,000</button>}
@@ -889,11 +884,9 @@ export default function App() {
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
             <h2 className="text-lg font-black text-white">Account management</h2>
             <p className="text-sm text-gray-300">Manage the account identifier linked to your AUTO VELTEX PRIME BOT licence.</p>
-            <p className="text-xs text-amber-200">⚠️ Account sharing/linking is not connected yet. A buyer should authorize their own broker account through the broker's official secure connection. No broker password or OTP is needed or should be collected here.</p>
-            <p className="text-xs text-gray-400">The bot owner controls the bot password. Do not put that password in a public message or share it with buyers. Account ID entry alone will not connect a broker in this version.</p>
-            <button onClick={checkDerivAccount} disabled={derivCheck.loading} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3 disabled:opacity-60">{derivCheck.loading ? 'Checking Deriv connection…' : 'Verify Deriv account connection'}</button>
-            {derivCheck.result && <div role="status" className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-xs text-emerald-200 space-y-1"><p className="font-bold">Deriv account verified · Read-only check</p><p>Account: {derivCheck.result.loginid}</p><p>Type: {derivCheck.result.account_type === 'demo' ? 'Demo' : 'Real'}</p><p>Currency: {derivCheck.result.currency || 'Not provided'}</p><p className="text-amber-200">This check does not place trades or enable live execution.</p></div>}
-            {derivCheck.error && <p role="alert" className="text-xs text-red-300">Deriv connection check failed: {derivCheck.error}</p>}
+            <p className="text-sm text-gray-300">This is your VELTEX platform account. It is not connected to Deriv or any external broker.</p>
+            <div className="rounded-lg bg-[#090d14] border border-gray-700 p-3 space-y-1"><p className="text-xs text-gray-400">Account name</p><p className="text-base font-bold text-white">{user.fullName || displayUserName}</p><p className="text-xs text-gray-300">{user.email || 'Not signed in'}</p><p className="text-xs text-gray-400">VELTEX customer account</p></div>
+            <p className="text-xs text-gray-400">Your login and account details belong to this VELTEX platform. Admin-only account controls are available to the verified owner from the Admin Panel.</p>
           </section>
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
             <h3 className="text-base font-black text-white">50/50 profit-sharing rules</h3>
