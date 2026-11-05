@@ -1,7 +1,7 @@
 export const config = { runtime: "nodejs" };
 
 function bearer(req) {
-  const match = String(req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i);
+  const match = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
   return match ? match[1].trim() : "";
 }
 
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const token = bearer(req);
   if (!url || !serviceKey) return res.status(503).json({ ok: false, error: "Secure wallet admin is not configured on the server" });
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
   const email = String(req.body?.email || "").trim().toLowerCase();
   const amount = Number(req.body?.amount);
-  if (!/^\\S+@\\S+\\.\\S+$/.test(email) || !Number.isFinite(amount) || amount <= 0 || amount > 100000) {
+  if (!/^\S+@\S+\.\S+$/.test(email) || !Number.isFinite(amount) || amount <= 0 || amount > 100000) {
     return res.status(400).json({ ok: false, error: "Enter a valid customer email and an amount up to $100,000" });
   }
 
