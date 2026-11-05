@@ -1,7 +1,7 @@
 export const config = { runtime: "nodejs" };
 
 async function db(path, serviceKey, options = {}) {
-  const base = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const base = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   return fetch(base + path, {
     ...options,
     headers:{ apikey:serviceKey, Authorization:`Bearer ${serviceKey}`, "Content-Type":"application/json", ...(options.headers || {}) },
