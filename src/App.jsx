@@ -386,6 +386,7 @@ export default function App() {
       const signalScore = Math.max(75, Math.min(100, 75 + Math.round((sideCount / digits.length) * 25)));
       setDeepScan({ ...selected, percentage: signalScore, qualifies: signalScore >= 75, highSignal: signalScore >= 85, sampleSize: digits.length, scanTick: totalTicks, appeared: false });
       setDeepScanning(false);
+      setActiveTab('TRADE');
     }, 700);
   };
 
@@ -614,27 +615,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Manual EVEN / ODD entry controls on the main market display */}
-            <div className="mx-3 mt-3 rounded-xl border border-slate-700 bg-[#101d29] p-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-black text-white">MANUAL ENTRY</span>
-                <span className="text-[10px] text-slate-400">{deepScan ? `WAIT FOR DIGIT ${deepScan.digit}` : 'RUN DEEPSCAN FIRST'}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" disabled={!deepScan || lastDigit !== deepScan.digit || !!activeTrade || accountMode !== 'DEMO'} onClick={() => {
-                  if (!deepScan || lastDigit !== deepScan.digit || activeTrade || accountMode !== 'DEMO') return;
-                  if (demoWallet < stake) { alert('Insufficient demo balance for this stake.'); return; }
-                  setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake });
-                }} className="rounded-lg border border-emerald-500 bg-emerald-900/50 py-3 text-sm font-black text-emerald-200 disabled:cursor-not-allowed disabled:opacity-35">EVEN</button>
-                <button type="button" disabled={!deepScan || lastDigit !== deepScan.digit || !!activeTrade || accountMode !== 'DEMO'} onClick={() => {
-                  if (!deepScan || lastDigit !== deepScan.digit || activeTrade || accountMode !== 'DEMO') return;
-                  if (demoWallet < stake) { alert('Insufficient demo balance for this stake.'); return; }
-                  setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake });
-                }} className="rounded-lg border border-rose-500 bg-rose-900/50 py-3 text-sm font-black text-rose-200 disabled:cursor-not-allowed disabled:opacity-35">ODD</button>
-              </div>
-              <p className="text-[10px] leading-relaxed text-slate-400">{deepScan ? `When digit ${deepScan.digit} appears in the live display, choose EVEN or ODD. Demo simulation only; live broker orders are not connected.` : 'Open DeepScan and scan first. Buttons activate when the scanned digit appears.'}</p>
-            </div>
-
             {/* Live Dynamic 0-9 Digit Highlights */}
             <div className="grid grid-cols-10 gap-1 mt-3 pt-1">
               {Object.entries(stats).map(([digit, val]) => (
@@ -704,6 +684,28 @@ export default function App() {
             </div>
 
           </div>
+            {/* Manual EVEN / ODD entry controls on the main market display */}
+            <div className="mx-3 mt-3 rounded-xl border border-slate-700 bg-[#101d29] p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-black text-white">MANUAL ENTRY</span>
+                <span className="text-[10px] text-slate-400">{deepScan ? `WAIT FOR DIGIT ${deepScan.digit}` : 'RUN DEEPSCAN FIRST'}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" disabled={!deepScan || lastDigit !== deepScan.digit || !!activeTrade || accountMode !== 'DEMO'} onClick={() => {
+                  if (!deepScan || lastDigit !== deepScan.digit || activeTrade || accountMode !== 'DEMO') return;
+                  if (demoWallet < stake) { alert('Insufficient demo balance for this stake.'); return; }
+                  setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake });
+                }} className="rounded-lg border border-emerald-500 bg-emerald-900/50 py-3 text-sm font-black text-emerald-200 disabled:cursor-not-allowed disabled:opacity-35">EVEN</button>
+                <button type="button" disabled={!deepScan || lastDigit !== deepScan.digit || !!activeTrade || accountMode !== 'DEMO'} onClick={() => {
+                  if (!deepScan || lastDigit !== deepScan.digit || activeTrade || accountMode !== 'DEMO') return;
+                  if (demoWallet < stake) { alert('Insufficient demo balance for this stake.'); return; }
+                  setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake });
+                }} className="rounded-lg border border-rose-500 bg-rose-900/50 py-3 text-sm font-black text-rose-200 disabled:cursor-not-allowed disabled:opacity-35">ODD</button>
+              </div>
+              <p className="text-[10px] leading-relaxed text-slate-400">{deepScan ? `When digit ${deepScan.digit} appears in the live display, choose EVEN or ODD. Demo simulation only; live broker orders are not connected.` : 'Open DeepScan and scan first. Buttons activate when the scanned digit appears.'}</p>
+            </div>
+
+
         </>
       )}
 
@@ -772,8 +774,6 @@ export default function App() {
                 <div className="space-y-2 rounded-xl border border-slate-700 bg-[#101d29] p-3">
                   <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="ml-auto text-right"><span className="block text-lg font-black text-cyan-200">{deepScan.percentage}%</span><span className={'inline-block rounded-md px-2 py-1 text-[9px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div></div>
                   <p className="text-[9px] leading-relaxed text-slate-400">Pattern score from the recent sample only; it is not a win probability or guarantee.</p>
-                  
-                  <button onClick={() => setActiveTab('TRADE')} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-2.5 text-xs font-black text-rose-300">LOAD SIGNAL · RETURN TO MARKET</button>
                 </div>
               )}
             </div>
