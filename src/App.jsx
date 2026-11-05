@@ -390,11 +390,15 @@ export default function App() {
       const predictedType = evenCount > oddCount ? 'EVEN' : 'ODD';
       const sampleSize = recentDigits.length;
       const observedShare = sampleSize ? (Math.max(evenCount, oddCount) / sampleSize * 100).toFixed(0) : '—';
+      const scanStrength = sampleSize >= 20 && Number(observedShare) >= 85
+        ? 'STRONG OBSERVED BIAS'
+        : '50/50 · NO STRONG BIAS';
       const triggerDigits = predictedType === 'EVEN' ? [0, 2, 4, 6, 8] : [1, 3, 5, 7, 9];
 
       setScannedSignal({
         prediction: predictedType,
         confidence: observedShare,
+        scanStrength,
         sampleSize,
         triggerDigits
       });
@@ -654,6 +658,39 @@ export default function App() {
               <span className="text-xs font-mono font-bold text-white">{activeTrade.ticksElapsed} / {duration} Ticks</span>
             </div>
           )}
+
+          {/* DeepScan: historical observed frequency, not a win-probability forecast */}
+          <section className="mx-3 mt-3 rounded-xl border border-cyan-700/70 bg-[#101c2a] p-3 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-black text-cyan-300">VELTEX DEEPSCAN</h3>
+                <p className="text-[10px] text-gray-400">Checks the latest 20 simulated market digits</p>
+              </div>
+              <button onClick={runDeepScan} disabled={isScanning || feedStatus !== 'LIVE'} className="rounded-lg bg-cyan-600 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
+                {isScanning ? 'SCANNING…' : 'DEEPSCAN'}
+              </button>
+            </div>
+            {scannedSignal ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg bg-[#090d14] p-2">
+                  <p className="text-[10px] text-gray-400">OBSERVED FREQUENCY</p>
+                  <p className="text-2xl font-black font-mono text-white">{scannedSignal.confidence}{scannedSignal.confidence === '—' ? '' : '%'}</p>
+                </div>
+                <div className="rounded-lg bg-[#090d14] p-2">
+                  <p className="text-[10px] text-gray-400">SCAN RESULT</p>
+                  <p className="text-lg font-black text-cyan-300">{scannedSignal.prediction}</p>
+                  <p className="text-[10px] text-gray-300">{scannedSignal.scanStrength}</p>
+                </div>
+                <div className="col-span-2 rounded-lg bg-[#090d14] p-2">
+                  <p className="text-[10px] text-gray-400">MATCHING DIGITS · SAMPLE {scannedSignal.sampleSize}</p>
+                  <p className="text-sm font-bold text-white">{scannedSignal.triggerDigits.join(' · ')}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">Tap DeepScan to calculate the observed EVEN/ODD frequency.</p>
+            )}
+            <p className="text-[10px] leading-relaxed text-amber-300">85–100% means strong historical frequency only; below 85% is shown as 50/50 / no strong bias. This is not a win probability or guarantee. At least 20 ticks are required for the strong-bias label.</p>
+          </section>
 
           {/* Controls */}
           <div className="p-3.5 space-y-3">
