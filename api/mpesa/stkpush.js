@@ -32,9 +32,53 @@ export default async function handler(req, res) {
   const shortcode = process.env.MPESA_SHORTCODE;
   const callbackToken = process.env.MPESA_CALLBACK_TOKEN;
   const siteUrl = process.env.SITE_URL || "https://vertexpromax.vercel.app";
-  const kesPerUsd = Number(process.env.VELTEX_KES_PER_USD);
-  if (!supabaseUrl || !serviceKey || !consumerKey || !consumerSecret || !passkey || !shortcode || !callbackToken || !Number.isFinite(kesPerUsd) || kesPerUsd <= 0) {
+  if (!supabaseUrl || !serviceKey || !consumerKey || !consumerSecret || !passkey || !shortcode || !callbackToken) {
     return json(res, 503, { ok:false, error:"M-Pesa is not configured. Required server environment variables are missing." });
+  }
+
+  async function getUsdKesRate() {
+    const cacheResponse = await supabaseFetch(
+      "/rest/v1/veltex_exchange_rates?base_currency=eq.USD&quote_currency=eq.KES&select=rate,provider_updated_at,next_update_at&limit=1",
+      serviceKey
+    );
+    const cachedRows = cacheResponse.ok ? await cacheResponse.json().catch(() => []) : [];
+    const cached = cachedRows?.[0];
+    if (cached && Number(cached.rate) > 0 && new Date(cached.next_update_at).getTime() > Date.now()) {
+      return { rate:Number(cached.rate), updatedAt:cached.provider_updated_at };
+    }
+
+    const fxResponse = await fetch("https://open.er-api.com/v6/latest/USD", {
+      cache:"no-store",
+      signal:AbortSignal.timeout(8000)
+    });
+    const fx = await fxResponse.json().catch(() => ({}));
+    const rate = Number(fx?.rates?.KES);
+    const updatedAt = Number(fx?.time_last_update_unix);
+    const nextUpdateAt = Number(fx?.time_next_update_unix);
+    if (!fxResponse.ok || fx?.result !== "success" || fx?.base_code !== "USD" ||
+        !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(updatedAt) ||
+        !Number.isFinite(nextUpdateAt) || nextUpdateAt <= updatedAt) {
+      throw new Error("Automatic USD/KES exchange rate is temporarily unavailable. Please try again later.");
+    }
+
+    const cacheWrite = await supabaseFetch(
+      "/rest/v1/veltex_exchange_rates?on_conflict=base_currency,quote_currency",
+      serviceKey,
+      {
+        method:"POST",
+        headers:{ Prefer:"resolution=merge-duplicates,return=minimal" },
+        body:JSON.stringify([{
+          base_currency:"USD",
+          quote_currency:"KES",
+          rate,
+          provider_updated_at:new Date(updatedAt * 1000).toISOString(),
+          next_update_at:new Date(nextUpdateAt * 1000).toISOString(),
+          fetched_at:new Date().toISOString()
+        }])
+      }
+    );
+    if (!cacheWrite.ok) throw new Error("Could not save the automatic exchange rate. Please try again.");
+    return { rate, updatedAt:new Date(updatedAt * 1000).toISOString() };
   }
 
   const accessToken = bearer(req);
@@ -44,6 +88,13 @@ export default async function handler(req, res) {
   if (!phone || !Number.isFinite(amountUsd) || amountUsd < 5 || amountUsd > 10000) {
     return json(res, 400, { ok:false, error:"Enter a valid Kenyan M-Pesa number and deposit amount (USD 5–10,000)." });
   }
+  let exchangeRate;
+  try {
+    exchangeRate = await getUsdKesRate();
+  } catch (error) {
+    return json(res, 503, { ok:false, error:error.message || "Automatic exchange rate unavailable." });
+  }
+  const kesPerUsd = exchangeRate.rate;
   const amountKes = Math.ceil(amountUsd * kesPerUsd);
   if (amountKes < 1 || amountKes > 250000) return json(res, 400, { ok:false, error:"The KES amount is outside the allowed STK Push limit." });
 
@@ -57,7 +108,7 @@ export default async function handler(req, res) {
 
     const pending = await supabaseFetch("/rest/v1/deposit_requests", serviceKey, {
       method:"POST", headers:{ Prefer:"return=representation" },
-      body:JSON.stringify([{ user_id:user.id, provider:"safaricom_daraja_stk", amount:amountUsd, currency:"USD", amount_kes:amountKes, phone_number:phone, status:"pending" }])
+      body:JSON.stringify([{ user_id:user.id, provider:"safaricom_daraja_stk", amount:amountUsd, currency:"USD", amount_kes:amountKes, exchange_rate_kes_per_usd:kesPerUsd, exchange_rate_updated_at:exchangeRate.updatedAt, phone_number:phone, status:"pending" }])
     });
     const pendingRows = await pending.json().catch(()=>[]);
     if (!pending.ok || !pendingRows[0]?.id) return json(res, 500, { ok:false, error:"Could not create a pending deposit record. Apply the VELTEX M-Pesa SQL migration first." });
@@ -102,7 +153,7 @@ export default async function handler(req, res) {
     await supabaseFetch(`/rest/v1/deposit_requests?id=eq.${depositId}`, serviceKey, {
       method:"PATCH", body:JSON.stringify({ merchant_request_id:stk.MerchantRequestID, checkout_request_id:stk.CheckoutRequestID })
     });
-    return json(res, 200, { ok:true, message:"STK Push sent. Approve the payment prompt on your phone.", depositId, checkoutRequestId:stk.CheckoutRequestID, amountKes });
+    return json(res, 200, { ok:true, message:"STK Push sent. Approve the payment prompt on your phone.", depositId, checkoutRequestId:stk.CheckoutRequestID, amountKes, exchangeRate:kesPerUsd, exchangeRateUpdatedAt:exchangeRate.updatedAt });
   } catch (error) {
     return json(res, 502, { ok:false, error:error.message || "Could not start M-Pesa payment." });
   }
