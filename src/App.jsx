@@ -67,26 +67,34 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [loginWelcome]);
 
-  // Welcome returning signed-in customers when they reopen the site or return to its tab.
+  // Re-show the welcome popup when a signed-in customer returns, reloads, or reconnects.
   useEffect(() => {
     if (!user.loggedIn) return undefined;
-    let wasHidden = document.visibilityState === 'hidden';
+    let wasAway = false;
+    const showWelcome = () => {
+      if (document.visibilityState === 'visible') setLoginWelcome(true);
+    };
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        wasHidden = true;
-      } else if (wasHidden) {
-        wasHidden = false;
-        setLoginWelcome(true);
+        wasAway = true;
+      } else if (wasAway) {
+        wasAway = false;
+        showWelcome();
       }
     };
-    const handlePageShow = (event) => {
-      if (event.persisted) setLoginWelcome(true);
+    const handleReturn = () => {
+      wasAway = false;
+      showWelcome();
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('pageshow', handleReturn);
+    window.addEventListener('focus', handleReturn);
+    window.addEventListener('online', handleReturn);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('pageshow', handleReturn);
+      window.removeEventListener('focus', handleReturn);
+      window.removeEventListener('online', handleReturn);
     };
   }, [user.loggedIn]);
 
