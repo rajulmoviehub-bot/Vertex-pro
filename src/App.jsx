@@ -772,11 +772,11 @@ export default function App() {
       {activeTab === 'ACCURATE' && (
         <div className="p-4 pb-24 space-y-4 max-w-lg mx-auto w-full">
           <div className="rounded-xl border border-cyan-700/60 bg-[#121824] p-4 space-y-2">
-            <div className="flex items-center gap-2"><ScanLine className="w-5 h-5 text-cyan-300" /><h2 className="text-base font-black text-white">VELTEX ACCURATE BOT</h2></div>
+            <div className="flex items-center gap-2"><ScanLine className="w-5 h-5 text-cyan-300" /><h2 className="text-base font-black text-white">VELTEX PRIME AUTO BOT</h2></div>
             <p className="text-xs text-gray-300">Independent analysis panel. Scans the latest observed demo-feed digits and reports their historical frequency.</p>
             <p className="text-[11px] text-amber-300">Historical frequency is not a prediction or guaranteed win probability. Current feed is simulated demo data.</p>
             <button onClick={runAccurateScan} disabled={accurateScanning || priceHistory.length === 0} className="w-full rounded-lg bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 py-3 text-sm font-black text-white">
-              {accurateScanning ? 'SCANNING DIGITS…' : 'RUN ACCURATE SCAN'}
+              {accurateScanning ? 'SCANNING DIGITS…' : 'RUN VELTEX PRIME SCAN'}
             </button>
           </div>
           {accurateScan && (
@@ -971,6 +971,9 @@ export default function App() {
               <li>Users are responsible for complying with applicable laws and the rules of their broker and payment providers.</li>
               <li>Regulatory licensing is not claimed. BCLB status is unverified until valid documentation is supplied and checked.</li>
             </ol>
+            <div className="mt-3 border-t border-gray-700 pt-3">
+              <a href="https://chat.whatsapp.com/I5o5C2sjgo9HNAvSwdvNcD?s=cl&amp;p=a&amp;mlu=4&amp;ilr=4&amp;iam=2" target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white hover:bg-emerald-600">JOIN FREE BINARY TRADING CLASS · WHATSAPP</a>
+            </div>
           </section>
         </main>
       )}
@@ -1103,7 +1106,7 @@ export default function App() {
         </button>
         <button aria-label="Accurate Bot analysis" onClick={() => setActiveTab('ACCURATE')} className={`flex flex-col items-center ${activeTab === 'ACCURATE' ? 'text-cyan-300' : 'text-gray-400'}`}>
           <ScanLine className="w-5 h-5" />
-          <span className="text-[10px] mt-1 font-bold">Accurate</span>
+          <span className="text-[10px] mt-1 font-bold">VELTEX PRIME</span>
         </button>
         <button aria-label="Trading history" onClick={() => setActiveTab('HISTORY')} className={`flex flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
           <Clock className="w-5 h-5" />
