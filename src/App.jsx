@@ -110,6 +110,7 @@ export default function App() {
   const wsRef = useRef(null);
   const lastTickAtRef = useRef(null);
   const marketSequenceRef = useRef(0);
+  const previousActiveTradeRef = useRef(false);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -373,7 +374,7 @@ export default function App() {
 
   // VELTEX PRO BINARY automatic demo logic
   useEffect(() => {
-    if (!botActive || accountMode !== 'DEMO' || sessionPL >= Number(target) || !scannedSignal || activeTrade) return;
+    if (!botActive || accountMode !== 'DEMO' || sessionPL >= Number(target) || !scannedSignal || activeTrade || totalTicks <= (scannedSignal.totalTicks || 0)) return;
 
     const targetPred = scannedSignal.prediction;
     const digitMatchesSignal = Number.isInteger(scannedSignal.bestDigit) ? lastDigit === scannedSignal.bestDigit : (targetPred === 'EVEN' ? lastDigit % 2 === 0 : lastDigit % 2 === 1);
@@ -384,7 +385,7 @@ export default function App() {
     } else {
       setBotStatusText(`Scanning all digits 0–9 | Waiting for ${targetPred.toLowerCase()} digit | Current: ${lastDigit}`);
     }
-  }, [lastDigit, botActive, scannedSignal, activeTrade, duration, accountMode, sessionPL, target]);
+  }, [lastDigit, totalTicks, botActive, scannedSignal, activeTrade, duration, accountMode, sessionPL, target]);
 
   const runDeepScan = () => {
     setIsScanning(true);
@@ -407,7 +408,8 @@ export default function App() {
         bestDigit,
         simulatedScore,
         sampleSize,
-        triggerDigits: [bestDigit]
+        triggerDigits: [bestDigit],
+        totalTicks
       });
       setIsScanning(false);
       if (startAfterScan) {
@@ -418,6 +420,22 @@ export default function App() {
       setBotStatusText(`Demo scan completed: ${bestDigit} ${predictedType}.`);
     }, 1000);
   };
+
+  // After each completed demo trade, automatically run a fresh DeepScan.
+  // The next signal is only eligible on a newer tick, preventing an immediate
+  // repeat entry using the same tick that closed the previous trade.
+  useEffect(() => {
+    if (activeTrade) {
+      previousActiveTradeRef.current = true;
+      return;
+    }
+    if (!previousActiveTradeRef.current) return;
+    previousActiveTradeRef.current = false;
+    if (botActive && accountMode === 'DEMO' && sessionPL < Number(target)) {
+      setBotStatusText('Demo trade completed. Running a fresh DeepScan for the next signal...');
+      runDeepScan();
+    }
+  }, [activeTrade, botActive, accountMode, sessionPL, target]);
 
   // Independent analysis panel: historical frequency only, not a guaranteed prediction.
   const runAccurateScan = () => {
