@@ -601,39 +601,16 @@ export default function App() {
               <span className="text-xs font-bold text-gray-200">AUTO VELTEX PRIME BOT Bot:</span>
               <span className="text-[11px] font-mono text-yellow-400">{botStatusText}</span>
             </div>
-            <button 
-              onClick={runDeepScan}
-              disabled={isScanning}
-              className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-3 py-1 rounded shadow"
+            <button
+              onClick={toggleDemoBot}
+              disabled={accountMode === 'REAL'}
+              className={`font-bold text-xs px-3 py-1 rounded shadow disabled:opacity-40 ${botActive ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white'}`}
             >
-              {isScanning ? 'Scanning...' : 'Deep Scan Market'}
+              {accountMode === 'REAL' ? 'REAL BOT OFF' : botActive ? 'Stop Bot' : 'Start Demo Bot'}
             </button>
           </div>
 
-          <div className="mx-3 mt-2 rounded-xl border border-emerald-500/40 bg-[#071b16] px-3 py-2 flex items-center justify-between gap-3" aria-live="polite">
-            <div><span className="text-[10px] uppercase tracking-wide text-emerald-200 font-bold block">Total demo profit / loss</span><span className={`text-xl font-black font-mono ${sessionPL >= 0 ? "text-emerald-300" : "text-red-300"}`}>{sessionPL >= 0 ? "+" : "-"}${Math.abs(sessionPL).toFixed(2)}</span></div>
-            <div className="text-right"><span className="text-[10px] text-gray-400 block">{activeTrade ? "TRADE IN PROGRESS" : botActive ? "BOT SCANNING" : "SESSION TOTAL"}</span><span className="text-xs font-bold text-white">{activeTrade ? `${activeTrade.prediction} · ${activeTrade.ticksElapsed}/${duration} ticks` : botActive ? "Waiting for matching digit" : "DEMO ONLY"}</span></div>
-          </div>
 
-          {scannedSignal && (
-            <div className="mx-3 mt-3 p-3 bg-red-950/40 border border-red-500/60 rounded-xl flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-red-400 font-bold block uppercase">Experimental demo signal</span>
-                <span className={`text-xs font-bold block mt-1 ${Number(scannedSignal.confidence) >= 85 ? 'text-emerald-300' : 'text-cyan-300'}`}>Observed EVEN/ODD frequency: {scannedSignal.confidence}% of {scannedSignal.sampleSize || 0} recent ticks — NOT win probability</span><span className="text-[11px] text-amber-200 block mt-1">Recent digit frequency is descriptive only; it cannot identify or guarantee the next winning wave.</span>
-                <span className="text-sm font-black text-white">Observed bias: <span className="text-emerald-400">{scannedSignal.prediction}</span> | Matching digits: <span className="text-yellow-400 font-mono font-bold">{(scannedSignal.triggerDigits || []).join(', ')}</span></span>
-                <span className="mt-2 flex flex-wrap gap-1" aria-label="Digits zero to nine">{Array.from({ length: 10 }, (_, digit) => <span key={digit} className={`rounded px-1.5 py-0.5 text-[10px] font-mono ${digit % 2 === 0 ? 'bg-cyan-950 text-cyan-200' : 'bg-amber-950 text-amber-200'}`}>{digit}</span>)}</span>
-              </div>
-              <div>
-                <button 
-                  disabled={accountMode === 'REAL'}
-                  onClick={toggleDemoBot}
-                  className={`text-xs font-bold px-3.5 py-1.5 rounded shadow disabled:opacity-40 ${botActive ? 'bg-amber-600 text-white animate-pulse' : 'bg-emerald-600 text-white'}`}
-                >
-                  {accountMode === 'REAL' ? 'REAL TRADING OFF' : botActive ? 'Stop Bot' : 'Start AUTO VELTEX PRIME BOT Demo'}
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Deriv-Style Dynamic Chart */}
           <div className="bg-[#121824] border-y border-gray-800 p-3.5 relative mt-2">
@@ -1008,7 +985,6 @@ export default function App() {
               <button onClick={() => { setAccountMode('DEMO'); setBotActive(false); setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
               <button onClick={() => { setActiveTab('ACCOUNT'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
               <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]); setBotActive(false); setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300">Reset demo balance</button>
-              <button onClick={() => { setMenuOpen(false); setActiveTab('TRADE'); runDeepScan(); }} disabled={isScanning} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-300">Deep scan market</button>
               <button onClick={() => {
                 setMenuOpen(false);
                 setActiveTab('TRADE');
@@ -1081,12 +1057,6 @@ export default function App() {
         <button aria-label="Trade tab" onClick={() => setActiveTab('TRADE')} className={`flex flex-col items-center ${activeTab === 'TRADE' ? 'text-red-500' : 'text-gray-400'}`}>
           <BarChart2 className="w-5 h-5" />
           <span className="text-[10px] mt-1 font-bold">Trade</span>
-        </button>
-        <button aria-label="AI market scan" onClick={() => { setActiveTab('TRADE'); runDeepScan(); }} disabled={isScanning} className="flex flex-col items-center text-cyan-400 disabled:opacity-50">
-          <div className="w-8 h-8 rounded-full bg-cyan-700 text-white flex items-center justify-center -mt-3 border-2 border-[#121824]">
-            <ScanLine className="w-4 h-4" />
-          </div>
-          <span className="text-[10px] mt-0.5 font-bold">{isScanning ? 'AI Scan…' : 'AI'}</span>
         </button>
         <button aria-label="AUTO VELTEX PRIME BOT" onClick={() => {
           setActiveTab('TRADE');
