@@ -552,8 +552,8 @@ export default function App() {
       </section>
 
       {/* Tabs */}
-      <div className="bg-[#121824] grid grid-cols-4 border-b border-gray-800 text-center">
-        {['TRADE', 'DEPOSIT', 'HISTORY', 'INFO'].map((tab) => (
+      <div className="bg-[#121824] grid grid-cols-5 border-b border-gray-800 text-center">
+        {['WITHDRAW', 'TRADE', 'DEPOSIT', 'HISTORY', 'INFO'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
