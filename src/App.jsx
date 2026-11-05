@@ -366,14 +366,14 @@ export default function App() {
   useEffect(() => {
     if (!botActive || accountMode !== 'DEMO' || sessionPL >= Number(target) || !scannedSignal || activeTrade) return;
 
-    const targetPred = scannedSignal.prediction; 
-    const tripDigit = scannedSignal.tripDigit; 
+    const targetPred = scannedSignal.prediction;
+    const digitMatchesSignal = targetPred === 'EVEN' ? lastDigit % 2 === 0 : lastDigit % 2 === 1;
 
-    if (lastDigit === tripDigit) {
-      setBotStatusText(`Tripped on digit ${tripDigit}! Executing ${targetPred} (${duration} ticks)...`);
+    if (digitMatchesSignal) {
+      setBotStatusText(`Signal matched digit ${lastDigit} (${targetPred}). Executing demo trade (${duration} ticks)...`);
       executeTrade(targetPred === 'EVEN' ? 'Even' : 'Odd');
     } else {
-      setBotStatusText(`Scanning... Waiting for trip on digit [${tripDigit}] | Current: ${lastDigit}`);
+      setBotStatusText(`Scanning all digits 0–9 | Waiting for ${targetPred.toLowerCase()} digit | Current: ${lastDigit}`);
     }
   }, [lastDigit, botActive, scannedSignal, activeTrade, duration, accountMode, sessionPL, target]);
 
@@ -386,12 +386,12 @@ export default function App() {
       const oddCount = [1, 3, 5, 7, 9].reduce((acc, d) => acc + (stats[d] || 0), 0);
       const predictedType = evenCount > oddCount ? 'EVEN' : 'ODD';
       const confidence = Math.max(evenCount, oddCount).toFixed(1);
-      const tripTarget = predictedType === 'EVEN' ? [2, 4, 6, 8, 0][Math.floor(Math.random()*5)] : [1, 3, 5, 7, 9][Math.floor(Math.random()*5)];
+      const triggerDigits = predictedType === 'EVEN' ? [0, 2, 4, 6, 8] : [1, 3, 5, 7, 9];
 
       setScannedSignal({
         prediction: predictedType,
         confidence: confidence,
-        tripDigit: tripTarget
+        triggerDigits
       });
       setIsScanning(false);
       if (startAfterScan) {
@@ -615,7 +615,7 @@ export default function App() {
               <div>
                 <span className="text-[10px] text-red-400 font-bold block uppercase">Experimental demo signal</span>
                 <span className="text-xs text-cyan-300 font-bold block mt-1">Observed digit split: {scannedSignal.confidence}% (not win probability or accuracy)</span><span className="text-[11px] text-amber-200 block mt-1">This experimental estimate may be wrong. It is for demo education only and is not a validated trading prediction.</span>
-                <span className="text-sm font-black text-white">Target: <span className="text-emerald-400">{scannedSignal.prediction}</span> | Trip Digit: <span className="text-yellow-400 font-mono underline font-bold text-base">{scannedSignal.tripDigit}</span></span>
+                <span className="text-sm font-black text-white">Target: <span className="text-emerald-400">{scannedSignal.prediction}</span> | Scanning digits: <span className="text-yellow-400 font-mono font-bold text-base">{(scannedSignal.triggerDigits || []).join(', ')}</span></span>
               </div>
               <div>
                 <button 
