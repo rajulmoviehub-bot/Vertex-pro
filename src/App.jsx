@@ -417,7 +417,7 @@ export default function App() {
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error || 'Could not start M-Pesa payment.');
-      alert(`M-Pesa prompt sent to ${depositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} on your phone. Your VELTEX wallet is credited only after Safaricom confirms payment.`);
+      alert(`M-Pesa prompt sent to ${depositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} on your phone. Automatic reference rate used: 1 USD = KES ${Number(result.exchangeRate).toFixed(4)}. Your VELTEX wallet is credited only after Safaricom confirms payment.`);
     } catch (error) {
       alert(error.message || 'M-Pesa deposit could not be started.');
     } finally {
@@ -779,7 +779,7 @@ export default function App() {
                 <label className="text-xs text-gray-400 block mb-1 font-bold">Amount (USD)</label>
                 <input type="number" min="5" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
               </div>
-              <p className="text-[10px] text-gray-500">M-Pesa deposits are converted to USD using the server-configured KES/USD rate. Wallet credit happens only after Safaricom confirms payment.</p>
+              <p className="text-[10px] text-gray-500">M-Pesa deposits use an automatically refreshed USD/KES reference rate (updated daily). The rate used is saved with each deposit, so wallet credit uses the same rate. Rates by <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer" className="underline text-gray-300">ExchangeRate-API</a>. Wallet credit happens only after Safaricom confirms payment.</p>
               <button disabled={depositBusy} onClick={() => depositAmount < 5 ? alert('Minimum deposit is $5.00.') : handleDeposit()} className="w-full bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-lg shadow-lg">{depositBusy ? 'SENDING PAYMENT PROMPT…' : 'PAY WITH M-PESA'}</button>
             </div>
           </div>
