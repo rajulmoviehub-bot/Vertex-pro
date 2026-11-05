@@ -56,6 +56,11 @@ export default function App() {
   const [adminSection, setAdminSection] = useState('OVERVIEW');
   const [shareCustomerNumber, setShareCustomerNumber] = useState('');
   const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
+  // Report observed results from completed demo trades; never manufacture an accuracy figure.
+  const completedTradeCount = trades.length;
+  const completedWins = trades.filter(trade => trade.status === 'WIN').length;
+  const observedWinRate = completedTradeCount ? (completedWins / completedTradeCount) * 100 : null;
+  const winRateGoalReached = observedWinRate !== null && observedWinRate >= 89;
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(10);
@@ -609,6 +614,24 @@ export default function App() {
               {isScanning ? 'Scanning...' : 'Deep Scan Market'}
             </button>
           </div>
+
+          <section className="mx-3 mt-3 rounded-xl border border-amber-500/40 bg-[#121824] p-3 space-y-2" aria-label="Verified performance and premium status">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-black uppercase tracking-wide text-white">Observed demo performance</span>
+              <span className="text-[10px] font-bold text-amber-300">89% GOAL · NOT GUARANTEED</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg bg-[#090d14] p-2"><div className="text-lg font-black text-white">{observedWinRate === null ? '—' : observedWinRate.toFixed(1) + '%'}</div><div className="text-[9px] text-gray-400">Actual win rate</div></div>
+              <div className="rounded-lg bg-[#090d14] p-2"><div className="text-lg font-black text-emerald-300">{completedWins}</div><div className="text-[9px] text-gray-400">Wins</div></div>
+              <div className="rounded-lg bg-[#090d14] p-2"><div className="text-lg font-black text-white">{completedTradeCount}</div><div className="text-[9px] text-gray-400">Completed trades</div></div>
+            </div>
+            <p className="text-[11px] {winRateGoalReached ? 'text-emerald-300' : 'text-gray-300'}">{observedWinRate === null ? 'No completed trades yet. Performance will appear after demo trades settle.' : winRateGoalReached ? 'Observed demo results have reached the 89% benchmark for this browser session.' : 'Observed results are below the 89% benchmark. The bot does not force or fake winning outcomes.'}</p>
+            <div className="border-t border-gray-700 pt-2 flex items-center justify-between gap-2">
+              <div><div className="text-xs font-bold text-amber-200">VELTEX PREMIUM</div><div className="text-[10px] text-gray-400">Premium execution and buyer licences require secure server-side payment and entitlement verification.</div></div>
+              <span className="shrink-0 rounded-md border border-amber-500/40 px-2 py-1 text-[10px] font-black text-amber-200">LOCKED</span>
+            </div>
+            <p className="text-[10px] text-gray-500">DEMO statistics are local to this browser and are not independently audited. Live broker execution remains disabled.</p>
+          </section>
 
           {scannedSignal && (
             <div className="mx-3 mt-3 p-3 bg-red-950/40 border border-red-500/60 rounded-xl flex items-center justify-between">
