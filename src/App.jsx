@@ -14,9 +14,9 @@ export default function App() {
     if (accountMode === 'DEMO') setDemoWallet(prev => Math.max(0, prev + delta));
     else setMainWallet(prev => Math.max(0, prev + delta));
   };
-  const [user, setUser] = useState({ loggedIn: false, email: '', refCode: 'VELTEX-7892' });
+  const [user, setUser] = useState({ loggedIn: false, email: '', fullName: '', refCode: 'VELTEX-7892' });
   const [authModal, setAuthModal] = useState(null);
-  const [authInput, setAuthInput] = useState({ email: '', password: '', ref: '' });
+  const [authInput, setAuthInput] = useState({ fullName: '', email: '', password: '', ref: '' });
 
   const [initialStake, setInitialStake] = useState(0.75);
   const [stake, setStake] = useState(0.75);
@@ -57,7 +57,7 @@ export default function App() {
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [adminSection, setAdminSection] = useState('OVERVIEW');
   const [shareCustomerNumber, setShareCustomerNumber] = useState('');
-  const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
+  const displayUserName = user.loggedIn ? (user.fullName?.trim() || user.email?.split('@')[0] || 'Customer') : 'Guest';
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
   const [depositAmount, setDepositAmount] = useState(5);
@@ -112,11 +112,11 @@ export default function App() {
     const syncSession = async (session) => {
       if (!mounted) return;
       if (!session?.user) {
-        setUser({ loggedIn: false, email: '', refCode: 'VELTEX-7892' });
+        setUser({ loggedIn: false, email: '', fullName: '', refCode: 'VELTEX-7892' });
         setMainWallet(0);
         return;
       }
-      setUser({ loggedIn: true, email: session.user.email || '', refCode: 'VELTEX-7892' });
+      setUser({ loggedIn: true, email: session.user.email || '', fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '', refCode: 'VELTEX-7892' });
       setLoginWelcome(true);
       const { data, error } = await supabase
         .from('wallets')
@@ -463,8 +463,8 @@ export default function App() {
     }
     const email = authInput.email.trim();
     const password = authInput.password;
-    if (!email || !password) {
-      alert('Enter your email and password.');
+    if (!email || !password || (authModal === 'signup' && !authInput.fullName.trim())) {
+      alert(authModal === 'signup' ? 'Enter your full name, email and password.' : 'Enter your email and password.');
       return;
     }
     try {
@@ -474,12 +474,12 @@ export default function App() {
           password,
           options: {
             emailRedirectTo: 'https://vertexpromax.vercel.app',
-            data: { referral_code: authInput.ref.trim() || null }
+            data: { full_name: authInput.fullName.trim(), name: authInput.fullName.trim(), referral_code: authInput.ref.trim() || null }
           }
         });
         if (error) throw error;
         if (data.session) {
-          setUser({ loggedIn: true, email: data.user?.email || email, refCode: 'VELTEX-7892' });
+          setUser({ loggedIn: true, email: data.user?.email || email, fullName: data.user?.user_metadata?.full_name || authInput.fullName.trim(), refCode: 'VELTEX-7892' });
         setLoginWelcome(true);
           alert('Your account was created. Your wallet will show once the database migration is applied.');
         } else {
@@ -488,7 +488,7 @@ export default function App() {
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        setUser({ loggedIn: true, email: data.user?.email || email, refCode: 'VELTEX-7892' });
+        setUser({ loggedIn: true, email: data.user?.email || email, fullName: data.user?.user_metadata?.full_name || data.user?.user_metadata?.name || '', refCode: 'VELTEX-7892' });
         setLoginWelcome(true);
         const { data: wallet, error: walletError } = await supabase
           .from('wallets')
@@ -503,7 +503,7 @@ export default function App() {
         }
       }
       setAuthModal(null);
-      setAuthInput({ email: '', password: '', ref: '' });
+      setAuthInput({ fullName: '', email: '', password: '', ref: '' });
     } catch (error) {
       alert(error?.message || 'Authentication failed. Please try again.');
     }
@@ -1121,6 +1121,12 @@ export default function App() {
               <label className="text-xs text-gray-400 block mb-1">Password</label>
               <input type="password" placeholder="••••••••" value={authInput.password} onChange={(e) => setAuthInput({ ...authInput, password: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
             </div>
+            {authModal === 'signup' && (
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Full name</label>
+                <input type="text" autoComplete="name" placeholder="Enter your full name" value={authInput.fullName} onChange={(e) => setAuthInput({ ...authInput, fullName: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
+              </div>
+            )}
             {authModal === 'signup' && (
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Referral Code</label>
