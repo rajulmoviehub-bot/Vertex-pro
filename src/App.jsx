@@ -30,22 +30,12 @@ export default function App() {
   const [multiplier, setMultiplier] = useState(2);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [loginWelcome, setLoginWelcome] = useState(false);
-  const [startAfterScan, setStartAfterScan] = useState(false);
   const [showTargetAchieved, setShowTargetAchieved] = useState(false);
 
-  const [isScanning, setIsScanning] = useState(false);
-  const [showDeepScanModal, setShowDeepScanModal] = useState(false);
-  const [scanCategory, setScanCategory] = useState('Even / Odd');
-  const [accurateScanning, setAccurateScanning] = useState(false);
-  const [accurateScan, setAccurateScan] = useState(null);
-  const [scannedSignal, setScannedSignal] = useState(null);
   const [botActive, setBotActive] = useState(false);
-  const [botStatusText, setBotStatusText] = useState('Idle: Click Deep Scan Market');
   const [activeTrade, setActiveTrade] = useState(null);
 
-  const [priceHistory, setPriceHistory] = useState([]);
   const [lastDigit, setLastDigit] = useState(0);
-  const signalDigitVisible = Boolean(scannedSignal && Number(scannedSignal.bestDigit) === Number(lastDigit));
   const [currentPrice, setCurrentPrice] = useState('Waiting for verified feed');
   const [feedStatus, setFeedStatus] = useState('CONNECTING');
   const [lastTickAt, setLastTickAt] = useState(null);
@@ -181,41 +171,6 @@ export default function App() {
     }
   };
 
-  const runDeepScan = () => {
-    if (isScanning || feedStatus !== 'LIVE') return;
-    if (priceHistory.length < 20) {
-      setScannedSignal(null);
-      setBotStatusText('Waiting for 20 observed ticks before scanning.');
-      return;
-    }
-    setIsScanning(true);
-    setScannedSignal(null);
-    setBotStatusText('Analyzing the latest 20 observed demo ticks…');
-    window.setTimeout(() => {
-      const recentDigits = priceHistory.slice(-20).map(value => Number.parseInt(Number(value).toFixed(3).slice(-1), 10)).filter(Number.isInteger);
-      if (!recentDigits.length) {
-        setIsScanning(false);
-        setBotStatusText('No valid tick data. Please scan again.');
-        return;
-      }
-      const counts = recentDigits.reduce((acc, digit) => {
-        acc[digit] = (acc[digit] || 0) + 1;
-        return acc;
-      }, {});
-      const maxCount = Math.max(...Object.values(counts));
-      const bestDigit = [...recentDigits].reverse().find(digit => counts[digit] === maxCount);
-      const prediction = bestDigit % 2 === 0 ? 'EVEN' : 'ODD';
-      setScannedSignal({
-        bestDigit,
-        prediction,
-        digitFrequency: Number(((maxCount / recentDigits.length) * 100).toFixed(1)),
-        sampleSize: recentDigits.length
-      });
-      setBotStatusText(`Selected ${bestDigit} – ${prediction}. Wait for this digit on a tick.`);
-      setIsScanning(false);
-    }, 650);
-  };
-
   const playSound = (type) => {
     if (!soundEnabled) return;
     try {
@@ -260,7 +215,6 @@ export default function App() {
     setCurrentPrice(quoteStr);
     setLastDigit(nextDigit);
 
-    setPriceHistory(prev => [...prev.slice(-25), quoteNum]);
 
     setTotalTicks(prev => {
       const newTotal = prev + 1;
