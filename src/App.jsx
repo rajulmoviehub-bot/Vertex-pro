@@ -37,7 +37,6 @@ export default function App() {
   const [deepScan, setDeepScan] = useState(null);
   const [deepScanning, setDeepScanning] = useState(false);
   const [deepScanMarket, setDeepScanMarket] = useState('Even / Odd');
-  const [deepBotLoaded, setDeepBotLoaded] = useState(false);
   const [activeTrade, setActiveTrade] = useState(null);
 
   const [priceHistory, setPriceHistory] = useState([]);
@@ -363,7 +362,6 @@ export default function App() {
   const runDeepScan = () => {
     setDeepScanning(true);
     setDeepScan(null);
-    setDeepBotLoaded(false);
     setTimeout(() => {
       const digits = priceHistory.slice(-12).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
       if (digits.length < 12) {
@@ -756,11 +754,11 @@ export default function App() {
               <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-4 text-sm font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
               {deepScan && (
                 <div className="space-y-3 rounded-xl border border-slate-700 bg-[#101d29] p-4">
-                  <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-4xl font-black text-white">{deepScan.digit}</span><span className={'text-lg font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="text-right"><p className="text-2xl font-black text-rose-300">{deepScan.percentage}%</p><p className="text-[10px] text-slate-400">Historical signal score</p></div></div>
+                  <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-4xl font-black text-white">{deepScan.digit}</span><span className={'text-lg font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="text-right"><p className="text-2xl font-black text-rose-300">{deepScan.qualifies ? deepScan.percentage + '%' : 'NO SIGNAL'}</p><p className="text-[10px] text-slate-400">Historical signal score</p></div></div>
                   <p className={'text-xs font-bold ' + (deepScan.highSignal ? 'text-emerald-300' : deepScan.qualifies ? 'text-amber-300' : 'text-slate-300')}>{deepScan.highSignal ? '85–100 · STRONG HISTORICAL SIGNAL' : deepScan.qualifies ? '75–84 · QUALIFYING SIGNAL' : 'BELOW 75 · NO QUALIFYING SIGNAL'}</p>
                   <p className="text-[10px] leading-relaxed text-amber-200">Score is based on the last 12 demo-feed ticks. It is not a 75–100% win probability or a guarantee; past patterns do not predict the next tick.</p>
                   {deepScan.appeared && <div className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-sm font-black text-emerald-300">DIGIT {deepScan.digit} APPEARED · {deepScan.side}</div>}
-                  <button onClick={() => { setDeepBotLoaded(true); setActiveTab('TRADE'); }} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-3 text-sm font-black text-rose-300">Load Deep Scanner Bot</button>
+                  <button onClick={() => setActiveTab('TRADE')} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-3 text-sm font-black text-rose-300">Load Deep Scanner Bot</button>
                 </div>
               )}
             </div>
