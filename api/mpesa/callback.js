@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     const cb = req.body?.Body?.stkCallback;
     const checkoutId = String(cb?.CheckoutRequestID || "");
     if (!checkoutId) return res.status(400).json({ ok:false });
-    const lookup = await db(`/rest/v1/deposit_requests?checkout_request_id=eq.${encodeURIComponent(checkoutId)}&select=id,user_id,amount,amount_kes,status`, serviceKey);
+    const lookup = await db(`/rest/v1/deposit_requests?checkout_request_id=eq.${encodeURIComponent(checkoutId)}&select=id,user_id,amount,amount_kes,phone_number,status`, serviceKey);
     const rows = await lookup.json();
     const deposit = rows?.[0];
     if (!lookup.ok || !deposit) return res.status(404).json({ ok:false });
@@ -43,7 +43,8 @@ export default async function handler(req, res) {
     const receipt = String(value("MpesaReceiptNumber") || "");
     const paidKes = Number(value("Amount"));
     const phone = String(value("PhoneNumber") || "");
-    if (!receipt || !Number.isFinite(paidKes) || paidKes <= 0 || Math.abs(paidKes - Number(deposit.amount_kes)) > 0.01) {
+    const expectedPhone = String(deposit.phone_number || "").replace(/\\D/g, "");
+    if (!receipt || !Number.isFinite(paidKes) || paidKes <= 0 || Math.abs(paidKes - Number(deposit.amount_kes)) > 0.01 || (expectedPhone && phone && expectedPhone !== phone)) {
       await db(`/rest/v1/deposit_requests?id=eq.${deposit.id}`, serviceKey, {
         method:"PATCH", body:JSON.stringify({ status:"failed", result_description:"Callback amount or receipt did not match the pending deposit." })
       });
