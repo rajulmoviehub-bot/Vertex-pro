@@ -358,7 +358,7 @@ export default function App() {
     setStartAfterScan(false);
     setShowTargetAchieved(true);
     playSound('win');
-    const timer = setTimeout(() => setShowTargetAchieved(false), 2000);
+    const timer = setTimeout(() => setShowTargetAchieved(false), 1000);
     return () => clearTimeout(timer);
   }, [accountMode, botActive, sessionPL, target]);
 
@@ -1016,9 +1016,8 @@ export default function App() {
       )}
 
       {showTargetAchieved && (
-        <div role="alert" aria-live="assertive" className="fixed inset-x-4 top-20 z-[110] mx-auto max-w-md rounded-2xl border border-amber-400 bg-emerald-950 px-5 py-4 text-center text-lg font-black text-amber-200 shadow-2xl">
+        <div role="alert" aria-live="assertive" className="pointer-events-none fixed inset-x-4 top-20 z-[110] mx-auto max-w-md bg-transparent px-2 py-2 text-center text-xl font-black text-lime-300 [text-shadow:0_0_8px_rgba(163,230,53,0.95),0_0_22px_rgba(132,204,22,0.8)]">
           Mashallah 🕌💫 TARGET ACHIEVED!
-          <p className="mt-1 text-xs font-medium text-emerald-100">Demo bot stopped. Your session target was reached.</p>
         </div>
       )}
       {loginWelcome && (
