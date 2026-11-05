@@ -1,17 +1,17 @@
 export const config = { runtime: "nodejs" };
 
 const json = (res, status, body) => res.status(status).json(body);
-const bearer = req => String(req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() || "";
-const digits = value => String(value || "").replace(/\\D/g, "");
+const bearer = req => String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
+const digits = value => String(value || "").replace(/\D/g, "");
 const phone254 = value => {
   let n = digits(value);
   if (n.startsWith("0")) n = "254" + n.slice(1);
   if (n.startsWith("7") || n.startsWith("1")) n = "254" + n;
-  return /^254[71]\\d{8}$/.test(n) ? n : "";
+  return /^254[71]\d{8}$/.test(n) ? n : "";
 };
 
 async function supabaseFetch(path, key, options = {}) {
-  const base = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const base = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   return fetch(base + path, {
     ...options,
     headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(options.headers || {}) },
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   if (req.method !== "POST") { res.setHeader("Allow", "POST"); return json(res, 405, { ok:false, error:"Method not allowed" }); }
 
-  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const consumerKey = process.env.MPESA_CONSUMER_KEY;
   const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
 
     const timestamp = new Date().toISOString().replace(/[^0-9]/g,"").slice(0,14);
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
-    const callbackUrl = `${siteUrl.replace(/\\/$/,"")}/api/mpesa/callback?key=${encodeURIComponent(callbackToken)}`;
+    const callbackUrl = `${siteUrl.replace(/\/$/,"")}/api/mpesa/callback?key=${encodeURIComponent(callbackToken)}`;
     const stkResponse = await fetch(`${apiBase}/mpesa/stkpush/v1/processrequest`, {
       method:"POST",
       headers:{ Authorization:`Bearer ${tokenData.access_token}`, "Content-Type":"application/json" },
