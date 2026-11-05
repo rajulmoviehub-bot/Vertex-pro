@@ -550,8 +550,8 @@ export default function App() {
           <button onClick={() => setActiveTab('WITHDRAW')} className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-md shadow-md">Withdraw</button>
 
           {user.loggedIn ? (
-            <span className="bg-red-950/60 border border-red-500/40 text-red-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-              <UserCheck className="w-3 h-3" /> {displayUserName}
+            <span aria-label="Signed in" title="Signed in" className="bg-red-950/60 border border-red-500/40 text-red-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+              <UserCheck className="w-3 h-3" />
             </span>
           ) : null}
         </div>
