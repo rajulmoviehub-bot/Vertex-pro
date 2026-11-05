@@ -36,6 +36,8 @@ export default function App() {
   const [accurateScan, setAccurateScan] = useState(null);
   const [deepScan, setDeepScan] = useState(null);
   const [deepScanning, setDeepScanning] = useState(false);
+  const [deepScanMarket, setDeepScanMarket] = useState('Even / Odd');
+  const [deepBotLoaded, setDeepBotLoaded] = useState(false);
   const [activeTrade, setActiveTrade] = useState(null);
 
   const [priceHistory, setPriceHistory] = useState([]);
@@ -361,9 +363,10 @@ export default function App() {
   const runDeepScan = () => {
     setDeepScanning(true);
     setDeepScan(null);
+    setDeepBotLoaded(false);
     setTimeout(() => {
-      const digits = priceHistory.slice(-20).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
-      if (digits.length < 20) {
+      const digits = priceHistory.slice(-12).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
+      if (digits.length < 12) {
         setDeepScanning(false);
         return;
       }
@@ -374,13 +377,9 @@ export default function App() {
       }));
       counts.sort((a, b) => b.count - a.count || a.digit - b.digit);
       const selected = counts[0];
-      setDeepScan({
-        ...selected,
-        percentage: Math.round((selected.count / digits.length) * 100),
-        sampleSize: digits.length,
-        scanTick: totalTicks,
-        appeared: false
-      });
+      const sideCount = digits.filter(value => (value % 2 === 0 ? 'EVEN' : 'ODD') === selected.side).length;
+      const signalScore = Math.round((sideCount / digits.length) * 100);
+      setDeepScan({ ...selected, percentage: signalScore, qualifies: signalScore >= 75, highSignal: signalScore >= 85, sampleSize: digits.length, scanTick: totalTicks, appeared: false });
       setDeepScanning(false);
     }, 700);
   };
@@ -740,32 +739,32 @@ export default function App() {
       )}
 
       {activeTab === 'DEEPSCAN' && (
-        <div className="p-4 pb-24 space-y-4 max-w-lg mx-auto w-full">
-          <div className="rounded-xl border border-violet-700/60 bg-[#121824] p-4 space-y-3">
-            <div className="flex items-center gap-2"><ScanLine className="w-5 h-5 text-violet-300" /><h2 className="text-base font-black text-white">VELTEX DEEPSCAN</h2></div>
-            <p className="text-xs text-gray-300">Analyzes the latest 20 observed market digits and selects the most frequent digit with its EVEN/ODD side.</p>
-            <p className="text-[11px] text-amber-300">The percentage is historical frequency in this sample, not a guaranteed win probability. Feed data may be simulated.</p>
-            <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 20} className="w-full rounded-lg bg-violet-700 hover:bg-violet-600 disabled:opacity-50 py-3 text-sm font-black text-white">
-              {deepScanning ? 'SCANNING 20 TICKS…' : 'START DEEPSCAN'}
-            </button>
-            {priceHistory.length < 20 && <p className="text-[11px] text-gray-400 text-center">Collecting ticks: {priceHistory.length}/20</p>}
-          </div>
-          {deepScan && (
-            <div className="rounded-xl border border-violet-600/70 bg-[#121824] p-4 space-y-3">
-              <div className="text-[10px] font-bold tracking-widest text-violet-300">SELECTED DIGIT</div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-baseline gap-2"><span className="text-5xl font-black text-white">{deepScan.digit}</span><span className={'text-lg font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-red-300')}>{deepScan.side}</span></div>
-                <div className="text-right"><span className="text-2xl font-black text-violet-200">{deepScan.percentage}%</span><p className="text-[10px] text-gray-400">Sample frequency</p></div>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 pb-24">
+          <section className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-700 bg-[#0c1824] shadow-2xl">
+            <header className="flex items-center justify-between border-b border-slate-700 px-5 py-4">
+              <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500 text-white shadow-lg"><ScanLine className="h-6 w-6" /></span><h2 className="text-base font-black text-white">Entry Scanner</h2></div>
+              <button aria-label="Close DeepScan" onClick={() => setActiveTab('TRADE')} className="p-2 text-gray-400 hover:text-white"><span className="text-2xl leading-none">×</span></button>
+            </header>
+            <div className="space-y-5 p-5">
+              <div className="rounded-xl bg-[#132331] p-4 text-sm leading-relaxed text-slate-300">Choose the market category to scan. VELTEX checks the latest 12 observed ticks for historical EVEN/ODD patterns.</div>
+              <div className="space-y-2"><label className="block text-xs font-bold text-slate-300">Market</label><select value={deepScanMarket} onChange={e => setDeepScanMarket(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#08131d] p-4 text-sm font-bold text-white"><option>Even / Odd</option></select></div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-slate-300"><span>{deepScanning ? 'Scanning market ticks' : 'Ready to scan'}</span><span className="font-mono font-bold text-white">{Math.min(priceHistory.length, 12)}/12</span></div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: (Math.min(priceHistory.length / 12, 1) * 100) + '%' }} /></div>
+                {priceHistory.length < 12 && <p className="text-[11px] text-slate-400">Collecting live ticks: {priceHistory.length}/12</p>}
               </div>
-              <p className="text-xs text-gray-400">Appears {deepScan.count} times in the last {deepScan.sampleSize} ticks.</p>
-              {deepScan.appeared ? (
-                <div className="rounded-lg border border-emerald-600/60 bg-emerald-950/40 p-3 text-sm font-black text-emerald-300">DIGIT {deepScan.digit} APPEARED · {deepScan.side}</div>
-              ) : (
-                <div className="rounded-lg border border-gray-700 bg-[#0c1017] p-3 text-xs text-gray-300">Watching for digit {deepScan.digit}. You decide whether to trade or wait.</div>
+              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-4 text-sm font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
+              {deepScan && (
+                <div className="space-y-3 rounded-xl border border-slate-700 bg-[#101d29] p-4">
+                  <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-4xl font-black text-white">{deepScan.digit}</span><span className={'text-lg font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="text-right"><p className="text-2xl font-black text-rose-300">{deepScan.percentage}%</p><p className="text-[10px] text-slate-400">Historical signal score</p></div></div>
+                  <p className={'text-xs font-bold ' + (deepScan.highSignal ? 'text-emerald-300' : deepScan.qualifies ? 'text-amber-300' : 'text-slate-300')}>{deepScan.highSignal ? '85–100 · STRONG HISTORICAL SIGNAL' : deepScan.qualifies ? '75–84 · QUALIFYING SIGNAL' : 'BELOW 75 · NO QUALIFYING SIGNAL'}</p>
+                  <p className="text-[10px] leading-relaxed text-amber-200">Score is based on the last 12 demo-feed ticks. It is not a 75–100% win probability or a guarantee; past patterns do not predict the next tick.</p>
+                  {deepScan.appeared && <div className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-sm font-black text-emerald-300">DIGIT {deepScan.digit} APPEARED · {deepScan.side}</div>}
+                  <button onClick={() => { setDeepBotLoaded(true); setActiveTab('TRADE'); }} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-3 text-sm font-black text-rose-300">Load Deep Scanner Bot</button>
+                </div>
               )}
-              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 20} className="w-full rounded-lg bg-violet-700 hover:bg-violet-600 disabled:opacity-50 py-3 text-sm font-black text-white">SCAN AGAIN</button>
             </div>
-          )}
+          </section>
         </div>
       )}
 
