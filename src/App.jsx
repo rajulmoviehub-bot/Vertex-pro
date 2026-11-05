@@ -342,9 +342,14 @@ export default function App() {
     };
   }, [duration, initialStake, multiplier, contractType, accountMode]);
 
+  const signalDigitVisible = Boolean(scannedSignal && totalTicks > (scannedSignal.totalTicks || 0) && lastDigit === scannedSignal.bestDigit);
+
   const executeTrade = (type) => {
-    if (feedStatus !== 'LIVE' || !lastTickAt || Date.now() - lastTickAt > 10000) { alert('Market feed is unavailable or stale. No trade was opened.'); setBotActive(false); return; }
-    if (accountMode === 'REAL') { alert('Real-money trading is disabled until a verified broker API and secure server execution are connected. Use DEMO to practise.'); setBotActive(false); return; }
+    if (!signalDigitVisible) { alert('Wait until the exact digit selected by DeepScan appears on the current tick.'); return; }
+    const expectedSide = scannedSignal.prediction === 'EVEN' ? 'Even' : 'Odd';
+    if (type !== expectedSide) { alert(`DeepScan selected ${scannedSignal.bestDigit} (${expectedSide.toUpperCase()}). Choose ${expectedSide.toUpperCase()} for this signal.`); return; }
+    if (feedStatus !== 'LIVE' || !lastTickAt || Date.now() - lastTickAt > 10000) { alert('Market feed is unavailable or stale. No demo trade was opened.'); return; }
+    if (accountMode === 'REAL') { alert('Real-money broker execution is not connected. Switch to DEMO to practise.'); return; }
     if (activeTrade) return;
     if (activeWallet < stake) {
       alert("Insufficient main wallet balance!");
@@ -361,31 +366,13 @@ export default function App() {
     });
   };
 
-  // Stop the demo bot as soon as the configured session target is reached.
+  // DeepScan only watches the feed. The trader chooses EVEN or ODD manually.
   useEffect(() => {
-    if (accountMode !== 'DEMO' || !botActive || sessionPL < Number(target)) return undefined;
-    setBotActive(false);
-    setStartAfterScan(false);
-    setShowTargetAchieved(true);
-    playSound('win');
-    const timer = setTimeout(() => setShowTargetAchieved(false), 500);
-    return () => clearTimeout(timer);
-  }, [accountMode, botActive, sessionPL, target]);
-
-  // VELTEX PRO BINARY automatic demo logic
-  useEffect(() => {
-    if (!botActive || accountMode !== 'DEMO' || sessionPL >= Number(target) || !scannedSignal || activeTrade || totalTicks <= (scannedSignal.totalTicks || 0)) return;
-
-    const targetPred = scannedSignal.prediction;
-    const digitMatchesSignal = Number.isInteger(scannedSignal.bestDigit) ? lastDigit === scannedSignal.bestDigit : (targetPred === 'EVEN' ? lastDigit % 2 === 0 : lastDigit % 2 === 1);
-
-    if (digitMatchesSignal) {
-      setBotStatusText(`Signal matched digit ${lastDigit} (${targetPred}). Executing demo trade (${duration} ticks)...`);
-      executeTrade(targetPred === 'EVEN' ? 'Even' : 'Odd');
-    } else {
-      setBotStatusText(`Scanning all digits 0–9 | Waiting for ${targetPred.toLowerCase()} digit | Current: ${lastDigit}`);
-    }
-  }, [lastDigit, totalTicks, botActive, scannedSignal, activeTrade, duration, accountMode, sessionPL, target]);
+    if (!scannedSignal || isScanning) return;
+    setBotStatusText(signalDigitVisible
+      ? `Digit ${scannedSignal.bestDigit} detected — press ${scannedSignal.prediction} manually if you choose.`
+      : `Waiting for scanned digit ${scannedSignal.bestDigit} — current tick: ${lastDigit}.`);
+  }, [scannedSignal, isScanning, signalDigitVisible, lastDigit]);
 
   const runDeepScan = () => {
     setIsScanning(true);
@@ -400,30 +387,24 @@ export default function App() {
       const tiedDigits = counts.filter(item => item.count === highestCount).map(item => item.digit);
       const bestDigit = tiedDigits[Math.floor(Math.random() * tiedDigits.length)] ?? 0;
       const predictedType = bestDigit % 2 === 0 ? 'EVEN' : 'ODD';
-      const simulatedScore = 75 + Math.floor(Math.random() * 26);
       const sampleSize = recentDigits.length;
 
       setScannedSignal({
         prediction: predictedType,
         bestDigit,
-        simulatedScore,
         sampleSize,
         triggerDigits: [bestDigit],
         totalTicks
       });
       setIsScanning(false);
-      if (startAfterScan) {
-        setStartAfterScan(false);
-        setBotActive(true);
-        setBotStatusText('Demo bot ON — waiting for the selected digit.');
-      }
-      setBotStatusText(`Demo scan completed: ${bestDigit} ${predictedType}.`);
+      setStartAfterScan(false);
+      setBotActive(false);
+      setBotStatusText(`DeepScan ready: wait for digit ${bestDigit}, then manually choose ${predictedType}.`);
     }, 1000);
   };
 
-  // After each completed demo trade, automatically run a fresh DeepScan.
-  // The next signal is only eligible on a newer tick, preventing an immediate
-  // repeat entry using the same tick that closed the previous trade.
+  // After a manually placed demo trade settles, prepare the next scan automatically.
+  // No trade is ever opened automatically; the trader must press EVEN or ODD.
   useEffect(() => {
     if (activeTrade) {
       previousActiveTradeRef.current = true;
@@ -431,11 +412,11 @@ export default function App() {
     }
     if (!previousActiveTradeRef.current) return;
     previousActiveTradeRef.current = false;
-    if (botActive && accountMode === 'DEMO' && sessionPL < Number(target)) {
-      setBotStatusText('Demo trade completed. Running a fresh DeepScan for the next signal...');
+    if (accountMode === 'DEMO') {
+      setBotStatusText('Trade settled. DeepScan is preparing the next signal; choose manually.');
       runDeepScan();
     }
-  }, [activeTrade, botActive, accountMode, sessionPL, target]);
+  }, [activeTrade, accountMode]);
 
   // Independent analysis panel: historical frequency only, not a guaranteed prediction.
   const runAccurateScan = () => {
@@ -452,25 +433,10 @@ export default function App() {
     }, 900);
   };
   const toggleDemoBot = () => {
-    if (accountMode !== 'DEMO') {
-      setBotActive(false);
-      alert('LIVE broker trading is disabled. Switch to DEMO to use the free demo bot.');
-      return;
-    }
-    if (botActive || startAfterScan) {
-      setBotActive(false);
-      setStartAfterScan(false);
-      setBotStatusText('Demo bot stopped by user.');
-      return;
-    }
-    if (!scannedSignal) {
-      setStartAfterScan(true);
-      runDeepScan();
-      setBotStatusText('Preparing demo scan, then the bot will start.');
-      return;
-    }
-    setBotActive(true);
-    setBotStatusText('Demo bot ON — waiting for trip digit.');
+    setBotActive(false);
+    setStartAfterScan(false);
+    setShowDeepScanModal(true);
+    if (!scannedSignal && !isScanning) runDeepScan();
   };
 
   const handleDeposit = () => {
@@ -798,7 +764,7 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <button disabled={!!activeTrade} onClick={() => executeTrade('Even')} className="bg-[#121824] hover:bg-[#1c2436] border border-gray-800 rounded-xl p-3 text-left transition-all relative overflow-hidden disabled:opacity-50">
+              <button disabled={!!activeTrade || !signalDigitVisible || scannedSignal?.prediction !== 'EVEN'} onClick={() => executeTrade('Even')} className="bg-[#121824] hover:bg-[#1c2436] border border-gray-800 rounded-xl p-3 text-left transition-all relative overflow-hidden disabled:opacity-40">
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold text-white text-sm">EVEN</span>
                   <span className="font-mono font-bold text-emerald-400 text-sm">${(stake * 1.95).toFixed(2)}</span>
@@ -807,7 +773,7 @@ export default function App() {
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
               </button>
 
-              <button disabled={!!activeTrade} onClick={() => executeTrade('Odd')} className="bg-[#121824] hover:bg-[#1c2436] border border-red-500/50 rounded-xl p-3 text-left transition-all relative overflow-hidden shadow-lg shadow-red-950/40 disabled:opacity-50">
+              <button disabled={!!activeTrade || !signalDigitVisible || scannedSignal?.prediction !== 'ODD'} onClick={() => executeTrade('Odd')} className="bg-[#121824] hover:bg-[#1c2436] border border-red-500/50 rounded-xl p-3 text-left transition-all relative overflow-hidden shadow-lg shadow-red-950/40 disabled:opacity-40">
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold text-red-500 text-sm">ODD</span>
                   <span className="font-mono font-bold text-emerald-400 text-sm">${(stake * 1.95).toFixed(2)}</span>
@@ -1157,9 +1123,9 @@ export default function App() {
               <button onClick={() => { runDeepScan(); }} disabled={isScanning || feedStatus !== 'LIVE'} className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-3 py-2.5 text-xs font-black text-white shadow-lg shadow-red-900/40 disabled:opacity-50">
                 <ScanLine className="h-5 w-5" />{isScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}
               </button>
-              {scannedSignal && <div className="rounded-lg border border-cyan-700/70 bg-[#08121c] p-3 text-center"><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Best market · demo scan</p><p className="mt-1 text-2xl font-black text-cyan-300">{scannedSignal.bestDigit} <span className="text-lg">{scannedSignal.prediction}</span></p><p className="mt-1 text-xl font-black text-emerald-300">{scannedSignal.simulatedScore}%</p><p className="text-[9px] uppercase tracking-wider text-slate-400">Simulated score · not win probability</p></div>}
-              <button onClick={() => { setShowDeepScanModal(false); toggleDemoBot(); }} className="w-full rounded-lg border border-slate-700 bg-[#101e2a] px-3 py-2.5 text-xs font-bold text-red-300 hover:bg-[#172938]">{botActive || startAfterScan ? 'Stop Deep Scanner Bot' : 'Load Deep Scanner Bot'}</button>
-              <p className="text-[10px] leading-relaxed text-amber-300">Demo feed and 75–100% score are simulated; the score is not a real success rate or win probability. No result is guaranteed. Bot operates in DEMO only; live broker execution is not connected.</p>
+              {scannedSignal && <div className="rounded-lg border border-cyan-700/70 bg-[#08121c] p-3 text-center"><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">DeepScan signal · observed demo feed</p><p className="mt-1 text-2xl font-black text-cyan-300">{scannedSignal.bestDigit} <span className="text-lg">{scannedSignal.prediction}</span></p><p className={`mt-2 rounded-md px-2 py-2 text-xs font-bold ${signalDigitVisible ? 'bg-emerald-950 text-emerald-300' : 'bg-amber-950 text-amber-300'}`}>{signalDigitVisible ? `DIGIT ${scannedSignal.bestDigit} IS HERE — YOU MAY PRESS ${scannedSignal.prediction}` : `WAITING FOR ${scannedSignal.bestDigit} · CURRENT TICK ${lastDigit}`}</p><p className="text-[9px] uppercase tracking-wider text-slate-400 mt-1">Historical frequency only · not a prediction or win guarantee</p></div>}
+              <button onClick={() => runDeepScan()} disabled={isScanning || feedStatus !== 'LIVE'} className="w-full rounded-lg border border-slate-700 bg-[#101e2a] px-3 py-2.5 text-xs font-bold text-cyan-300 hover:bg-[#172938] disabled:opacity-50">SCAN AGAIN</button>
+              <p className="text-[10px] leading-relaxed text-amber-300">DeepScan waits for the selected digit. You manually press EVEN or ODD when it appears. This demo feed is simulated; the scan does not predict or guarantee a win. Live broker execution is not connected.</p>
             </div>
           </div>
         </div>
