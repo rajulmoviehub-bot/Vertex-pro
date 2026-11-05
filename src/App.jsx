@@ -106,6 +106,7 @@ export default function App() {
         return;
       }
       setUser({ loggedIn: true, email: session.user.email || '', refCode: 'VELTEX-7892' });
+      setLoginWelcome(true);
       const { data, error } = await supabase
         .from('wallets')
         .select('available_balance')
