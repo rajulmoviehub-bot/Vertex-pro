@@ -553,11 +553,7 @@ export default function App() {
             <span className="bg-red-950/60 border border-red-500/40 text-red-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
               <UserCheck className="w-3 h-3" /> {displayUserName}
             </span>
-          ) : (
-            <div className="flex gap-1">
-              <button onClick={() => setAuthModal('signup')} className="bg-red-600 text-xs text-white px-2 py-1 rounded font-bold">Sign Up</button>
-            </div>
-          )}
+          ) : null}
         </div>
       </header>
 
