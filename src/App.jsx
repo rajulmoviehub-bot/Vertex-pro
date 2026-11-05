@@ -732,28 +732,27 @@ export default function App() {
       )}
 
       {activeTab === 'DEEPSCAN' && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 pb-24">
-          <section className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-700 bg-[#0c1824] shadow-2xl">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 backdrop-blur-md p-3 pb-20">
+          <section className="w-full max-w-sm max-h-[78vh] overflow-y-auto overflow-hidden rounded-2xl border border-slate-700 bg-[#0c1824] shadow-2xl">
             <header className="flex items-center justify-between border-b border-slate-700 px-5 py-4">
               <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500 text-white shadow-lg"><ScanLine className="h-6 w-6" /></span><h2 className="text-base font-black text-white">Entry Scanner</h2></div>
               <button aria-label="Close DeepScan" onClick={() => setActiveTab('TRADE')} className="p-2 text-gray-400 hover:text-white"><span className="text-2xl leading-none">×</span></button>
             </header>
-            <div className="space-y-5 p-5">
-              <div className="rounded-xl bg-[#132331] p-4 text-sm leading-relaxed text-slate-300">Choose the market category to scan. VELTEX checks the latest 12 observed ticks for historical EVEN/ODD patterns.</div>
+            <div className="space-y-3 p-4">
+              <div className="rounded-xl bg-[#132331] p-3 text-xs leading-relaxed text-slate-300">Choose a market category. VELTEX scans the latest 12 observed ticks for EVEN/ODD patterns.</div>
               <div className="space-y-2"><label className="block text-xs font-bold text-slate-300">Market</label><select value={deepScanMarket} onChange={e => setDeepScanMarket(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#08131d] p-4 text-sm font-bold text-white"><option>Even / Odd</option></select></div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-slate-300"><span>{deepScanning ? 'Scanning market ticks' : 'Ready to scan'}</span><span className="font-mono font-bold text-white">{Math.min(priceHistory.length, 12)}/12</span></div>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: (Math.min(priceHistory.length / 12, 1) * 100) + '%' }} /></div>
                 {priceHistory.length < 12 && <p className="text-[11px] text-slate-400">Collecting live ticks: {priceHistory.length}/12</p>}
               </div>
-              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-4 text-sm font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
+              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-3 text-xs font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
               {deepScan && (
-                <div className="space-y-3 rounded-xl border border-slate-700 bg-[#101d29] p-4">
-                  <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-4xl font-black text-white">{deepScan.digit}</span><span className={'text-lg font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="text-right"><p className="text-2xl font-black text-rose-300">{deepScan.qualifies ? deepScan.percentage + '%' : 'NO SIGNAL'}</p><p className="text-[10px] text-slate-400">Historical signal score</p></div></div>
-                  <p className={'text-xs font-bold ' + (deepScan.highSignal ? 'text-emerald-300' : deepScan.qualifies ? 'text-amber-300' : 'text-slate-300')}>{deepScan.highSignal ? '85–100 · STRONG HISTORICAL SIGNAL' : deepScan.qualifies ? '75–84 · QUALIFYING SIGNAL' : 'BELOW 75 · NO QUALIFYING SIGNAL'}</p>
-                  <p className="text-[10px] leading-relaxed text-amber-200">Score is based on the last 12 demo-feed ticks. It is not a 75–100% win probability or a guarantee; past patterns do not predict the next tick.</p>
+                <div className="space-y-2 rounded-xl border border-slate-700 bg-[#101d29] p-3">
+                  <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><span className={'ml-auto rounded-lg px-3 py-2 text-[10px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div>
+                  <p className="text-[10px] leading-relaxed text-slate-400">Signal is based on recent sample patterns and does not guarantee the next result.</p>
                   {deepScan.appeared && <div className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-sm font-black text-emerald-300">DIGIT {deepScan.digit} APPEARED · {deepScan.side}</div>}
-                  <button onClick={() => setActiveTab('TRADE')} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-3 text-sm font-black text-rose-300">Load Deep Scanner Bot</button>
+                  <button onClick={() => setActiveTab('TRADE')} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-2.5 text-xs font-black text-rose-300">Load Deep Scanner Bot</button>
                 </div>
               )}
             </div>
