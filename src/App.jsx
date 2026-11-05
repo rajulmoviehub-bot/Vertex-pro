@@ -572,8 +572,9 @@ export default function App() {
 
       <section aria-label="Permanent bot sale notice" className="bg-amber-950/50 border-b border-amber-700 px-3 py-1.5 animate-pulse">
         <p className="text-[11px] font-black text-amber-200">VELTEX PRIME V6 AUTO BOT · SALE</p>
-        <p className="text-base font-black text-white">KSh 50,000</p>
-        <p className="text-[10px] text-amber-100">Previous price KSh 64,000 · Limited offer</p>
+        <p className="text-[11px] font-bold text-gray-300 line-through">Cash price: $493 (KSh 64,000)</p>
+        <p className="text-base font-black text-white">Offer price: $385 (KSh 50,000)</p>
+        <p className="text-[10px] text-amber-100">Limited offer · USD estimates at about KSh 130 per $1</p>
         <div className="mt-2">
           <button onClick={() => setActiveTab('INFO')} className="rounded bg-amber-500 text-black text-[11px] font-bold px-3 py-1.5">BOT SALE DETAILS</button>
         </div>
@@ -961,11 +962,12 @@ export default function App() {
             <h2 className="text-lg font-black text-white">AUTO VELTEX PRIME BOT</h2>
             <p className="text-gray-300">Trading education and a demo practice interface. The current build does not execute live broker trades or predict guaranteed outcomes.</p>
             <p className="text-amber-300 font-bold">Never deposit money you cannot afford to lose. There are no guaranteed profits.</p>
-            <p className="text-gray-300">VELTEX PRIME V6 AUTO BOT offer price: KSh 50,000. Previous/standard price: KSh 64,000. For purchase enquiries, contact the seller directly and confirm the buyer licence and verified payment details before paying. Payments are not accepted inside this app yet.</p>
+            <p className="text-gray-300">VELTEX PRIME V6 AUTO BOT cash price: $493 (KSh 64,000). Offer price: $385 (KSh 50,000). USD amounts are approximate. For purchase enquiries, contact the seller directly and confirm the buyer licence and verified payment details before paying. Payments are not accepted inside this app yet.</p>
           </section>
           <section className="bg-emerald-950/40 border border-emerald-600 rounded-xl p-4 space-y-3">
             <h3 className="text-base font-black text-emerald-300">BUY VELTEX PRIME V6 AUTO BOT</h3>
-            <p className="text-2xl font-black text-white">KSh 50,000</p>
+            <p className="text-xs font-bold text-gray-400 line-through">Cash price: $493 (KSh 64,000)</p>
+            <p className="text-2xl font-black text-white">Offer price: $385 (KSh 50,000)</p>
             <p className="text-xs text-gray-300">Educational trading tool with demo practice and English-only TikTok LIVE education sessions. It does not guarantee profit. The current version is demo-only and does not place live broker trades.</p>
             <p className="text-xs text-amber-200">Interested customers should contact the seller directly to confirm availability, licence terms and verified payment details. No payment is processed by this website yet.</p>
           </section>
