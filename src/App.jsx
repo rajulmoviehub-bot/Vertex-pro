@@ -625,7 +625,7 @@ export default function App() {
               <div className="rounded-lg bg-[#090d14] p-2"><div className="text-lg font-black text-emerald-300">{completedWins}</div><div className="text-[9px] text-gray-400">Wins</div></div>
               <div className="rounded-lg bg-[#090d14] p-2"><div className="text-lg font-black text-white">{completedTradeCount}</div><div className="text-[9px] text-gray-400">Completed trades</div></div>
             </div>
-            <p className="text-[11px] {winRateGoalReached ? 'text-emerald-300' : 'text-gray-300'}">{observedWinRate === null ? 'No completed trades yet. Performance will appear after demo trades settle.' : winRateGoalReached ? 'Observed demo results have reached the 89% benchmark for this browser session.' : 'Observed results are below the 89% benchmark. The bot does not force or fake winning outcomes.'}</p>
+            <p className={`text-[11px] ${winRateGoalReached ? 'text-emerald-300' : 'text-gray-300'}`}>{observedWinRate === null ? 'No completed trades yet. Performance will appear after demo trades settle.' : winRateGoalReached ? 'Observed demo results have reached the 89% benchmark for this browser session.' : 'Observed results are below the 89% benchmark. The bot does not force or fake winning outcomes.'}</p>
             <div className="border-t border-gray-700 pt-2 flex items-center justify-between gap-2">
               <div><div className="text-xs font-bold text-amber-200">VELTEX PREMIUM</div><div className="text-[10px] text-gray-400">Premium execution and buyer licences require secure server-side payment and entitlement verification.</div></div>
               <span className="shrink-0 rounded-md border border-amber-500/40 px-2 py-1 text-[10px] font-black text-amber-200">LOCKED</span>
