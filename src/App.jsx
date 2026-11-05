@@ -594,23 +594,6 @@ export default function App() {
 
       {activeTab === 'TRADE' && (
         <>
-          {/* Deep Scan & Trip Bar */}
-          <div className="p-3 bg-[#0d131f] border-b border-gray-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ScanLine className="w-4 h-4 text-red-500 animate-pulse" />
-              <span className="text-xs font-bold text-gray-200">AUTO VELTEX PRIME BOT Bot:</span>
-              <span className="text-[11px] font-mono text-yellow-400">{botStatusText}</span>
-            </div>
-            <button
-              onClick={toggleDemoBot}
-              disabled={accountMode === 'REAL'}
-              className={`font-bold text-xs px-3 py-1 rounded shadow disabled:opacity-40 ${botActive ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white'}`}
-            >
-              {accountMode === 'REAL' ? 'REAL BOT OFF' : botActive ? 'Stop Bot' : 'Start Demo Bot'}
-            </button>
-          </div>
-
-
 
           {/* Deriv-Style Dynamic Chart */}
           <div className="bg-[#121824] border-y border-gray-800 p-3.5 relative mt-2">
