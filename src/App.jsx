@@ -38,6 +38,7 @@ export default function App() {
   const [accurateScanning, setAccurateScanning] = useState(false);
   const [accurateScan, setAccurateScan] = useState(null);
   const [scannedSignal, setScannedSignal] = useState(null);
+  const signalDigitVisible = Boolean(scannedSignal && Number(scannedSignal.bestDigit) === Number(lastDigit));
   const [botActive, setBotActive] = useState(false);
   const [botStatusText, setBotStatusText] = useState('Idle: Click Deep Scan Market');
   const [activeTrade, setActiveTrade] = useState(null);
@@ -179,303 +180,39 @@ export default function App() {
     }
   };
 
-  const playSound = (type) => {
-    if (!soundEnabled) return;
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      if (type === 'win') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
-      } else {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(220, ctx.currentTime);
-        osc.frequency.setValueAtTime(140, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.35);
-      }
-    } catch (e) {
-      console.log('Audio error:', e);
+  const runDeepScan = () => {
+    if (isScanning || feedStatus !== 'LIVE') return;
+    if (priceHistory.length < 20) {
+      setScannedSignal(null);
+      setBotStatusText('Waiting for 20 observed ticks before scanning.');
+      return;
     }
-  };
-
-  const processNewTick = (quoteNum) => {
-    if (!Number.isFinite(quoteNum)) return;
-    const quoteStr = quoteNum.toFixed(3);
-    const receivedAt = Date.now();
-    lastTickAtRef.current = receivedAt;
-    setLastTickAt(receivedAt);
-    setFeedStatus('LIVE');
-    const lastChar = quoteStr.slice(-1);
-    const nextDigit = parseInt(lastChar, 10);
-
-    setCurrentPrice(quoteStr);
-    setLastDigit(nextDigit);
-
-    setPriceHistory(prev => [...prev.slice(-25), quoteNum]);
-
-    setTotalTicks(prev => {
-      const newTotal = prev + 1;
-      setDigitCounts(dCounts => {
-        const updatedCounts = { ...dCounts, [nextDigit]: (dCounts[nextDigit] || 0) + 1 };
-        const newStats = {};
-        Object.keys(updatedCounts).forEach(dig => {
-          newStats[dig] = Number(((updatedCounts[dig] / newTotal) * 100).toFixed(1));
-        });
-        setStats(newStats);
-        return updatedCounts;
-      });
-      return newTotal;
-    });
-
-    // 5-Tick Active Trade Monitor & Martingale Logic
-    setActiveTrade(trade => {
-      if (!trade) return null;
-      const currentTickCount = trade.ticksElapsed + 1;
-
-      if (currentTickCount >= duration) {
-        const isWin = nextDigit % 2 === 0 ? trade.prediction === 'Even' : trade.prediction === 'Odd';
-        const payout = isWin ? trade.stake * 0.95 : -trade.stake;
-
-        updateActiveWallet(payout);
-        setSessionPL(prev => prev + payout);
-
-        if (isWin) {
-          playSound('win');
-          setStake(initialStake); // Reset stake on WIN
-        } else {
-          playSound('loss');
-          setStake(prev => prev * multiplier); // Double stake on LOSS (Martingale)
-        }
-
-        const finishedTrade = {
-          id: Date.now(),
-          time: new Date().toLocaleTimeString(),
-          type: contractType,
-          prediction: trade.prediction,
-          duration: duration,
-          entryDigit: trade.entryDigit,
-          exitDigit: nextDigit,
-          stake: trade.stake,
-          payout: payout,
-          status: isWin ? 'WIN' : 'LOSS'
-        };
-        setTrades(prev => [finishedTrade, ...prev]);
-        return null;
-      }
-
-      return { ...trade, ticksElapsed: currentTickCount };
-    });
-  };
-
-  // Poll VELTEX's server-side deterministic synthetic demo market.
-  // The API discloses that these are simulated prices, not real-world quotes.
-  useEffect(() => {
-    let disposed = false;
-    let busy = false;
-    let staleTimer;
-    let lastSequence = marketSequenceRef.current;
-    const feedStartedAt = Date.now();
-    setFeedStatus('CONNECTING');
-
-    const pollMarket = async () => {
-      if (disposed || busy) return;
-      busy = true;
-      try {
-        const response = await fetch('/api/market/tick?limit=30', {
-          method: 'GET',
-          cache: 'no-store',
-          headers: { Accept: 'application/json' }
-        });import React, { useState, useEffect, useRef } from 'react';
-import { supabase, isSupabaseConfigured } from './lib/supabase.js';
-import { 
-  TrendingUp, TrendingDown, RefreshCw, Zap, ShieldAlert, Award, Bot, 
-  Activity, DollarSign, Settings, ChevronRight, Play, Square, History, BarChart2, MessageSquare, Clock, Volume2, VolumeX, Menu, Bell, UserCheck, LogIn, UserPlus, CreditCard, ArrowDownLeft, ArrowUpRight, Share2, ScanLine, Wallet, LogOut
-} from 'lucide-react';
-
-export default function App() {
-  const [mainWallet, setMainWallet] = useState(0); // loaded from the authenticated VELTEX wallet
-  const [demoWallet, setDemoWallet] = useState(10000.00);
-  const [accountMode, setAccountMode] = useState('DEMO');
-  const activeWallet = accountMode === 'DEMO' ? demoWallet : mainWallet;
-  const updateActiveWallet = (delta) => {
-    if (accountMode === 'DEMO') setDemoWallet(prev => Math.max(0, prev + delta));
-    else setMainWallet(prev => Math.max(0, prev + delta));
-  };
-  const [user, setUser] = useState({ loggedIn: false, email: '', fullName: '', refCode: 'VELTEX-7892' });
-  const [authModal, setAuthModal] = useState(null);
-  const [authInput, setAuthInput] = useState({ fullName: '', email: '', password: '', ref: '' });
-
-  const [initialStake, setInitialStake] = useState(0.75);
-  const [stake, setStake] = useState(0.75);
-  const [market, setMarket] = useState('VELTEX Synthetic Index');
-  const [contractType, setContractType] = useState('Even/Odd');
-  const [tradeMode, setTradeMode] = useState('AUTO'); 
-  const [duration, setDuration] = useState(5); 
-  const [target, setTarget] = useState(200);
-  const [stopLoss, setStopLoss] = useState(999);
-  const [multiplier, setMultiplier] = useState(2);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [loginWelcome, setLoginWelcome] = useState(false);
-  const [startAfterScan, setStartAfterScan] = useState(false);
-  const [showTargetAchieved, setShowTargetAchieved] = useState(false);
-
-  const [isScanning, setIsScanning] = useState(false);
-  const [showDeepScanModal, setShowDeepScanModal] = useState(false);
-  const [scanCategory, setScanCategory] = useState('Even / Odd');
-  const [accurateScanning, setAccurateScanning] = useState(false);
-  const [accurateScan, setAccurateScan] = useState(null);
-  const [scannedSignal, setScannedSignal] = useState(null);
-  const [botActive, setBotActive] = useState(false);
-  const [botStatusText, setBotStatusText] = useState('Idle: Click Deep Scan Market');
-  const [activeTrade, setActiveTrade] = useState(null);
-
-  const [priceHistory, setPriceHistory] = useState([]);
-  const [lastDigit, setLastDigit] = useState(0);
-  const [currentPrice, setCurrentPrice] = useState('Waiting for verified feed');
-  const [feedStatus, setFeedStatus] = useState('CONNECTING');
-  const [lastTickAt, setLastTickAt] = useState(null);
-  const [stats, setStats] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
-  const [digitCounts, setDigitCounts] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
-  const [totalTicks, setTotalTicks] = useState(0);
-  const [sessionPL, setSessionPL] = useState(0.00);
-
-  const [trades, setTrades] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [activeTab, setActiveTab] = useState('TRADE');
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [adminUnlocked, setAdminUnlocked] = useState(false);
-  const [adminSection, setAdminSection] = useState('OVERVIEW');
-  const [shareCustomerNumber, setShareCustomerNumber] = useState('');
-  const [capitalEmail, setCapitalEmail] = useState('');
-  const [capitalAmount, setCapitalAmount] = useState('5');
-  const [capitalBusy, setCapitalBusy] = useState(false);
-  // Use the account username (email prefix) consistently across sessions and welcome messages.
-  const displayUserName = user.loggedIn ? (user.email?.split('@')[0] || 'Customer') : 'Guest';
-  const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
-  const [depositMethod, setDepositMethod] = useState('M-PESA');
-  const [depositAmount, setDepositAmount] = useState(5);
-  const [withdrawAmount, setWithdrawAmount] = useState(5);
-  const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
-
-  useEffect(() => {
-    if (!loginWelcome) return undefined;
-    const timer = setTimeout(() => setLoginWelcome(false), 3000);
-    return () => clearTimeout(timer);
-  }, [loginWelcome]);
-
-  // Re-show the welcome popup when a signed-in customer returns, reloads, or reconnects.
-  useEffect(() => {
-    if (!user.loggedIn) return undefined;
-    let wasAway = false;
-    const showWelcome = () => {
-      if (document.visibilityState === 'visible') setLoginWelcome(true);
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        wasAway = true;
-      } else if (wasAway) {
-        wasAway = false;
-        showWelcome();
-      }
-    };
-    const handleReturn = () => {
-      wasAway = false;
-      showWelcome();
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pageshow', handleReturn);
-    window.addEventListener('focus', handleReturn);
-    window.addEventListener('online', handleReturn);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pageshow', handleReturn);
-      window.removeEventListener('focus', handleReturn);
-      window.removeEventListener('online', handleReturn);
-    };
-  }, [user.loggedIn]);
-
-  const wsRef = useRef(null);
-  const lastTickAtRef = useRef(null);
-  const marketSequenceRef = useRef(0);
-  const previousActiveTradeRef = useRef(false);
-
-  useEffect(() => {
-    if (!supabase) return undefined;
-    let mounted = true;
-
-    const syncSession = async (session) => {
-      if (!mounted) return;
-      if (!session?.user) {
-        setUser({ loggedIn: false, email: '', fullName: '', refCode: 'VELTEX-7892' });
-        setMainWallet(0);
+    setIsScanning(true);
+    setScannedSignal(null);
+    setBotStatusText('Analyzing the latest 20 observed demo ticks…');
+    window.setTimeout(() => {
+      const recentDigits = priceHistory.slice(-20).map(value => Number.parseInt(Number(value).toFixed(3).slice(-1), 10)).filter(Number.isInteger);
+      if (!recentDigits.length) {
+        setIsScanning(false);
+        setBotStatusText('No valid tick data. Please scan again.');
         return;
       }
-      setUser({ loggedIn: true, email: session.user.email || '', fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '', refCode: 'VELTEX-7892' });
-      setLoginWelcome(true);
-      const { data, error } = await supabase
-        .from('wallets')
-        .select('available_balance')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-      if (!mounted) return;
-      if (error) {
-        console.error('VELTEX wallet could not be loaded:', error.message);
-        setMainWallet(0);
-        return;
-      }
-      setMainWallet(Number(data?.available_balance || 0));
-    };
-
-    supabase.auth.getSession().then(({ data }) => syncSession(data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      Promise.resolve().then(() => syncSession(session));
-    });
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const unlockAdmin = async () => {
-    if (!supabase) {
-      alert('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel.');
-      return false;
-    }
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      alert('Please sign in with your admin account first.');
-      setAuthModal('login');
-      return false;
-    }
-    try {
-      const response = await fetch('/api/admin/verify', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        cache: 'no-store'
+      const counts = recentDigits.reduce((acc, digit) => {
+        acc[digit] = (acc[digit] || 0) + 1;
+        return acc;
+      }, {});
+      const maxCount = Math.max(...Object.values(counts));
+      const bestDigit = [...recentDigits].reverse().find(digit => counts[digit] === maxCount);
+      const prediction = bestDigit % 2 === 0 ? 'EVEN' : 'ODD';
+      setScannedSignal({
+        bestDigit,
+        prediction,
+        digitFrequency: Number(((maxCount / recentDigits.length) * 100).toFixed(1)),
+        sampleSize: recentDigits.length
       });
-      const result = await response.json();
-      if (!response.ok || !result.ok) {
-        alert(result.error || 'This account does not have admin access.');
-        return false;
-      }
-      setAdminUnlocked(true);
-      return true;
-    } catch {
-      alert('Could not verify admin access. Please try again.');
-      return false;
-    }
+      setBotStatusText(`Selected ${bestDigit} – ${prediction}. Wait for this digit on a tick.`);
+      setIsScanning(false);
+    }, 650);
   };
 
   const playSound = (type) => {
@@ -740,7 +477,7 @@ export default function App() {
             <div className={`rounded-xl border p-4 text-center ${signalDigitVisible ? 'border-emerald-500 bg-emerald-950/40' : 'border-slate-700 bg-[#121824]'}`}>
               <p className="text-[10px] uppercase tracking-widest text-slate-400">Selected analysis</p>
               <p className="mt-2 text-2xl font-black text-cyan-300">{scannedSignal?.bestDigit ?? '—'} – {scannedSignal?.prediction ?? '—'}</p>
-              <p className="mt-2 text-xs text-slate-300">{signalDigitVisible ? `Digit ${scannedSignal.bestDigit} detected on the latest tick` : `Latest tick: ${lastDigit}`}</p>
+              <p className="mt-2 text-xs text-slate-300">{signalDigitVisible ? `PRESS ${scannedSignal.prediction} NOW — digit ${scannedSignal.bestDigit} is on this tick` : `Waiting for digit ${scannedSignal.bestDigit}. Latest tick: ${lastDigit}`}</p>
               <p className="mt-2 text-sm font-bold text-white">Observed digit frequency: {scannedSignal?.digitFrequency ?? '—'}%</p>
               <p className="mt-1 text-[9px] text-slate-400">Observed demo-feed frequency only; not a verified win probability.</p>
             </div>
