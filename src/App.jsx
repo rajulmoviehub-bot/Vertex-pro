@@ -59,6 +59,9 @@ export default function App() {
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [adminSection, setAdminSection] = useState('OVERVIEW');
   const [shareCustomerNumber, setShareCustomerNumber] = useState('');
+  const [capitalEmail, setCapitalEmail] = useState('');
+  const [capitalAmount, setCapitalAmount] = useState('5');
+  const [capitalBusy, setCapitalBusy] = useState(false);
   // Use the account username (email prefix) consistently across sessions and welcome messages.
   const displayUserName = user.loggedIn ? (user.email?.split('@')[0] || 'Customer') : 'Guest';
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
@@ -456,6 +459,38 @@ export default function App() {
 
   const handleDeposit = () => {
     alert('M-Pesa and other payment gateways are not connected yet. No payment was taken and no balance was credited.');
+  };
+
+  const handleAdminCapital = async () => {
+    const email = capitalEmail.trim().toLowerCase();
+    const amount = Number(capitalAmount);
+    if (!email || !/^\S+@\S+\.\S+$/.test(email) || !Number.isFinite(amount) || amount <= 0 || amount > 100000) {
+      alert('Enter a valid customer email and an amount greater than $0 (maximum $100,000).');
+      return;
+    }
+    if (!supabase || !adminUnlocked || !isOwner) {
+      alert('Only the verified VELTEX owner can add customer capital.');
+      return;
+    }
+    setCapitalBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Your admin session expired. Sign in again.');
+      const response = await fetch('/api/admin/add-capital', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ email, amount })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Capital could not be added.');
+      alert(`$ ${amount.toFixed(2)} capital added to ${email}. New wallet balance: ${Number(result.balance).toFixed(2)}.`);
+      setCapitalEmail('');
+      if (user.email?.trim().toLowerCase() === email) setMainWallet(Number(result.balance));
+    } catch (error) {
+      alert(error.message || 'Could not add customer capital.');
+    } finally {
+      setCapitalBusy(false);
+    }
   };
 
 
@@ -902,6 +937,7 @@ export default function App() {
                 ['OVERVIEW','Dashboard overview'],
                 ['DEPOSITS','Customer deposits'],
                 ['REGISTRATIONS','Registered customers'],
+                ['CAPITAL','Add customer capital'],
                 ['WITHDRAWALS','Withdrawal approvals'],
                 ['ACCOUNTS','Account management'],
                 ['CENTRAL','Central wallet withdrawal'],
@@ -911,6 +947,16 @@ export default function App() {
             {adminSection === 'OVERVIEW' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">System status</h3><p className="text-xs text-gray-300">Customer deposits: Not connected</p><p className="text-xs text-gray-300">Verified registrations: Not connected</p><p className="text-xs text-gray-300">Withdrawal requests: Not connected</p><p className="text-xs text-gray-300">Central wallet: Not connected</p><p className="text-xs text-gray-300">Bot licence transfer: Not connected</p></div>}
             {adminSection === 'DEPOSITS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Customer deposits</h3><p className="text-xs text-amber-200">No customer deposit feed is connected. The records below, if any, are only local browser entries and are not proof of payment.</p>{transactions.filter(tx => tx.type === 'DEPOSIT').length === 0 ? <p className="text-sm text-gray-400">No local deposit entries.</p> : transactions.filter(tx => tx.type === 'DEPOSIT').map(tx => <p key={tx.id} className="text-xs text-gray-300">{tx.time} · ${tx.amount.toFixed(2)} · {tx.status}</p>)}</div>}
             {adminSection === 'REGISTRATIONS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Registered customers</h3><p className="text-2xl font-black text-white">Unavailable</p><p className="text-xs text-gray-400">Email registration and verification are not connected to a customer database, so a real registration count and customer list cannot be shown yet.</p></div>}
+            {adminSection === 'CAPITAL' && <div className="rounded-lg border border-emerald-800 bg-[#090d14] p-4 space-y-3">
+              <h3 className="font-bold text-white">Add customer capital · USD</h3>
+              <p className="text-xs text-gray-300">Enter the customer's registered email. The credit is recorded against that customer's VELTEX wallet and in the wallet ledger.</p>
+              <label className="block text-xs font-bold text-gray-300">Customer account email</label>
+              <input type="email" value={capitalEmail} onChange={e => setCapitalEmail(e.target.value)} placeholder="customer@example.com" className="w-full rounded-lg border border-gray-700 bg-[#121824] p-3 text-sm text-white" />
+              <label className="block text-xs font-bold text-gray-300">Capital amount (USD)</label>
+              <input type="number" min="0.01" max="100000" step="0.01" value={capitalAmount} onChange={e => setCapitalAmount(e.target.value)} placeholder="50.00" className="w-full rounded-lg border border-gray-700 bg-[#121824] p-3 text-sm text-white" />
+              <button onClick={handleAdminCapital} disabled={capitalBusy || !capitalEmail.trim() || !capitalAmount} className="w-full rounded-lg bg-emerald-700 py-3 text-sm font-black text-white disabled:opacity-50">{capitalBusy ? 'ADDING CAPITAL…' : 'ADD CAPITAL'}</button>
+              <p className="text-[11px] leading-relaxed text-amber-200">Admin credit only. It increases the selected customer's recorded wallet balance; it does not represent a customer deposit or external funds received. Every credit is ledger-recorded.</p>
+            </div>}
             {adminSection === 'WITHDRAWALS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Withdrawal request approvals</h3><p className="text-xs text-gray-300">No withdrawal request system or server-side approval queue is connected. No pending requests are available to review.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Approve request · unavailable</button><p className="text-[11px] text-amber-200">Approval controls will only be enabled after verified customer identity, request records and secure payout integration are implemented.</p></div>}
             {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">Account management</h3><p className="text-xs text-gray-300">Verify the Deriv connection for the broker account authorized by the owner. This check is read-only.</p><button onClick={checkDerivAccount} disabled={derivCheck.loading} className="w-full rounded-lg bg-cyan-700 text-white font-bold text-sm py-3 disabled:opacity-60">{derivCheck.loading ? 'Checking Deriv connection…' : 'Verify Deriv account connection'}</button>{derivCheck.result && <div role="status" className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-xs text-emerald-200 space-y-1"><p className="font-bold">Deriv account verified · Read-only check</p><p>Account: {derivCheck.result.loginid}</p><p>Type: {derivCheck.result.account_type === 'demo' ? 'Demo' : 'Real'}</p><p>Currency: {derivCheck.result.currency || 'Not provided'}</p><p className="text-amber-200">This check does not place trades or enable live execution.</p></div>}{derivCheck.error && <p role="alert" className="text-xs text-red-300">Deriv connection check failed: {derivCheck.error}</p>}<p className="text-[11px] text-amber-200">No customer account records are currently available. Broker trading and customer account linking are not enabled.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Open personal account details</button></div>}
             {adminSection === 'CENTRAL' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Central wallet withdrawal</h3><p className="text-xs text-gray-300">Central wallet balance: Not connected. No business wallet or payout provider is linked.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Request central withdrawal · unavailable</button><p className="text-[11px] text-amber-200">This panel cannot access or move customer or company funds.</p></div>}
@@ -1032,6 +1078,7 @@ export default function App() {
                   ['OVERVIEW','Dashboard Overview'],
                   ['DEPOSITS','Customer Deposits'],
                   ['CUSTOMERS','Registered Customers'],
+                  ['CAPITAL','Add Customer Capital'],
                   ['WITHDRAWALS','Withdrawal Approvals'],
                   ['ACCOUNTS','Account Management'],
                   ['CENTRAL','Central Wallet Withdrawal'],
