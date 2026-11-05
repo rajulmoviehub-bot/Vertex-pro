@@ -376,7 +376,7 @@ export default function App() {
     if (!botActive || accountMode !== 'DEMO' || sessionPL >= Number(target) || !scannedSignal || activeTrade) return;
 
     const targetPred = scannedSignal.prediction;
-    const digitMatchesSignal = targetPred === 'EVEN' ? lastDigit % 2 === 0 : lastDigit % 2 === 1;
+    const digitMatchesSignal = Number.isInteger(scannedSignal.bestDigit) ? lastDigit === scannedSignal.bestDigit : (targetPred === 'EVEN' ? lastDigit % 2 === 0 : lastDigit % 2 === 1);
 
     if (digitMatchesSignal) {
       setBotStatusText(`Signal matched digit ${lastDigit} (${targetPred}). Executing demo trade (${duration} ticks)...`);
@@ -389,29 +389,33 @@ export default function App() {
   const runDeepScan = () => {
     setIsScanning(true);
     setScannedSignal(null);
-    setBotStatusText('Analyzing live tick patterns...');
+    setBotStatusText('Analyzing recent demo-feed digits...');
     setTimeout(() => {
-      // Estimate a short-term demo bias from the latest observed synthetic-feed digits.
-      // This frequency scan is descriptive, not a validated prediction of the next tick.
+      // Select the most frequently observed digit in the recent synthetic demo sample.
+      // The displayed score is deliberately labelled simulated; it is not a win probability.
       const recentDigits = priceHistory.slice(-20).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
-      const evenCount = recentDigits.filter(digit => digit % 2 === 0).length;
-      const oddCount = recentDigits.length - evenCount;
-      const predictedType = evenCount > oddCount ? 'EVEN' : 'ODD';
+      const counts = Array.from({ length: 10 }, (_, digit) => ({ digit, count: recentDigits.filter(value => value === digit).length }));
+      const highestCount = Math.max(0, ...counts.map(item => item.count));
+      const tiedDigits = counts.filter(item => item.count === highestCount).map(item => item.digit);
+      const bestDigit = tiedDigits[Math.floor(Math.random() * tiedDigits.length)] ?? 0;
+      const predictedType = bestDigit % 2 === 0 ? 'EVEN' : 'ODD';
+      const simulatedScore = 75 + Math.floor(Math.random() * 26);
       const sampleSize = recentDigits.length;
-      const triggerDigits = predictedType === 'EVEN' ? [0, 2, 4, 6, 8] : [1, 3, 5, 7, 9];
 
       setScannedSignal({
         prediction: predictedType,
+        bestDigit,
+        simulatedScore,
         sampleSize,
-        triggerDigits
+        triggerDigits: [bestDigit]
       });
       setIsScanning(false);
       if (startAfterScan) {
         setStartAfterScan(false);
         setBotActive(true);
-        setBotStatusText('Demo bot ON — waiting for trip digit.');
+        setBotStatusText('Demo bot ON — waiting for the selected digit.');
       }
-      setBotStatusText(`Demo scan completed: ${predictedType}. Check the matching digits.`);
+      setBotStatusText(`Demo scan completed: ${bestDigit} ${predictedType}.`);
     }, 1000);
   };
 
@@ -1113,17 +1117,17 @@ export default function App() {
 
       {showDeepScanModal && (
         <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 px-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Entry Scanner">
-          <div className="w-full max-w-xl overflow-hidden rounded-[22px] border border-slate-700 bg-[#0c1824] shadow-2xl shadow-black/60">
-            <div className="flex items-center gap-3 border-b border-slate-700 px-5 py-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500 text-white shadow-lg shadow-red-900/40"><ScanLine className="h-6 w-6" /></div>
-              <h2 className="flex-1 text-lg font-black text-slate-100">Entry Scanner</h2>
-              <button onClick={() => setShowDeepScanModal(false)} aria-label="Close Entry Scanner" className="px-2 text-2xl text-slate-400">×</button>
+          <div className="w-full max-w-sm max-h-[88vh] overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-700 bg-[#0c1824] shadow-2xl shadow-black/60">
+            <div className="flex items-center gap-2 border-b border-slate-700 px-3 py-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500 text-white"><ScanLine className="h-5 w-5" /></div>
+              <h2 className="flex-1 text-base font-black text-slate-100">Entry Scanner</h2>
+              <button onClick={() => setShowDeepScanModal(false)} aria-label="Close Entry Scanner" className="px-2 text-xl text-slate-400">×</button>
             </div>
-            <div className="space-y-5 p-5">
-              <p className="rounded-xl bg-[#132331] p-4 text-sm leading-relaxed text-slate-300">Pick the market category you want to scan. The deep scanner reviews recent observed demo-feed digits and displays the historical frequency for that category.</p>
+            <div className="space-y-3 p-3">
+              <p className="rounded-lg bg-[#132331] p-2.5 text-xs leading-relaxed text-slate-300">Scan recent observed demo-feed digits to display one frequently observed digit and its EVEN/ODD side.</p>
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-slate-200" htmlFor="veltex-scan-category">Market</label>
-                <select id="veltex-scan-category" value={scanCategory} onChange={e => setScanCategory(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#08121c] px-4 py-4 text-sm font-semibold text-slate-100 outline-none">
+                <select id="veltex-scan-category" value={scanCategory} onChange={e => setScanCategory(e.target.value)} className="w-full rounded-lg border border-slate-700 bg-[#08121c] px-3 py-2.5 text-xs font-semibold text-slate-100 outline-none">
                   <option>Even / Odd</option>
                   <option>Digits 0–9</option>
                 </select>
@@ -1132,12 +1136,12 @@ export default function App() {
                 <div className="flex items-center justify-between text-sm text-slate-300"><span>{isScanning ? 'Scanning observed digits…' : 'Ready to scan'}</span><span className="font-mono font-bold">{scannedSignal?.sampleSize || 0}/20</span></div>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-red-500 transition-all" style={{width: isScanning ? '55%' : scannedSignal ? '100%' : '0%'}} /></div>
               </div>
-              <button onClick={() => { runDeepScan(); }} disabled={isScanning || feedStatus !== 'LIVE'} className="flex w-full items-center justify-center gap-3 rounded-xl bg-red-500 px-4 py-4 text-sm font-black text-white shadow-lg shadow-red-900/40 disabled:opacity-50">
+              <button onClick={() => { runDeepScan(); }} disabled={isScanning || feedStatus !== 'LIVE'} className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-3 py-2.5 text-xs font-black text-white shadow-lg shadow-red-900/40 disabled:opacity-50">
                 <ScanLine className="h-5 w-5" />{isScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}
               </button>
-              {scannedSignal && <div className="rounded-xl border border-slate-700 bg-[#08121c] p-3 text-center"><p className="text-xl font-black text-cyan-300">{scannedSignal.prediction}</p><p className="mt-1 text-xs text-slate-300">Matching digits: {scannedSignal.triggerDigits.join(' · ')}</p></div>}
-              <button onClick={() => { setShowDeepScanModal(false); toggleDemoBot(); }} className="w-full rounded-xl border border-slate-700 bg-[#101e2a] px-4 py-4 text-sm font-bold text-red-300 hover:bg-[#172938]">{botActive || startAfterScan ? 'Stop Deep Scanner Bot' : 'Load Deep Scanner Bot'}</button>
-              <p className="text-[10px] leading-relaxed text-amber-300">This build uses simulated demo-feed data. Historical frequency is not a prediction, guaranteed accuracy or financial advice. The bot only operates in DEMO; live broker execution is not connected.</p>
+              {scannedSignal && <div className="rounded-lg border border-cyan-700/70 bg-[#08121c] p-3 text-center"><p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Best market · demo scan</p><p className="mt-1 text-2xl font-black text-cyan-300">{scannedSignal.bestDigit} <span className="text-lg">{scannedSignal.prediction}</span></p><p className="mt-1 text-xl font-black text-emerald-300">{scannedSignal.simulatedScore}%</p><p className="text-[9px] uppercase tracking-wider text-slate-400">Simulated score · not win probability</p></div>}
+              <button onClick={() => { setShowDeepScanModal(false); toggleDemoBot(); }} className="w-full rounded-lg border border-slate-700 bg-[#101e2a] px-3 py-2.5 text-xs font-bold text-red-300 hover:bg-[#172938]">{botActive || startAfterScan ? 'Stop Deep Scanner Bot' : 'Load Deep Scanner Bot'}</button>
+              <p className="text-[10px] leading-relaxed text-amber-300">Demo feed and 75–100% score are simulated; the score is not a real success rate or win probability. No result is guaranteed. Bot operates in DEMO only; live broker execution is not connected.</p>
             </div>
           </div>
         </div>
