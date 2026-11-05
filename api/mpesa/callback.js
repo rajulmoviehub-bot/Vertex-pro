@@ -17,14 +17,13 @@ export default async function handler(req, res) {
   if (!process.env.MPESA_CALLBACK_TOKEN || token !== process.env.MPESA_CALLBACK_TOKEN) return res.status(404).json({ ok:false });
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const fx = Number(process.env.VELTEX_KES_PER_USD);
-  if (!serviceKey || !supabaseUrl || !Number.isFinite(fx) || fx <= 0) return res.status(503).json({ ok:false });
+  if (!serviceKey || !supabaseUrl) return res.status(503).json({ ok:false });
 
   try {
     const cb = req.body?.Body?.stkCallback;
     const checkoutId = String(cb?.CheckoutRequestID || "");
     if (!checkoutId) return res.status(400).json({ ok:false });
-    const lookup = await db(`/rest/v1/deposit_requests?checkout_request_id=eq.${encodeURIComponent(checkoutId)}&select=id,user_id,amount,amount_kes,phone_number,status`, serviceKey);
+    const lookup = await db(`/rest/v1/deposit_requests?checkout_request_id=eq.${encodeURIComponent(checkoutId)}&select=id,user_id,amount,amount_kes,exchange_rate_kes_per_usd,exchange_rate_updated_at,phone_number,status`, serviceKey);
     const rows = await lookup.json();
     const deposit = rows?.[0];
     if (!lookup.ok || !deposit) return res.status(404).json({ ok:false });
@@ -51,6 +50,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ ResultCode:0, ResultDesc:"Payment details require reconciliation" });
     }
 
+    const fx = Number(deposit.exchange_rate_kes_per_usd);
+    if (!Number.isFinite(fx) || fx <= 0) {
+      await db(`/rest/v1/deposit_requests?id=eq.${deposit.id}`, serviceKey, {
+        method:"PATCH", body:JSON.stringify({ status:"failed", result_description:"The exchange rate saved for this deposit is missing or invalid." })
+      });
+      return res.status(200).json({ ResultCode:0, ResultDesc:"Deposit requires reconciliation" });
+    }
     const usdCredit = Number((paidKes / fx).toFixed(2));
     const credit = await db("/rest/v1/rpc/post_wallet_transaction", serviceKey, {
       method:"POST",
@@ -61,7 +67,7 @@ export default async function handler(req, res) {
         p_amount:usdCredit,
         p_direction:"credit",
         p_reference:receipt,
-        p_metadata:{ provider:"safaricom_daraja_stk", checkout_request_id:checkoutId, amount_kes:paidKes, phone_number:phone, exchange_rate_kes_per_usd:fx }
+        p_metadata:{ provider:"safaricom_daraja_stk", checkout_request_id:checkoutId, amount_kes:paidKes, phone_number:phone, exchange_rate_kes_per_usd:fx, exchange_rate_updated_at:deposit.exchange_rate_updated_at }
       })
     });
     if (!credit.ok) return res.status(500).json({ ok:false, error:"Wallet credit failed; payment needs reconciliation." });
