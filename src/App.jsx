@@ -33,6 +33,8 @@ export default function App() {
   const [showTargetAchieved, setShowTargetAchieved] = useState(false);
 
   const [isScanning, setIsScanning] = useState(false);
+  const [accurateScanning, setAccurateScanning] = useState(false);
+  const [accurateScan, setAccurateScan] = useState(null);
   const [scannedSignal, setScannedSignal] = useState(null);
   const [botActive, setBotActive] = useState(false);
   const [botStatusText, setBotStatusText] = useState('Idle: Click Deep Scan Market');
@@ -412,6 +414,20 @@ export default function App() {
     }, 1000);
   };
 
+  // Independent analysis panel: historical frequency only, not a guaranteed prediction.
+  const runAccurateScan = () => {
+    setAccurateScanning(true);
+    setAccurateScan(null);
+    setTimeout(() => {
+      const digits = priceHistory.slice(-20).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
+      const rows = Array.from({ length: 10 }, (_, digit) => {
+        const count = digits.filter(value => value === digit).length;
+        return { digit, side: digit % 2 === 0 ? 'EVEN' : 'ODD', percentage: digits.length ? Math.round(count / digits.length * 100) : 0, count };
+      });
+      setAccurateScan({ rows, sampleSize: digits.length });
+      setAccurateScanning(false);
+    }, 900);
+  };
   const toggleDemoBot = () => {
     if (accountMode !== 'DEMO') {
       setBotActive(false);
@@ -792,6 +808,36 @@ export default function App() {
         </div>
       )}
 
+      {activeTab === 'ACCURATE' && (
+        <div className="p-4 pb-24 space-y-4 max-w-lg mx-auto w-full">
+          <div className="rounded-xl border border-cyan-700/60 bg-[#121824] p-4 space-y-2">
+            <div className="flex items-center gap-2"><ScanLine className="w-5 h-5 text-cyan-300" /><h2 className="text-base font-black text-white">VELTEX ACCURATE BOT</h2></div>
+            <p className="text-xs text-gray-300">Independent analysis panel. Scans the latest observed digits separately from DeepScan and Auto Bot.</p>
+            <p className="text-[11px] text-amber-300">Historical frequency is not a prediction or guaranteed win probability. Current feed is simulated demo data.</p>
+            <button onClick={runAccurateScan} disabled={accurateScanning || priceHistory.length === 0} className="w-full rounded-lg bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 py-3 text-sm font-black text-white">
+              {accurateScanning ? 'SCANNING DIGITS…' : 'RUN ACCURATE SCAN'}
+            </button>
+          </div>
+          {accurateScan && (
+            <div className="rounded-xl border border-gray-700 bg-[#121824] p-4 space-y-3">
+              <div className="flex items-center justify-between"><h3 className="text-sm font-bold text-white">Digit frequency · 0–9</h3><span className="text-[10px] text-gray-400">Sample: {accurateScan.sampleSize}</span></div>
+              <div className="grid grid-cols-2 gap-2">
+                {accurateScan.rows.map(row => (
+                  <div key={row.digit} className="rounded-lg bg-[#0c1017] border border-gray-800 p-2 flex items-center justify-between">
+                    <div><span className="text-lg font-black text-white">{row.digit}</span><span className={'ml-2 text-[10px] font-bold ' + (row.side === 'EVEN' ? 'text-emerald-300' : 'text-red-300')}>{row.side}</span></div>
+                    <div className="text-right"><span className="text-sm font-black text-cyan-200">{row.percentage}%</span><p className="text-[9px] text-gray-500">{row.count}/{accurateScan.sampleSize}</p></div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400">Percentages describe only this scanned sample. This panel does not send automatic live orders.</p>
+            </div>
+          )}
+          <div className="rounded-xl border border-amber-700/50 bg-amber-950/20 p-3 space-y-1">
+            <h3 className="text-xs font-black text-amber-200">LIVE ACCESS · PAID LICENCE</h3>
+            <p className="text-[11px] text-gray-300">DEMO remains free. Paid LIVE activation requires verified payment and a securely connected broker account. Payment verification and automatic broker activation are not connected in this version, so LIVE trading remains disabled.</p>
+          </div>
+        </div>
+      )}
       {/* HISTORY VIEW */}
       {activeTab === 'HISTORY' && (
         <div className="p-4 space-y-4 max-w-lg mx-auto w-full">
@@ -1086,6 +1132,10 @@ export default function App() {
             <Bot className="w-4 h-4" />
           </div>
           <span className="text-[10px] mt-0.5 font-bold">Auto Bot</span>
+        </button>
+        <button aria-label="Accurate Bot analysis" onClick={() => setActiveTab('ACCURATE')} className={`flex flex-col items-center ${activeTab === 'ACCURATE' ? 'text-cyan-300' : 'text-gray-400'}`}>
+          <ScanLine className="w-5 h-5" />
+          <span className="text-[10px] mt-1 font-bold">Accurate</span>
         </button>
         <button aria-label="Trading history" onClick={() => setActiveTab('HISTORY')} className={`flex flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
           <Clock className="w-5 h-5" />
