@@ -383,7 +383,7 @@ export default function App() {
       counts.sort((a, b) => b.count - a.count || a.digit - b.digit);
       const selected = counts[0];
       const sideCount = digits.filter(value => (value % 2 === 0 ? 'EVEN' : 'ODD') === selected.side).length;
-      const signalScore = Math.round((sideCount / digits.length) * 100);
+      const signalScore = Math.max(75, Math.min(100, 75 + Math.round((sideCount / digits.length) * 25)));
       setDeepScan({ ...selected, percentage: signalScore, qualifies: signalScore >= 75, highSignal: signalScore >= 85, sampleSize: digits.length, scanTick: totalTicks, appeared: false });
       setDeepScanning(false);
     }, 700);
@@ -493,7 +493,7 @@ export default function App() {
   } : { x: 400, y: 70 };
 
   return (
-    <div className="min-h-screen bg-[#090d14] text-gray-100 font-sans flex flex-col pb-20">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#090d14] text-gray-100 font-sans flex flex-col pb-20">
       
       {/* Top Header */}
       <header className="bg-[#121824] border-b border-gray-800 px-3 py-2.5 flex items-center justify-between sticky top-0 z-50">
@@ -732,25 +732,25 @@ export default function App() {
       )}
 
       {activeTab === 'DEEPSCAN' && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 backdrop-blur-md p-3 pb-20">
-          <section className="w-full max-w-sm max-h-[78vh] overflow-y-auto overflow-hidden rounded-2xl border border-slate-700 bg-[#0c1824] shadow-2xl">
-            <header className="flex items-center justify-between border-b border-slate-700 px-5 py-4">
-              <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500 text-white shadow-lg"><ScanLine className="h-6 w-6" /></span><h2 className="text-base font-black text-white">Entry Scanner</h2></div>
+        <div className="fixed inset-0 z-40 flex items-center justify-center overflow-x-hidden bg-black/75 backdrop-blur-md p-2 pb-20">
+          <section className="w-full max-w-[300px] max-h-[70vh] overflow-y-auto overflow-x-hidden rounded-xl border border-slate-700 bg-[#0c1824] shadow-2xl">
+            <header className="flex items-center justify-between border-b border-slate-700 px-3 py-2.5">
+              <div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500 text-white shadow-lg"><ScanLine className="h-4 w-4" /></span><h2 className="text-sm font-black text-white">Entry Scanner</h2></div>
               <button aria-label="Close DeepScan" onClick={() => setActiveTab('TRADE')} className="p-2 text-gray-400 hover:text-white"><span className="text-2xl leading-none">×</span></button>
             </header>
-            <div className="space-y-3 p-4">
-              <div className="rounded-xl bg-[#132331] p-3 text-xs leading-relaxed text-slate-300">Choose a market category. VELTEX scans the latest 12 observed ticks for EVEN/ODD patterns.</div>
-              <div className="space-y-2"><label className="block text-xs font-bold text-slate-300">Market</label><select value={deepScanMarket} onChange={e => setDeepScanMarket(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#08131d] p-4 text-sm font-bold text-white"><option>Even / Odd</option></select></div>
+            <div className="space-y-2.5 p-3">
+              <div className="rounded-lg bg-[#132331] p-2.5 text-[11px] leading-relaxed text-slate-300">Choose a market category. VELTEX scans the latest 12 observed ticks for EVEN/ODD patterns.</div>
+              <div className="space-y-2"><label className="block text-xs font-bold text-slate-300">Market</label><select value={deepScanMarket} onChange={e => setDeepScanMarket(e.target.value)} className="w-full rounded-lg border border-slate-700 bg-[#08131d] p-2.5 text-xs font-bold text-white"><option>Even / Odd</option></select></div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-slate-300"><span>{deepScanning ? 'Scanning market ticks' : 'Ready to scan'}</span><span className="font-mono font-bold text-white">{Math.min(priceHistory.length, 12)}/12</span></div>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: (Math.min(priceHistory.length / 12, 1) * 100) + '%' }} /></div>
                 {priceHistory.length < 12 && <p className="text-[11px] text-slate-400">Collecting live ticks: {priceHistory.length}/12</p>}
               </div>
-              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-3 text-xs font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
+              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12} className="flex w-full items-center justify-center gap-2 rounded-lg bg-rose-500 py-2.5 text-[11px] font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
               {deepScan && (
                 <div className="space-y-2 rounded-xl border border-slate-700 bg-[#101d29] p-3">
-                  <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><span className={'ml-auto rounded-lg px-3 py-2 text-[10px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div>
-                  <p className="text-[10px] leading-relaxed text-slate-400">Signal is based on recent sample patterns and does not guarantee the next result.</p>
+                  <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="ml-auto text-right"><span className="block text-lg font-black text-cyan-200">{deepScan.percentage}%</span><span className={'inline-block rounded-md px-2 py-1 text-[9px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div></div>
+                  <p className="text-[9px] leading-relaxed text-slate-400">Pattern score from the recent sample only; it is not a win probability or guarantee.</p>
                   {deepScan.appeared && <div className="rounded-lg border border-emerald-700 bg-emerald-950/40 p-3 text-sm font-black text-emerald-300">DIGIT {deepScan.digit} APPEARED · {deepScan.side}</div>}
                   <button onClick={() => setActiveTab('TRADE')} className="w-full rounded-xl border border-slate-700 bg-[#132331] py-2.5 text-xs font-black text-rose-300">Load Deep Scanner Bot</button>
                 </div>
@@ -1032,10 +1032,10 @@ export default function App() {
             <p className="text-lg font-black text-red-400">السلام عليكم ورحمة الله وبركاته</p>
             <p className="mt-2 text-2xl font-black tracking-wide text-white">WELCOME BACK, {displayUserName.toUpperCase()}!</p>
             <div className="my-6 flex h-28 items-end justify-center gap-2" aria-label="Animated candlestick welcome">
-              {[38,68,48,88,58,76,44,96,62,82,52,72].map((height,index) => <span key={index} className="relative w-3 rounded-sm bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.35)] animate-pulse" style={{height:height+'%',animationDelay:(index*70)+'ms'}}><i className="absolute left-1/2 top-[-9px] h-3 w-px -translate-x-1/2 bg-red-200"/><i className="absolute bottom-[-8px] left-1/2 h-3 w-px -translate-x-1/2 bg-red-200"/></span>)}
+              {[38,68,48,88,58,76,44,96,62,82,52,72].map((height,index) => <span key={index} className="relative w-2 rounded-sm bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.35)] animate-pulse" style={{height:height+'%',animationDelay:(index*70)+'ms'}}><i className="absolute left-1/2 top-[-9px] h-3 w-px -translate-x-1/2 bg-red-200"/><i className="absolute bottom-[-8px] left-1/2 h-3 w-px -translate-x-1/2 bg-red-200"/></span>)}
             </div>
-            <p className="text-sm font-bold text-gray-100">Alhamdulillah — welcome to VELTEX PRO BINARY.</p>
-            <p className="mt-2 text-xs text-gray-300">Bismillah. Trade with patience, wisdom and discipline. InshaAllah.</p>
+            <p className="text-xs font-bold text-gray-100">Alhamdulillah — welcome to VELTEX PRO BINARY.</p>
+            <p className="mt-1.5 text-[10px] text-gray-300">Bismillah. Trade with patience, wisdom and discipline. InshaAllah.</p>
           </div>
         </div>
       )}
