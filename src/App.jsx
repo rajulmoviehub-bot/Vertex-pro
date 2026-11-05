@@ -714,9 +714,9 @@ export default function App() {
 
           {/* Controls */}
           <div className="p-3.5 space-y-3">
-            <div className="grid grid-cols-2 bg-[#121824] p-1 rounded-xl border border-gray-800">
-              <button onClick={() => setTradeMode('AUTO')} className={`py-2 text-xs font-bold rounded-lg transition-all ${tradeMode === 'AUTO' ? 'bg-red-600 text-white shadow-md' : 'text-gray-400'}`}>AUTO TRADING</button>
-              <button onClick={() => setTradeMode('MANUAL')} className={`py-2 text-xs font-bold rounded-lg transition-all ${tradeMode === 'MANUAL' ? 'bg-red-600 text-white shadow-md' : 'text-gray-400'}`}>MANUAL TRADE</button>
+            <div className="rounded-xl border border-cyan-800 bg-[#101c2a] p-3 text-xs text-cyan-200">
+              <strong>MANUAL TRADE MODE</strong>
+              <p className="mt-1 text-gray-300">DeepScan watches for the exact digit it selected. When that digit appears, the matching EVEN or ODD button becomes available. You decide when to place the demo trade.</p>
             </div>
 
             <div className="bg-[#121824] border border-gray-800 rounded-xl p-3">
@@ -1205,7 +1205,7 @@ export default function App() {
           <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center -mt-3 border-2 border-[#121824]">
             <Bot className="w-4 h-4" />
           </div>
-          <span className="text-[10px] mt-0.5 font-bold">Auto Bot</span>
+          <span className="text-[10px] mt-0.5 font-bold">DeepScan</span>
         </button>
         <button aria-label="Accurate Bot analysis" onClick={() => setActiveTab('ACCURATE')} className={`flex flex-col items-center ${activeTab === 'ACCURATE' ? 'text-cyan-300' : 'text-gray-400'}`}>
           <ScanLine className="w-5 h-5" />
