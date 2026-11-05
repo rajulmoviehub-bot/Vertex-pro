@@ -403,8 +403,8 @@ export default function App() {
     }, 1000);
   };
 
-  // After a manually placed demo trade settles, prepare the next scan automatically.
-  // No trade is ever opened automatically; the trader must press EVEN or ODD.
+  // A completed demo trade never starts another scan automatically.
+  // The trader decides when to press DeepScan again.
   useEffect(() => {
     if (activeTrade) {
       previousActiveTradeRef.current = true;
@@ -412,11 +412,8 @@ export default function App() {
     }
     if (!previousActiveTradeRef.current) return;
     previousActiveTradeRef.current = false;
-    if (accountMode === 'DEMO') {
-      setBotStatusText('Trade settled. DeepScan is preparing the next signal; choose manually.');
-      runDeepScan();
-    }
-  }, [activeTrade, accountMode]);
+    setBotStatusText('Trade settled. Press DeepScan when you are ready for another signal.');
+  }, [activeTrade]);
 
   // Independent analysis panel: historical frequency only, not a guaranteed prediction.
   const runAccurateScan = () => {
