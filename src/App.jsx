@@ -1,3 +1,4 @@
+// VELTEX production deployment trigger: 2026-11-05
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { 
