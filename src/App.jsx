@@ -398,15 +398,17 @@ export default function App() {
       const oddCount = recentDigits.length - evenCount;
       const predictedType = evenCount > oddCount ? 'EVEN' : 'ODD';
       const sampleSize = recentDigits.length;
-      const observedShare = sampleSize ? (Math.max(evenCount, oddCount) / sampleSize * 100).toFixed(0) : '—';
-      const scanStrength = sampleSize >= 20 && Number(observedShare) >= 85
-        ? 'STRONG OBSERVED BIAS'
-        : '50/50 · NO STRONG BIAS';
+      // Decorative demo-only score. It is deliberately not used as a probability,
+      // prediction, trade trigger, or claim of a winning outcome.
+      const simulatedScore = Math.floor(Math.random() * 26) + 75;
+      const scanStrength = simulatedScore >= 85
+        ? 'HIGH SIMULATED SCORE · NOT A WIN'
+        : 'MODERATE SIMULATED SCORE · NOT A WIN';
       const triggerDigits = predictedType === 'EVEN' ? [0, 2, 4, 6, 8] : [1, 3, 5, 7, 9];
 
       setScannedSignal({
         prediction: predictedType,
-        confidence: observedShare,
+        confidence: String(simulatedScore),
         scanStrength,
         sampleSize,
         triggerDigits
@@ -417,7 +419,7 @@ export default function App() {
         setBotActive(true);
         setBotStatusText('Demo bot ON — waiting for trip digit.');
       }
-      setBotStatusText(`Experimental demo estimate: ${predictedType}; may be wrong.`);
+      setBotStatusText(`Demo scan: ${predictedType}; simulated score ${simulatedScore}%. Not a win probability.`);
     }, 1000);
   };
 
@@ -727,7 +729,7 @@ export default function App() {
                 OPEN DEEPSCAN
               </button>
             </div>
-            {scannedSignal && <p className="text-xs text-gray-300">Last scan: <strong className="text-cyan-300">{scannedSignal.prediction}</strong> · observed frequency {scannedSignal.confidence}{scannedSignal.confidence === '—' ? '' : '%'}</p>}
+            {scannedSignal && <p className="text-xs text-gray-300">Last scan: <strong className="text-cyan-300">{scannedSignal.prediction}</strong> · simulated score {scannedSignal.confidence}{scannedSignal.confidence === '—' ? '' : '%'}</p>}
           </section>
 
           {/* Controls */}
@@ -1141,7 +1143,7 @@ export default function App() {
               <button onClick={() => { runDeepScan(); }} disabled={isScanning || feedStatus !== 'LIVE'} className="flex w-full items-center justify-center gap-3 rounded-xl bg-red-500 px-4 py-4 text-sm font-black text-white shadow-lg shadow-red-900/40 disabled:opacity-50">
                 <ScanLine className="h-5 w-5" />{isScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}
               </button>
-              {scannedSignal && <div className="rounded-xl border border-slate-700 bg-[#08121c] p-3 text-center"><p className="text-xs text-slate-400">OBSERVED HISTORICAL FREQUENCY · NOT A WIN PROBABILITY</p><p className="mt-1 text-xl font-black text-cyan-300">{scannedSignal.prediction} · {scannedSignal.confidence}{scannedSignal.confidence === '—' ? '' : '%'}</p><p className="mt-1 text-xs text-slate-300">Matching digits: {scannedSignal.triggerDigits.join(' · ')}</p></div>}
+              {scannedSignal && <div className="rounded-xl border border-slate-700 bg-[#08121c] p-3 text-center"><p className="text-xs text-slate-400">SIMULATED DISPLAY SCORE · NOT A WIN PROBABILITY</p><p className="mt-1 text-xl font-black text-cyan-300">{scannedSignal.prediction} · {scannedSignal.confidence}{scannedSignal.confidence === '—' ? '' : '%'}</p><p className="mt-1 text-xs text-slate-300">Matching digits: {scannedSignal.triggerDigits.join(' · ')}</p></div>}
               <button onClick={() => { setShowDeepScanModal(false); toggleDemoBot(); }} className="w-full rounded-xl border border-slate-700 bg-[#101e2a] px-4 py-4 text-sm font-bold text-red-300 hover:bg-[#172938]">{botActive || startAfterScan ? 'Stop Deep Scanner Bot' : 'Load Deep Scanner Bot'}</button>
               <p className="text-[10px] leading-relaxed text-amber-300">This build uses simulated demo-feed data. Historical frequency is not a prediction, guaranteed accuracy or financial advice. The bot only operates in DEMO; live broker execution is not connected.</p>
             </div>
