@@ -18,8 +18,8 @@ export default function App() {
   const [authModal, setAuthModal] = useState(null);
   const [authInput, setAuthInput] = useState({ email: '', password: '', ref: '' });
 
-  const [initialStake, setInitialStake] = useState(10);
-  const [stake, setStake] = useState(10);
+  const [initialStake, setInitialStake] = useState(0.75);
+  const [stake, setStake] = useState(0.75);
   const [market, setMarket] = useState('VELTEX Synthetic Index');
   const [contractType, setContractType] = useState('Even/Odd');
   const [tradeMode, setTradeMode] = useState('AUTO'); 
@@ -60,7 +60,8 @@ export default function App() {
   const displayUserName = user.loggedIn && user.email ? user.email.split('@')[0] : 'Guest';
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
-  const [depositAmount, setDepositAmount] = useState(10);
+  const [depositAmount, setDepositAmount] = useState(5);
+  const [withdrawAmount, setWithdrawAmount] = useState(5);
   const [derivCheck, setDerivCheck] = useState({ loading: false, result: null, error: '' });
 
   useEffect(() => {
@@ -556,6 +557,7 @@ export default function App() {
           </button>
 
           <button onClick={() => setActiveTab('DEPOSIT')} className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-md shadow-md">Deposit</button>
+          <button onClick={() => setActiveTab('WITHDRAW')} className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-md shadow-md">Withdraw</button>
 
           {user.loggedIn ? (
             <span className="bg-red-950/60 border border-red-500/40 text-red-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -732,9 +734,9 @@ export default function App() {
               <div>
                 <span className="text-[10px] text-gray-400 block uppercase font-medium">TOTAL STAKE</span>
                 <div className="flex items-center gap-2 mt-1">
-                  <button onClick={() => { setInitialStake(Math.max(1, initialStake - 1)); setStake(Math.max(1, stake - 1)); }} className="w-7 h-7 bg-gray-800 rounded flex items-center justify-center font-bold">-</button>
-                  <input type="number" value={stake} onChange={(e) => { setStake(Number(e.target.value)); setInitialStake(Number(e.target.value)); }} className="w-16 bg-[#090d14] text-center font-mono font-bold text-base text-red-500 border border-gray-700 rounded py-0.5" />
-                  <button onClick={() => { setInitialStake(initialStake + 1); setStake(stake + 1); }} className="w-7 h-7 bg-gray-800 rounded flex items-center justify-center font-bold">+</button>
+                  <button onClick={() => { setInitialStake(Math.max(0.75, Number((initialStake - 0.25).toFixed(2)))); setStake(Math.max(0.75, Number((stake - 0.25).toFixed(2)))); }} className="w-7 h-7 bg-gray-800 rounded flex items-center justify-center font-bold">-</button>
+                  <input type="number" min="0.75" step="0.25" value={stake} onChange={(e) => { const amount = Math.max(0.75, Number(e.target.value) || 0.75); setStake(amount); setInitialStake(amount); }} className="w-16 bg-[#090d14] text-center font-mono font-bold text-base text-red-500 border border-gray-700 rounded py-0.5" />
+                  <button onClick={() => { setInitialStake(Number((initialStake + 0.25).toFixed(2))); setStake(Number((stake + 0.25).toFixed(2))); }} className="w-7 h-7 bg-gray-800 rounded flex items-center justify-center font-bold">+</button>
                 </div>
               </div>
               <div className="border-l border-gray-800 pl-3">
@@ -783,6 +785,25 @@ export default function App() {
         </>
       )}
 
+      {/* WITHDRAWAL VIEW */}
+      {activeTab === 'WITHDRAW' && (
+        <div className="p-4 space-y-4 max-w-md mx-auto w-full">
+          <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-3">
+            <h2 className="text-base font-bold text-white flex items-center gap-2"><ArrowUpRight className="w-5 h-5 text-emerald-400" /> Withdraw Funds</h2>
+            <p className="text-xs text-gray-400">Minimum withdrawal: $5.00</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[5, 10, 25, 50, 100, 250].map(amount => (
+                <button key={amount} onClick={() => setWithdrawAmount(amount)} aria-pressed={withdrawAmount === amount} className={`rounded-lg border px-3 py-3 text-sm font-black ${withdrawAmount === amount ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
+              ))}
+            </div>
+            <label className="block text-xs text-gray-400 font-bold">Withdrawal amount (USD)</label>
+            <input type="number" min="5" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
+            <button disabled className="w-full bg-gray-700 text-gray-300 font-bold text-sm py-3 rounded-lg opacity-70 cursor-not-allowed">Withdrawal requests not enabled yet</button>
+            <p className="text-[11px] text-amber-200">This screen is a preview only. Secure wallet withdrawal processing and payment-provider verification are not connected, so no money can be requested or sent yet.</p>
+          </section>
+        </div>
+      )}
+
       {/* DEPOSIT VIEW */}
       {activeTab === 'DEPOSIT' && (
         <div className="p-4 space-y-4 max-w-md mx-auto w-full">
@@ -801,9 +822,9 @@ export default function App() {
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1 font-bold">Amount (USD)</label>
-                <input type="number" min="5" value={depositAmount} onChange={(e) => setDepositAmount(Number(e.target.value))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
+                <input type="number" min="5" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
               </div>
-              <button onClick={handleDeposit} className="w-full bg-emerald-700 text-white font-bold text-sm py-3 rounded-lg shadow-lg">Check payment setup</button>
+              <button onClick={() => depositAmount < 5 ? alert('Minimum deposit is $5.00.') : handleDeposit()} className="w-full bg-emerald-700 text-white font-bold text-sm py-3 rounded-lg shadow-lg">Check payment setup</button>
             </div>
           </div>
         </div>
