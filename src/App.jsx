@@ -610,11 +610,6 @@ export default function App() {
 
           {/* Controls */}
           <div className="p-3.5 space-y-3">
-            <div className="rounded-xl border border-cyan-800 bg-[#101c2a] p-3 text-xs text-cyan-200">
-              <strong>MANUAL TRADE MODE</strong>
-              <p className="mt-1 text-gray-300">Use the live tick and the market information shown above to make your own trading decision. VELTEX does not place trades.</p>
-            </div>
-
             <div className="bg-[#121824] border border-gray-800 rounded-xl p-3">
               <div className="flex justify-between text-xs text-gray-400 mb-2 font-medium">
                 <span>DURATION</span>
