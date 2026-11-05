@@ -77,7 +77,10 @@ export default async function handler(req, res) {
         }])
       }
     );
-    if (!cacheWrite.ok) throw new Error("Could not save the automatic exchange rate. Please try again.");
+    // FX cache is an optimization; a cache write failure must not block a deposit.
+    if (!cacheWrite.ok) {
+      console.error("VELTEX FX cache write failed:", cacheWrite.status, await cacheWrite.text().catch(() => ""));
+    }
     return { rate, updatedAt:new Date(updatedAt * 1000).toISOString() };
   }
 
