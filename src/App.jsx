@@ -410,18 +410,29 @@ export default function App() {
             </div>
           )}
 
-          {/* DeepScan launcher */}
-          <section className="mx-3 mt-3 rounded-xl border border-cyan-700/70 bg-[#101c2a] p-3 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h3 className="text-sm font-black text-cyan-300">VELTEX DEEPSCAN</h3>
-                <p className="text-[10px] text-gray-400">Open the market scanner</p>
+          {/* Rebuilt DeepScan launcher */}
+          <section className="mx-3 mt-3 rounded-xl border border-cyan-600 bg-[#101c2a] p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-300">
+                <ScanLine className="h-5 w-5" />
               </div>
-              <button onClick={() => setShowDeepScanModal(true)} className="rounded-lg bg-red-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-red-900/30">
-                OPEN DEEPSCAN
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-black text-cyan-300">VELTEX DEEPSCAN</h3>
+                <p className="text-[10px] text-gray-400">Analyze 20 observed ticks. You place trades manually.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDeepScanModal(true)}
+                className="shrink-0 rounded-lg bg-cyan-600 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-cyan-950/40 active:scale-95"
+              >
+                DEEPSCAN
               </button>
             </div>
-            {scannedSignal && <p className="text-xs text-gray-300">Last scan: <strong className="text-cyan-300">{scannedSignal.prediction}</strong></p>}
+            {scannedSignal && (
+              <p className="mt-2 text-xs text-gray-300">
+                Latest selection: <strong className="text-cyan-300">{scannedSignal.bestDigit} – {scannedSignal.prediction}</strong>
+              </p>
+            )}
           </section>
 
           {/* Controls */}
@@ -630,13 +641,14 @@ export default function App() {
         </button>
 
         <button
+          type="button"
           onClick={() => {
             setActiveTab('TRADE');
-            toggleDemoBot();
+            setShowDeepScanModal(true);
           }}
-          className="flex flex-col items-center text-emerald-400"
+          className="flex flex-col items-center text-cyan-300"
         >
-          <Bot className="h-5 w-5" />
+          <ScanLine className="h-5 w-5" />
           <span className="mt-1 text-[10px]">DeepScan</span>
         </button>
 
