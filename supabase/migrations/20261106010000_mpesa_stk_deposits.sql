@@ -13,3 +13,7 @@ create unique index if not exists deposit_requests_checkout_request_id_uidx
 
 create index if not exists deposit_requests_status_created_idx
   on public.deposit_requests(status, created_at desc);
+
+create unique index if not exists deposit_requests_mpesa_receipt_uidx
+  on public.deposit_requests(mpesa_receipt_number)
+  where mpesa_receipt_number is not null;
