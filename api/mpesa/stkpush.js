@@ -137,8 +137,15 @@ export default async function handler(req, res) {
     const tokenResponse = await fetch(`${apiBase}/oauth/v1/generate?grant_type=client_credentials`, {
       headers:{ Authorization:"Basic " + Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64") }, cache:"no-store"
     });
-    const tokenData = await tokenResponse.json().catch(()=>({}));
-    if (!tokenResponse.ok || !tokenData.access_token) throw new Error("Safaricom OAuth failed. Check Daraja app credentials and environment.");
+    const tokenBody = await tokenResponse.text().catch(()=>"");
+    let tokenData = {};
+    try { tokenData = tokenBody ? JSON.parse(tokenBody) : {}; } catch {}
+    if (!tokenResponse.ok || !tokenData.access_token) {
+      const safeReason = [tokenData.errorMessage, tokenData.error_description, tokenData.error, tokenData.errorCode]
+        .filter(Boolean).join(" | ");
+      console.error("VELTEX Daraja OAuth failed:", tokenResponse.status, tokenBody);
+      throw new Error(`Safaricom OAuth failed (HTTP ${tokenResponse.status}). ${safeReason || "Check that the sandbox Consumer Key and Consumer Secret belong to the same Daraja sandbox app, and MPESA_ENV is sandbox."}`);
+    }
 
     const timestamp = new Date().toISOString().replace(/[^0-9]/g,"").slice(0,14);
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
