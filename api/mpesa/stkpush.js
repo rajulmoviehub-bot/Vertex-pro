@@ -193,9 +193,14 @@ export default async function handler(req, res) {
       });
     }
 
-    await supabaseFetch(`/rest/v1/deposit_requests?id=eq.${depositId}`, serviceKey, {
-      method:"PATCH", body:JSON.stringify({ merchant_request_id:stk.MerchantRequestID, checkout_request_id:stk.CheckoutRequestID })
+    const savedCheckout = await supabaseFetch(`/rest/v1/deposit_requests?id=eq.${depositId}`, serviceKey, {
+      method:"PATCH", headers:{ Prefer:"return=minimal" },
+      body:JSON.stringify({ merchant_request_id:stk.MerchantRequestID, checkout_request_id:stk.CheckoutRequestID })
     });
+    if (!savedCheckout.ok) {
+      console.error("VELTEX could not save Safaricom checkout IDs:", savedCheckout.status, await savedCheckout.text().catch(() => ""));
+      return json(res, 502, { ok:false, error:"Safaricom sent the payment prompt, but VELTEX could not save its tracking ID. Do not retry payment yet; contact support for reconciliation." });
+    }
     return json(res, 200, { ok:true, message:"STK Push sent. Approve the payment prompt on your phone.", depositId, checkoutRequestId:stk.CheckoutRequestID, amountKes, exchangeRate:kesPerUsd, exchangeRateUpdatedAt:exchangeRate.updatedAt });
   } catch (error) {
     return json(res, 502, { ok:false, error:error.message || "Could not start M-Pesa payment." });
