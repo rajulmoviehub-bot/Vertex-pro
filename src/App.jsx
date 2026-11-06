@@ -930,8 +930,8 @@ export default function App() {
             </div>
 
           </div>
-            {/* Manual EVEN / ODD entry controls on the main market display */}
-            <div className="mx-3 mt-3 rounded-xl border border-slate-700 bg-[#101d29] p-3 space-y-2">
+            {/* Manual EVEN / ODD controls are hidden while MV6 AUTO BOT is running. */}
+            {!autoBotRunning && <div className="mx-3 mt-3 rounded-xl border border-slate-700 bg-[#101d29] p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-black text-white">MANUAL ENTRY</span>
                 <span className="text-[10px] text-slate-400">{deepScan ? `WAIT FOR DIGIT ${deepScan.digit}` : 'RUN DEEPSCAN FIRST'}</span>
@@ -949,7 +949,7 @@ export default function App() {
                 }} className="rounded-lg border border-rose-500 bg-rose-900/50 py-3 text-sm font-black text-rose-200 disabled:cursor-not-allowed disabled:opacity-35">ODD</button>
               </div>
               <p className="text-[10px] leading-relaxed text-slate-400">{deepScan ? `When digit ${deepScan.digit} appears in the live display, choose EVEN or ODD. Demo simulation only; live broker orders are not connected.` : 'Open DeepScan and scan first. Buttons activate when the scanned digit appears.'}</p>
-            </div>
+            </div>}
 
 
         </>
