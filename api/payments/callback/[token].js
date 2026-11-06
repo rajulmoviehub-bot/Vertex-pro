@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     const receipt = String(value("MpesaReceiptNumber") || "");
     const paidKes = Number(value("Amount"));
     const phone = String(value("PhoneNumber") || "");
-    const expectedPhone = String(deposit.phone_number || "").replace(/\\D/g, "");
+    const expectedPhone = String(deposit.phone_number || "").replace(/\D/g, "");
     if (!receipt || !Number.isFinite(paidKes) || paidKes <= 0 || Math.abs(paidKes - Number(deposit.amount_kes)) > 0.01 || (expectedPhone && phone && expectedPhone !== phone)) {
       await db(`/rest/v1/deposit_requests?id=eq.${deposit.id}`, serviceKey, {
         method:"PATCH", body:JSON.stringify({ status:"failed", result_description:"Callback amount or receipt did not match the pending deposit." })
