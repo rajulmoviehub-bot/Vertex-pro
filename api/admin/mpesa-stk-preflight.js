@@ -7,7 +7,7 @@ function json(res, status, body) {
 }
 
 function bearer(req) {
-  return String(req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() || "";
+  return String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 }
 
 export default async function handler(req, res) {
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     return json(res, 405, { ok: false, error: "Method not allowed" });
   }
 
-  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const session = bearer(req);
   if (!supabaseUrl || !serviceKey) return json(res, 503, { ok: false, error: "Secure admin verification is not configured." });
