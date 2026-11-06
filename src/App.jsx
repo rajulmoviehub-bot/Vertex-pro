@@ -184,7 +184,7 @@ export default function App() {
         return;
       }
       setUser({ loggedIn: true, email: session.user.email || '', fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '', refCode: 'VELTEX-7892' });
-      fetch('/api/bot-license', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(r => r.json()).then(result => { if (mounted && result.ok) setBotLicence(result.licence || null); }).catch(() => {});
+      fetch('/api/bot-license', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(r => r.json()).then(result => { if (mounted && result.ok) { setBotLicence(result.licence || null); if (result.licence?.status !== 'active') setAccountMode('DEMO'); } }).catch(() => {});
       setLoginWelcome(true);
       const { data, error } = await supabase
         .from('wallets')
