@@ -869,58 +869,8 @@ export default function App() {
             </div>
           )}
 
-          {/* Controls */}
-          <div className="p-3.5 space-y-3">
-            <div className="grid grid-cols-2 gap-2 px-3" aria-label="MV6 AUTO BOT controls">
-              <button type="button" disabled={autoBotRunning || accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(target)) || Number(target) <= 0 || !Number.isFinite(Number(stopLoss)) || Number(stopLoss) <= 0} onClick={() => { autoLastEntryTickRef.current = totalTicks - 1; setAutoBotRunning(true); }} className="rounded-lg bg-emerald-700 py-3 text-sm font-black text-white disabled:opacity-40">START AUTO BOT</button>
-              <button type="button" disabled={!autoBotRunning} onClick={() => setAutoBotRunning(false)} className="rounded-lg border border-red-500 bg-red-950/50 py-3 text-sm font-black text-red-200 disabled:opacity-40">STOP BOT</button>
-            </div>
-            <div className="bg-[#121824] border border-gray-800 rounded-xl p-3">
-              <div className="flex justify-between text-xs text-gray-400 mb-2 font-medium">
-                <span>DURATION</span>
-                <span className="font-bold text-white font-mono">{duration} ticks</span>
-              </div>
-              <div className="grid grid-cols-10 gap-1">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((d) => (
-                  <button key={d} onClick={() => setDuration(d)} className={`py-1.5 text-xs font-mono rounded font-bold border ${duration === d ? 'bg-red-600 text-white border-red-500' : 'bg-[#090d14] text-gray-400 border-gray-800'}`}>{d}</button>
-                ))}
-              </div>
-            </div>
+          {/* Bot settings panel removed. Keep only the fixed START AUTO BOT and STOP BOT buttons. */}
 
-            <div className="grid grid-cols-2 gap-3 bg-[#121824] border border-gray-800 rounded-xl p-3 items-center">
-              <div>
-                <span className="text-[10px] text-gray-400 block uppercase font-medium">TOTAL STAKE</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <button onClick={() => { setInitialStake(Math.max(0.75, Number((initialStake - 0.25).toFixed(2)))); setStake(Math.max(0.75, Number((stake - 0.25).toFixed(2)))); }} className="w-7 h-7 bg-gray-800 rounded flex items-center justify-center font-bold">-</button>
-                  <input type="number" min="0.75" step="0.25" value={stake} onChange={(e) => { const amount = Math.max(0.75, Number(e.target.value) || 0.75); setStake(amount); setInitialStake(amount); }} className="w-16 bg-[#090d14] text-center font-mono font-bold text-base text-red-500 border border-gray-700 rounded py-0.5" />
-                  <button onClick={() => { setInitialStake(Number((initialStake + 0.25).toFixed(2))); setStake(Number((stake + 0.25).toFixed(2))); }} className="w-7 h-7 bg-gray-800 rounded flex items-center justify-center font-bold">+</button>
-                </div>
-              </div>
-              <div className="border-l border-gray-800 pl-3">
-                <span className="text-[10px] text-gray-400 block uppercase font-medium">TOTAL PROFIT / LOSS</span>
-                <span className={`font-mono font-bold text-base mt-1 block ${sessionPL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {sessionPL >= 0 ? `+$${sessionPL.toFixed(2)}` : `-$${Math.abs(sessionPL).toFixed(2)}`}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-[#121824] border border-gray-800 rounded-xl p-2.5 text-center">
-                <span className="text-[9px] text-gray-400 block">🎯 TARGET PROFIT</span>
-                <input type="number" value={target} onChange={(e) => setTarget(Number(e.target.value))} className="w-full bg-[#090d14] text-center font-mono font-bold text-sm text-white border border-gray-700 rounded py-0.5 mt-1" />
-              </div>
-              <div className="bg-[#121824] border border-gray-800 rounded-xl p-2.5 text-center">
-                <span className="text-[9px] text-gray-400 block">🛑 STOP LOSS</span>
-                <input type="number" value={stopLoss} onChange={(e) => setStopLoss(Number(e.target.value))} className="w-full bg-[#090d14] text-center font-mono font-bold text-sm text-white border border-gray-700 rounded py-0.5 mt-1" />
-              </div>
-              <div className="bg-[#121824] border border-gray-800 rounded-xl p-2.5 text-center">
-                <span className="text-[9px] text-gray-400 block">⚡ MULTIPLIER</span>
-                <span className="font-mono font-bold text-sm text-white block mt-1">x {multiplier}</span>
-              </div>
-            </div>
-
-          </div>
-            {/* Manual entry panel removed; use MV6 AUTO BOT controls instead. */}
 
 
         </>
