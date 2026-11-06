@@ -809,6 +809,14 @@ export default function App() {
       {activeTab === 'TRADE' && (
         <>
 
+          {/* Deriv-inspired total profit display: changes only when a trade settles. */}
+          <section aria-label="Total Profit" aria-live="polite" className="mx-3 mt-3 rounded-xl border border-gray-700 bg-[#121824] p-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">TOTAL PROFIT</p>
+            <p className={`mt-1 text-3xl font-black tabular-nums ${sessionPL > 0 ? 'text-emerald-400' : sessionPL < 0 ? 'text-red-400' : 'text-white'}`}>
+              {sessionPL > 0 ? '+' : sessionPL < 0 ? '−' : ''}${Math.abs(sessionPL).toFixed(2)}
+            </p>
+          </section>
+
           {/* VELTEX Dynamic Market Chart */}
           <div className="bg-[#121824] border-y border-gray-800 p-3.5 relative mt-2">
             <div className="flex items-center justify-between mb-3">
