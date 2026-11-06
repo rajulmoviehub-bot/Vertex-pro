@@ -1,10 +1,10 @@
 export const config = { runtime: "nodejs" };
 const OWNER_EMAIL = "rajulmoviehub@gmail.com";
-const bearer = req => String(req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() || "";
+const bearer = req => String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 const cleanEmail = value => String(value || "").trim().toLowerCase();
-const phoneDigits = value => String(value || "").replace(/\\D/g, "").replace(/^0/, "254");
+const phoneDigits = value => String(value || "").replace(/\D/g, "").replace(/^0/, "254");
 async function authenticate(req, requireOwner = false) {
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const token = bearer(req);
   if (!url || !key) return { error: "Bot licence service is not configured.", status: 503 };
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     const action = String(req.body?.action || "");
     const email = cleanEmail(req.body?.email);
     const phone = phoneDigits(req.body?.mobileNumber);
-    if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !/^254[71]\\d{8}$/.test(phone)) return res.status(400).json({ ok: false, error: "Enter the buyer's registered VELTEX email and mobile number." });
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^254[71]\d{8}$/.test(phone)) return res.status(400).json({ ok: false, error: "Enter the buyer's registered VELTEX email and mobile number." });
     const buyer = await listAuthUsers(url, key, email);
     if (!buyer) return res.status(404).json({ ok: false, error: "No VELTEX account found for that email." });
     const registeredPhone = phoneDigits(buyer.user_metadata?.mobile_number || buyer.user_metadata?.phone || buyer.phone || "");
