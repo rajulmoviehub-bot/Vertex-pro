@@ -988,8 +988,8 @@ export default function App() {
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
             <h3 className="font-bold text-white">Common questions</h3>
             <p><strong className="text-white">How do I practise?</strong> Select DEMO. It starts at $10,000 and can be reset. Demo results are simulated and are not cash.</p>
-            <p><strong className="text-white">Can I deposit with Safaricom M-Pesa?</strong> M-Pesa STK Push and confirmation pop-ups are planned, but Daraja is not connected. Do not send money based on this screen.</p>
-            <p><strong className="text-white">Can I withdraw?</strong> The withdrawal feature has been removed from this version. No withdrawals can be requested through this app.</p>
+            <p><strong className="text-white">Can I deposit with Safaricom M-Pesa?</strong> M-Pesa Express is connected in Daraja Sandbox for testing. Use test payments only; live payments are not enabled.</p>
+            <p><strong className="text-white">Can I withdraw?</strong> Withdrawals are not enabled yet. Do not treat your VELTEX wallet balance as withdrawable cash.</p>
             <p><strong className="text-white">Does it copy another trader?</strong> No copy-trading feature is offered.</p>
             <p><strong className="text-white">Does the scanner guarantee a win?</strong> No. Digit statistics and the current scanner are informational/simulated only and do not establish a reliable prediction.</p>
           </section>
@@ -1002,11 +1002,11 @@ export default function App() {
             <h3 className="font-bold text-white">Terms and conditions</h3>
             <ol className="list-decimal pl-5 space-y-1 text-gray-300">
               <li>Use the DEMO account to practise; its $10,000 balance is virtual and has no cash value.</li>
-              <li>The main-wallet withdrawal option has been removed. No live broker execution, custody, deposits or withdrawals are enabled.</li>
+              <li>M-Pesa deposits are currently in Daraja Sandbox testing only. Withdrawals and live broker execution are not enabled.</li>
               <li>Trading involves substantial risk and you may lose all money committed. Past or simulated results do not predict future results.</li>
               <li>No profit, income, accuracy, recovery or return is promised or guaranteed.</li>
               <li>Do not share your account, passwords, verification codes, device access or broker credentials. No copy trading is provided.</li>
-              <li>Payment must only be made through a verified, officially enabled payment channel. This build does not currently accept payments.</li>
+              <li>Only use the M-Pesa Sandbox flow for testing. Do not send real money; live payment collection and payouts are not enabled.</li>
               <li>Any buyer licence transfer must be processed through a secure, verified owner service. A transfer must revoke the previous activation before the new buyer is activated; this enforcement is not yet live.</li>
               <li>Users are responsible for complying with applicable laws and the rules of their broker and payment providers.</li>
               <li>Regulatory licensing is not claimed. BCLB status is unverified until valid documentation is supplied and checked.</li>
