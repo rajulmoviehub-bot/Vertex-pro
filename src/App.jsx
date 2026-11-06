@@ -250,7 +250,7 @@ export default function App() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
-      const response = await fetch('/api/admin/mpesa-stk-preflight', {
+      const response = await fetch('/api/admin/mpesa-check?check=preflight', {
         method:'POST',
         headers:{ Authorization:`Bearer ${session.access_token}` },
         cache:'no-store'
@@ -275,7 +275,7 @@ export default function App() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
-      const response = await fetch('/api/admin/mpesa-oauth-check', {
+      const response = await fetch('/api/admin/mpesa-check?check=oauth', {
         method:'POST',
         headers:{ Authorization:`Bearer ${session.access_token}` },
         cache:'no-store'
