@@ -61,6 +61,8 @@ export default function App() {
   const [capitalBusy, setCapitalBusy] = useState(false);
   const [mpesaCheckBusy, setMpesaCheckBusy] = useState(false);
   const [mpesaCheckResult, setMpesaCheckResult] = useState(null);
+  const [mpesaPreflightBusy, setMpesaPreflightBusy] = useState(false);
+  const [mpesaPreflightResult, setMpesaPreflightResult] = useState(null);
   // Use the account username (email prefix) consistently across sessions and welcome messages.
   const displayUserName = user.loggedIn ? (user.fullName?.trim() || user.email?.split('@')[0] || 'Customer') : 'Guest';
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
@@ -191,6 +193,31 @@ export default function App() {
     } catch {
       alert('Could not verify admin access. Please try again.');
       return false;
+    }
+  };
+
+  const runMpesaStkPreflight = async () => {
+    if (!supabase || !adminUnlocked || !isOwner) {
+      alert('Only the verified VELTEX owner can run this check.');
+      return;
+    }
+    setMpesaPreflightBusy(true);
+    setMpesaPreflightResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
+      const response = await fetch('/api/admin/mpesa-stk-preflight', {
+        method:'POST',
+        headers:{ Authorization:`Bearer ${session.access_token}` },
+        cache:'no-store'
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Preflight failed (HTTP ${response.status}).`);
+      setMpesaPreflightResult(result);
+    } catch (error) {
+      setMpesaPreflightResult({ ok:false, message:error.message || 'STK preflight could not complete.' });
+    } finally {
+      setMpesaPreflightBusy(false);
     }
   };
 
@@ -942,7 +969,7 @@ export default function App() {
                 ['WITHDRAWALS','Withdrawal approvals'],
                 ['ACCOUNTS','Account management'],
                 ['CENTRAL','Central wallet withdrawal'],
-                ['MPESA','M-Pesa OAuth test'],
+                ['MPESA','M-Pesa connection tests'],
                 ['SHARING','Bot sharing / licence transfer']
               ].map(([key,label]) => <button key={key} onClick={() => setAdminSection(key)} aria-pressed={adminSection === key} className={`rounded-lg border px-3 py-3 text-left text-xs font-bold ${adminSection === key ? 'bg-cyan-800 border-cyan-500 text-white' : 'bg-[#090d14] border-gray-700 text-gray-200'}`}>{label}</button>)}
             </div>
@@ -954,6 +981,16 @@ export default function App() {
                 <p className="font-bold">{mpesaCheckResult.ok ? 'OAuth connection successful' : 'OAuth connection failed'}</p>
                 <p>{mpesaCheckResult.message}</p>
                 {mpesaCheckResult.environment && <p>Environment: {mpesaCheckResult.environment}</p>}
+              </div>}
+              <h3 className="font-bold text-white pt-2">M-Pesa STK preflight · no payment</h3>
+              <p className="text-xs text-gray-300">Checks required settings and Daraja OAuth. It does not send an STK prompt, charge a customer, simulate a successful callback, or credit a wallet. It cannot prove the live shortcode or passkey until Safaricom accepts a real STK request.</p>
+              <button type="button" disabled={mpesaPreflightBusy} onClick={runMpesaStkPreflight} className="w-full rounded-lg bg-emerald-800 disabled:opacity-60 text-white font-bold text-sm py-3">{mpesaPreflightBusy ? 'CHECKING STK CONFIGURATION…' : 'RUN STK PREFLIGHT (NO PAYMENT)'}</button>
+              {mpesaPreflightResult && <div role="status" aria-live="polite" className={`rounded-lg border p-3 text-sm space-y-1 ${mpesaPreflightResult.ok ? 'border-emerald-700 text-emerald-200' : 'border-amber-700 text-amber-200'}`}>
+                <p className="font-bold">{mpesaPreflightResult.ok ? 'STK preflight passed' : 'STK preflight needs attention'}</p>
+                <p>{mpesaPreflightResult.message || mpesaPreflightResult.error}</p>
+                {mpesaPreflightResult.environment && <p>Environment: {mpesaPreflightResult.environment}</p>}
+                {mpesaPreflightResult.failed?.length > 0 && <p>Checks needing attention: {mpesaPreflightResult.failed.join(', ')}</p>}
+                {mpesaPreflightResult.limitations?.map((item, index) => <p key={index}>{item}</p>)}
               </div>}
             </div>}
             {adminSection === 'OVERVIEW' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">System status</h3><p className="text-xs text-gray-300">Customer deposits: Not connected</p><p className="text-xs text-gray-300">Verified registrations: Not connected</p><p className="text-xs text-gray-300">Withdrawal requests: Not connected</p><p className="text-xs text-gray-300">Central wallet: Not connected</p><p className="text-xs text-gray-300">Bot licence transfer: Not connected</p></div>}
