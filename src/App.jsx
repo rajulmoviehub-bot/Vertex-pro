@@ -812,7 +812,7 @@ export default function App() {
             <label className="block text-xs text-gray-400 font-bold">Withdrawal amount (USD)</label>
             <input type="number" min="5" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
             <button disabled className="w-full bg-gray-700 text-gray-300 font-bold text-sm py-3 rounded-lg opacity-70 cursor-not-allowed">Withdrawal request setup required</button>
-            <p className="text-[11px] text-amber-200">All five methods are being prepared. Withdrawals will use manual admin review; no request is accepted and no payout is sent until the secure wallet reservation, destination verification and approval system is connected.</p>
+            <p className="text-[11px] text-amber-200">Withdrawal requests are not enabled yet. Once enabled, every request will be reviewed manually. Rejected requests will NOT be refunded automatically; the owner must issue any refund manually from Admin.</p>
           </section>
         </div>
       )}
@@ -840,10 +840,16 @@ export default function App() {
               </div>}
               {depositMethod !== 'M-PESA' && <p className="rounded-lg border border-amber-700 bg-amber-950/30 p-3 text-xs text-amber-200">{depositMethod === 'AIRTEL_MONEY' ? 'Airtel Money' : depositMethod === 'CRYPTO' ? 'Crypto' : depositMethod === 'USDT_P2P' ? 'USDT P2P' : 'Worldcoin (WLD)'} is listed for setup, but its verified receiving account/address and payment confirmation integration are not configured yet. Do not send funds to an unverified address.</p>}
               <div>
-                <label className="text-xs text-gray-400 block mb-1 font-bold">Amount (USD)</label>
+                <label className="text-xs text-gray-400 block mb-1 font-bold">Quick deposit amounts (USD)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[5, 10, 25, 50, 100, 250].map(amount => (
+                    <button type="button" key={amount} onClick={() => setDepositAmount(amount)} aria-pressed={depositAmount === amount} className={`rounded-lg border px-3 py-3 text-sm font-black ${depositAmount === amount ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
+                  ))}
+                </div>
+                <label className="text-xs text-gray-400 block mb-1 mt-3 font-bold">Custom amount (USD)</label>
                 <input type="number" min="5" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
               </div>
-              {depositMethod === 'M-PESA' && <p className="text-[10px] text-gray-500">M-Pesa is currently connected in Daraja Sandbox testing only. Wallet credit happens only after Safaricom confirms payment.</p>}
+              {depositMethod === 'M-PESA' && <p className="text-[10px] text-gray-500">M-Pesa payments are processed through Safaricom Daraja. Your wallet is credited only after Safaricom confirms the payment.</p>}
               <button disabled={depositBusy || depositMethod !== 'M-PESA'} onClick={() => depositAmount < 5 ? alert('Minimum deposit is USD 5.') : handleDeposit()} className="w-full bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-lg shadow-lg">{depositBusy ? 'SENDING PAYMENT PROMPT…' : depositMethod === 'M-PESA' ? 'CONTINUE WITH M-PESA' : 'METHOD SETUP REQUIRED'}</button>
             </div>
           </div>
@@ -1077,7 +1083,7 @@ export default function App() {
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
             <h3 className="font-bold text-white">Common questions</h3>
             <p><strong className="text-white">How do I practise?</strong> Select DEMO. It starts at $10,000 and can be reset. Demo results are simulated and are not cash.</p>
-            <p><strong className="text-white">Can I deposit with Safaricom M-Pesa?</strong> M-Pesa Express is connected in Daraja Sandbox for testing. Use test payments only; live payments are not enabled.</p>
+            <p><strong className="text-white">Can I deposit with Safaricom M-Pesa?</strong> M-Pesa Express is connected through Safaricom Daraja. Wallet credit happens only after Safaricom confirms payment.</p>
             <p><strong className="text-white">Can I withdraw?</strong> Withdrawals are not enabled yet. Do not treat your VELTEX wallet balance as withdrawable cash.</p>
             <p><strong className="text-white">Does it copy another trader?</strong> No copy-trading feature is offered.</p>
             <p><strong className="text-white">Does the scanner guarantee a win?</strong> No. Digit statistics and the current scanner are informational/simulated only and do not establish a reliable prediction.</p>
@@ -1091,11 +1097,11 @@ export default function App() {
             <h3 className="font-bold text-white">Terms and conditions</h3>
             <ol className="list-decimal pl-5 space-y-1 text-gray-300">
               <li>Use the DEMO account to practise; its $10,000 balance is virtual and has no cash value.</li>
-              <li>M-Pesa deposits are currently in Daraja Sandbox testing only. Withdrawals and live broker execution are not enabled.</li>
+              <li>M-Pesa deposits are processed through Safaricom confirmation. Withdrawals require manual review; rejected withdrawals are refunded manually by the VELTEX owner, never automatically.</li>
               <li>Trading involves substantial risk and you may lose all money committed. Past or simulated results do not predict future results.</li>
               <li>No profit, income, accuracy, recovery or return is promised or guaranteed.</li>
               <li>Do not share your account, passwords, verification codes, device access or broker credentials. No copy trading is provided.</li>
-              <li>Only use the M-Pesa Sandbox flow for testing. Do not send real money; live payment collection and payouts are not enabled.</li>
+              <li>Only pay through the verified M-Pesa prompt shown by VELTEX. Withdrawals are not automatically paid or refunded; the owner handles review and any refund manually.</li>
               <li>Any buyer licence transfer must be processed through a secure, verified owner service. A transfer must revoke the previous activation before the new buyer is activated; this enforcement is not yet live.</li>
               <li>Users are responsible for complying with applicable laws and the rules of their broker and payment providers.</li>
               <li>Regulatory licensing is not claimed. BCLB status is unverified until valid documentation is supplied and checked.</li>
