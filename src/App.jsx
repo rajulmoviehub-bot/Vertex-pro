@@ -31,6 +31,8 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [loginWelcome, setLoginWelcome] = useState(false);
   const [showTargetAchieved, setShowTargetAchieved] = useState(false);
+  const [autoBotRunning, setAutoBotRunning] = useState(false);
+  const autoLastEntryTickRef = useRef(-1);
 
   const [accurateScanning, setAccurateScanning] = useState(false);
   const [accurateScan, setAccurateScan] = useState(null);
@@ -77,6 +79,37 @@ export default function App() {
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
   const [withdrawalAdminBusy, setWithdrawalAdminBusy] = useState(false);
   const [startupShown, setStartupShown] = useState(false);
+
+  useEffect(() => {
+    if (!autoBotRunning) return;
+    if (sessionPL >= Number(target) && Number(target) > 0) {
+      setAutoBotRunning(false);
+      setShowTargetAchieved(true);
+      setTimeout(() => setShowTargetAchieved(false), 5000);
+      return;
+    }
+    if (Number(stopLoss) > 0 && sessionPL <= -Math.abs(Number(stopLoss))) {
+      setAutoBotRunning(false);
+      alert('MV6 AUTO BOT stopped: stop-loss limit reached.');
+    }
+  }, [autoBotRunning, sessionPL, target, stopLoss]);
+
+  useEffect(() => {
+    if (!autoBotRunning || accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade || totalTicks <= 0) return;
+    if (autoLastEntryTickRef.current === totalTicks) return;
+    if (sessionPL >= Number(target) && Number(target) > 0) return;
+    if (Number(stopLoss) > 0 && sessionPL <= -Math.abs(Number(stopLoss))) return;
+    if (demoWallet < stake) {
+      setAutoBotRunning(false);
+      alert('MV6 AUTO BOT stopped: insufficient demo balance for the selected stake.');
+      return;
+    }
+    const evenCount = Object.entries(digitCounts).reduce((sum, [digit, count]) => sum + (Number(digit) % 2 === 0 ? count : 0), 0);
+    const oddCount = Object.entries(digitCounts).reduce((sum, [digit, count]) => sum + (Number(digit) % 2 === 1 ? count : 0), 0);
+    const prediction = evenCount <= oddCount ? 'Even' : 'Odd';
+    autoLastEntryTickRef.current = totalTicks;
+    setActiveTrade({ prediction, ticksElapsed: 0, entryDigit: lastDigit, stake });
+  }, [autoBotRunning, accountMode, feedStatus, activeTrade, totalTicks, sessionPL, target, stopLoss, demoWallet, stake, digitCounts, lastDigit]);
 
   useEffect(() => {
     if (!deepScan || deepScan.appeared || totalTicks <= deepScan.scanTick) return;
@@ -805,6 +838,16 @@ export default function App() {
 
           {/* Controls */}
           <div className="p-3.5 space-y-3">
+            <section className="rounded-xl border border-cyan-700 bg-[#101d29] p-3 space-y-2" aria-label="MV6 AUTO BOT automatic trading controls">
+              <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-black text-white">MV6 AUTO BOT</h2><span role="status" className={`text-[10px] font-black ${autoBotRunning ? 'text-emerald-300' : 'text-gray-400'}`}>{autoBotRunning ? 'AUTO BOT RUNNING' : 'BOT STOPPED'}</span></div>
+              <p className="text-[11px] text-gray-300">Automatically opens simulated DEMO trades using observed tick-frequency data. It does not connect to a broker or place live orders.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" disabled={autoBotRunning || accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(target)) || Number(target) <= 0 || !Number.isFinite(Number(stopLoss)) || Number(stopLoss) <= 0} onClick={() => { autoLastEntryTickRef.current = totalTicks - 1; setAutoBotRunning(true); }} className="rounded-lg bg-emerald-700 py-3 text-sm font-black text-white disabled:opacity-40">START AUTO BOT</button>
+                <button type="button" disabled={!autoBotRunning} onClick={() => setAutoBotRunning(false)} className="rounded-lg border border-red-500 bg-red-950/50 py-3 text-sm font-black text-red-200 disabled:opacity-40">STOP BOT</button>
+              </div>
+              <p className="text-[10px] text-amber-200">Automatic ticks: {totalTicks} · Target: +${Math.max(0, Number(target) || 0).toFixed(2)} · Stop-loss: -${Math.max(0, Number(stopLoss) || 0).toFixed(2)}. Bot stops opening new trades when either limit is reached.</p>
+              {accountMode !== 'DEMO' && <p className="text-[10px] text-red-300">Switch to DEMO to use auto-trading. LIVE broker execution is not connected.</p>}
+            </section>
             <div className="bg-[#121824] border border-gray-800 rounded-xl p-3">
               <div className="flex justify-between text-xs text-gray-400 mb-2 font-medium">
                 <span>DURATION</span>
@@ -1335,9 +1378,9 @@ export default function App() {
 
       {/* Fixed bottom navigation */}
       <nav aria-label="Main navigation" className="bg-[#121824] border-t border-gray-800 fixed bottom-0 left-0 right-0 py-2 px-3 flex items-center justify-around z-50">
-        <button aria-label="Buy VELTEX PRIME bot" onClick={() => setActiveTab('INFO')} className={`flex flex-col items-center ${activeTab === 'INFO' ? 'text-amber-300' : 'text-amber-400'}`}>
-          <DollarSign className="w-5 h-5" />
-          <span className="text-[10px] mt-1 font-bold">BOT SALE</span>
+        <button aria-label="MV6 AUTO BOT auto trade" onClick={() => setActiveTab('TRADE')} className={`flex flex-col items-center ${activeTab === 'TRADE' ? 'text-emerald-300' : 'text-emerald-400'}`}>
+          <Zap className="w-5 h-5" />
+          <span className="text-[10px] mt-1 font-bold">MV6 AUTO BOT</span>
         </button>
         <button aria-label="Trade tab" onClick={() => setActiveTab('TRADE')} className={`flex flex-col items-center ${activeTab === 'TRADE' ? 'text-red-500' : 'text-gray-400'}`}>
           <BarChart2 className="w-5 h-5" />
