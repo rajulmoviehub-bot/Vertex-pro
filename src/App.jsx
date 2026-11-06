@@ -494,7 +494,7 @@ export default function App() {
       alert('Only M-Pesa withdrawal requests are enabled. Other methods are not connected.');
       return;
     }
-    if (!/^((\\+?254)|0)?[71]\\d{8}$/.test(withdrawPhone.replace(/[\\s-]/g, ''))) {
+    if (!/^((\+?254)|0)?[71]\d{8}$/.test(withdrawPhone.replace(/[\s-]/g, ''))) {
       alert('Enter a valid Kenyan M-Pesa number.');
       return;
     }
