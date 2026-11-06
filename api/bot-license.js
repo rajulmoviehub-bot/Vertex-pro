@@ -55,9 +55,18 @@ export default async function handler(req, res) {
     const buyer = await listAuthUsers(url, key, email);
     if (!buyer) return res.status(404).json({ ok: false, error: "No VELTEX account found for that email." });
     const registeredPhone = phoneDigits(buyer.user_metadata?.mobile_number || buyer.user_metadata?.phone || buyer.phone || "");
-    if (!registeredPhone || registeredPhone !== phone) return res.status(409).json({ ok: false, error: "The mobile number does not match the number saved on that VELTEX account. Ask the buyer to update/verify their account details first." });
+    if (registeredPhone && registeredPhone !== phone) return res.status(409).json({ ok: false, error: "The mobile number does not match the number saved on that VELTEX account." });
     if (!(buyer.email_confirmed_at || buyer.confirmed_at)) return res.status(409).json({ ok: false, error: "The buyer must verify their email before activation." });
     if (action === "activate") {
+      if (!registeredPhone) {
+        const metadataResponse = await fetch(`${url}/auth/v1/admin/users/${encodeURIComponent(buyer.id)}`, {
+          method: "PUT",
+          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ user_metadata: { ...(buyer.user_metadata || {}), mobile_number: phone } }),
+          cache: "no-store"
+        });
+        if (!metadataResponse.ok) return res.status(502).json({ ok: false, error: "Could not save this mobile number to the buyer account. No licence was activated." });
+      }
       const response = await fetch(`${url}/rest/v1/bot_licenses?on_conflict=user_id`, {
         method: "POST",
         headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=representation" },
