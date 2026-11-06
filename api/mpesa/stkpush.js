@@ -114,8 +114,22 @@ export default async function handler(req, res) {
       method:"POST", headers:{ Prefer:"return=representation" },
       body:JSON.stringify([{ user_id:user.id, provider:"safaricom_daraja_stk", amount:amountUsd, currency:"USD", amount_kes:amountKes, exchange_rate_kes_per_usd:kesPerUsd, exchange_rate_updated_at:exchangeRate.updatedAt, phone_number:phone, status:"pending" }])
     });
-    const pendingRows = await pending.json().catch(()=>[]);
-    if (!pending.ok || !pendingRows[0]?.id) return json(res, 500, { ok:false, error:"Could not create a pending deposit record. Apply the VELTEX M-Pesa SQL migration first." });
+    const pendingBody = await pending.text().catch(()=>"");
+    let pendingRows = [];
+    try { pendingRows = pendingBody ? JSON.parse(pendingBody) : []; } catch {}
+    if (!pending.ok || !pendingRows[0]?.id) {
+      let detail = "";
+      try {
+        const parsed = JSON.parse(pendingBody);
+        detail = [parsed.message, parsed.details, parsed.hint, parsed.code].filter(Boolean).join(" | ");
+      } catch {}
+      console.error("VELTEX pending deposit insert failed:", pending.status, pendingBody);
+      return json(res, 500, {
+        ok:false,
+        error:"Could not create pending deposit record.",
+        diagnostic: detail || `Supabase returned HTTP ${pending.status}. Check Vercel function logs.`
+      });
+    }
     const depositId = pendingRows[0].id;
 
     const sandbox = String(process.env.MPESA_ENV || "sandbox").toLowerCase() !== "production";
