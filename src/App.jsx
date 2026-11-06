@@ -484,8 +484,8 @@ export default function App() {
       counts.sort((a, b) => b.count - a.count || a.digit - b.digit);
       const selected = counts[0];
       const sideCount = digits.filter(value => (value % 2 === 0 ? 'EVEN' : 'ODD') === selected.side).length;
-      const signalScore = Math.max(75, Math.min(100, 75 + Math.round((sideCount / digits.length) * 25)));
-      setDeepScan({ ...selected, percentage: signalScore, qualifies: signalScore >= 75, highSignal: signalScore >= 85, sampleSize: digits.length, scanTick: totalTicks, appeared: false });
+      const observedFrequency = Math.round((sideCount / digits.length) * 100);
+      setDeepScan({ ...selected, percentage: observedFrequency, qualifies: observedFrequency > 50, highSignal: false, sampleSize: digits.length, scanTick: totalTicks, appeared: false });
       setDeepScanning(false);
       setActiveTab('TRADE');
     }, 700);
@@ -1042,7 +1042,7 @@ export default function App() {
               {deepScan && (
                 <div className="space-y-2 rounded-xl border border-slate-700 bg-[#101d29] p-3">
                   <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="ml-auto text-right"><span className="block text-lg font-black text-cyan-200">{deepScan.percentage}%</span><span className={'inline-block rounded-md px-2 py-1 text-[9px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div></div>
-                  <p className="text-[9px] leading-relaxed text-slate-400">Pattern score from the recent sample only; it is not a win probability or guarantee.</p>
+                  <p className="text-[9px] leading-relaxed text-slate-400">Observed side frequency in only 12 recent demo ticks. This is not a prediction, edge, or win probability; the next result may be either side.</p>
                 </div>
               )}
             </div>
