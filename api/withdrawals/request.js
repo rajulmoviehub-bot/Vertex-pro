@@ -10,8 +10,10 @@ function normalizePhone(value) {
   return /^254[71]\d{8}$/.test(n) ? n : "";
 }
 function encryptDestination(value, keyText) {
-  const key = Buffer.from(String(keyText || ""), "base64");
-  if (key.length !== 32) throw new Error("WITHDRAWAL_ENCRYPTION_KEY must be a base64-encoded 32-byte key.");
+  const rawKey = String(keyText || "");
+  const decodedKey = Buffer.from(rawKey, "base64");
+  const key = Buffer.byteLength(rawKey, "utf8") === 32 ? Buffer.from(rawKey, "utf8") : decodedKey;
+  if (key.length !== 32) throw new Error("WITHDRAWAL_ENCRYPTION_KEY must be a random 32-character value or base64-encoded 32-byte key.");
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
