@@ -31,7 +31,10 @@ export default async function handler(req, res) {
   const passkey = process.env.MPESA_PASSKEY;
   const shortcode = process.env.MPESA_SHORTCODE;
   const callbackToken = process.env.MPESA_CALLBACK_TOKEN;
-  const siteUrl = process.env.SITE_URL || "https://vertexpromax.vercel.app";
+  const mpesaEnv = String(process.env.MPESA_ENV || "").trim().toLowerCase();
+  if (mpesaEnv !== "sandbox" && mpesaEnv !== "production") {
+    return json(res, 503, { ok:false, error:"M-Pesa environment is not configured correctly. Set MPESA_ENV to exactly sandbox or production in Vercel, then redeploy." });
+  }
   if (!supabaseUrl || !serviceKey || !consumerKey || !consumerSecret || !passkey || !shortcode || !callbackToken) {
     return json(res, 503, { ok:false, error:"M-Pesa is not configured. Required server environment variables are missing." });
   }
@@ -133,7 +136,7 @@ export default async function handler(req, res) {
     }
     const depositId = pendingRows[0].id;
 
-    const sandbox = String(process.env.MPESA_ENV || "sandbox").toLowerCase() !== "production";
+    const sandbox = mpesaEnv === "sandbox";
     const apiBase = sandbox ? "https://sandbox.safaricom.co.ke" : "https://api.safaricom.co.ke";
     const tokenResponse = await fetch(`${apiBase}/oauth/v1/generate?grant_type=client_credentials`, {
       headers:{ Authorization:"Basic " + Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64") }, cache:"no-store"
@@ -144,8 +147,14 @@ export default async function handler(req, res) {
     if (!tokenResponse.ok || !tokenData.access_token) {
       const safeReason = [tokenData.errorMessage, tokenData.error_description, tokenData.error, tokenData.errorCode]
         .filter(Boolean).join(" | ");
-      console.error("VELTEX Daraja OAuth failed:", tokenResponse.status, tokenBody);
-      throw new Error(`Safaricom OAuth failed (HTTP ${tokenResponse.status}). ${safeReason || "Check that the sandbox Consumer Key and Consumer Secret belong to the same Daraja sandbox app, and MPESA_ENV is sandbox."}`);
+      console.error("VELTEX Daraja OAuth failed:", { environment:mpesaEnv, httpStatus:tokenResponse.status, reason:safeReason || "No OAuth error detail returned" });
+      const guidance = sandbox
+        ? "Check that the Consumer Key and Consumer Secret belong to the same Daraja sandbox app."
+        : "Check that the Production Consumer Key and Consumer Secret belong to the same approved Daraja production app and that the app has the required production product enabled.";
+      await supabaseFetch(`/rest/v1/deposit_requests?id=eq.${depositId}`, serviceKey, {
+        method:"PATCH", body:JSON.stringify({ status:"failed", result_description:`Daraja ${mpesaEnv} OAuth failed (HTTP ${tokenResponse.status}).` })
+      });
+      return json(res, 502, { ok:false, error:`Safaricom ${mpesaEnv} OAuth failed (HTTP ${tokenResponse.status}). ${safeReason || guidance}` });
     }
 
     const timestamp = new Date().toISOString().replace(/[^0-9]/g,"").slice(0,14);
