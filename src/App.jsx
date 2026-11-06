@@ -59,6 +59,8 @@ export default function App() {
   const [capitalEmail, setCapitalEmail] = useState('');
   const [capitalAmount, setCapitalAmount] = useState('5');
   const [capitalBusy, setCapitalBusy] = useState(false);
+  const [mpesaCheckBusy, setMpesaCheckBusy] = useState(false);
+  const [mpesaCheckResult, setMpesaCheckResult] = useState(null);
   // Use the account username (email prefix) consistently across sessions and welcome messages.
   const displayUserName = user.loggedIn ? (user.fullName?.trim() || user.email?.split('@')[0] || 'Customer') : 'Guest';
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
@@ -189,6 +191,31 @@ export default function App() {
     } catch {
       alert('Could not verify admin access. Please try again.');
       return false;
+    }
+  };
+
+  const runMpesaOAuthCheck = async () => {
+    if (!supabase || !adminUnlocked || !isOwner) {
+      alert('Only the verified VELTEX owner can run this check.');
+      return;
+    }
+    setMpesaCheckBusy(true);
+    setMpesaCheckResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
+      const response = await fetch('/api/admin/mpesa-oauth-check', {
+        method:'POST',
+        headers:{ Authorization:`Bearer ${session.access_token}` },
+        cache:'no-store'
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || `OAuth check failed (HTTP ${response.status}).`);
+      setMpesaCheckResult({ ok:true, message:result.message, environment:result.environment });
+    } catch (error) {
+      setMpesaCheckResult({ ok:false, message:error.message || 'OAuth check could not complete.' });
+    } finally {
+      setMpesaCheckBusy(false);
     }
   };
 
@@ -915,9 +942,20 @@ export default function App() {
                 ['WITHDRAWALS','Withdrawal approvals'],
                 ['ACCOUNTS','Account management'],
                 ['CENTRAL','Central wallet withdrawal'],
+                ['MPESA','M-Pesa OAuth test'],
                 ['SHARING','Bot sharing / licence transfer']
               ].map(([key,label]) => <button key={key} onClick={() => setAdminSection(key)} aria-pressed={adminSection === key} className={`rounded-lg border px-3 py-3 text-left text-xs font-bold ${adminSection === key ? 'bg-cyan-800 border-cyan-500 text-white' : 'bg-[#090d14] border-gray-700 text-gray-200'}`}>{label}</button>)}
             </div>
+            {adminSection === 'MPESA' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3">
+              <h3 className="font-bold text-white">Daraja OAuth connection test</h3>
+              <p className="text-xs text-gray-300">This checks the configured Daraja Production or Sandbox Consumer Key and Secret only. It does not send an STK Push, request payment, or credit any wallet.</p>
+              <button type="button" disabled={mpesaCheckBusy} onClick={runMpesaOAuthCheck} className="w-full rounded-lg bg-cyan-800 disabled:opacity-60 text-white font-bold text-sm py-3">{mpesaCheckBusy ? 'CHECKING DAR AJA OAUTH…' : 'TEST M-PESA OAUTH (NO PAYMENT)'}</button>
+              {mpesaCheckResult && <div role="status" aria-live="polite" className={`rounded-lg border p-3 text-sm ${mpesaCheckResult.ok ? 'border-emerald-700 text-emerald-200' : 'border-red-700 text-red-200'}`}>
+                <p className="font-bold">{mpesaCheckResult.ok ? 'OAuth connection successful' : 'OAuth connection failed'}</p>
+                <p>{mpesaCheckResult.message}</p>
+                {mpesaCheckResult.environment && <p>Environment: {mpesaCheckResult.environment}</p>}
+              </div>}
+            </div>}
             {adminSection === 'OVERVIEW' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">System status</h3><p className="text-xs text-gray-300">Customer deposits: Not connected</p><p className="text-xs text-gray-300">Verified registrations: Not connected</p><p className="text-xs text-gray-300">Withdrawal requests: Not connected</p><p className="text-xs text-gray-300">Central wallet: Not connected</p><p className="text-xs text-gray-300">Bot licence transfer: Not connected</p></div>}
             {adminSection === 'DEPOSITS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Customer deposits</h3><p className="text-xs text-amber-200">No customer deposit feed is connected. The records below, if any, are only local browser entries and are not proof of payment.</p>{transactions.filter(tx => tx.type === 'DEPOSIT').length === 0 ? <p className="text-sm text-gray-400">No local deposit entries.</p> : transactions.filter(tx => tx.type === 'DEPOSIT').map(tx => <p key={tx.id} className="text-xs text-gray-300">{tx.time} · ${tx.amount.toFixed(2)} · {tx.status}</p>)}</div>}
             {adminSection === 'REGISTRATIONS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Registered customers</h3><p className="text-2xl font-black text-white">Unavailable</p><p className="text-xs text-gray-400">Email registration and verification are not connected to a customer database, so a real registration count and customer list cannot be shown yet.</p></div>}
