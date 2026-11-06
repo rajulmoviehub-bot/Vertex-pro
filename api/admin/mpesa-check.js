@@ -2,7 +2,7 @@ export const config = { runtime: "nodejs" };
 
 const OWNER_EMAIL = "rajulmoviehub@gmail.com";
 const json = (res, status, body) => res.status(status).json(body);
-const bearer = (req) => String(req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() || "";
+const bearer = (req) => String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const mode = new URL(req.url, "https://vertexpromax.vercel.app").searchParams.get("check");
   if (!["oauth", "preflight"].includes(mode)) return json(res, 400, { ok:false, error:"Specify check=oauth or check=preflight." });
 
-  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const token = bearer(req);
   if (!supabaseUrl || !serviceKey) return json(res, 503, { ok:false, error:"Secure admin verification is not configured." });
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
     const callbackUrl = `https://vertexpromax.vercel.app/api/payments/callback/${encodeURIComponent(callbackToken)}`;
     const checks = {
       environment:true,
-      shortcode_present_and_numeric:/^\\d{5,7}$/.test(shortcode),
+      shortcode_present_and_numeric:/^\d{5,7}$/.test(shortcode),
       transaction_type_supported:["CustomerBuyGoodsOnline","CustomerPayBillOnline"].includes(transactionType),
       consumer_key_present:Boolean(consumerKey),
       consumer_secret_present:Boolean(consumerSecret),
