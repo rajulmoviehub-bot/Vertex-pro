@@ -1430,10 +1430,6 @@ export default function App() {
           <ScanLine className="w-5 h-5" />
           <span className="text-[10px] mt-1 font-bold">DeepScan</span>
         </button>
-        <button aria-label="Accurate Bot analysis" onClick={() => setActiveTab('ACCURATE')} className={`flex flex-col items-center ${activeTab === 'ACCURATE' ? 'text-cyan-300' : 'text-gray-400'}`}>
-          <ScanLine className="w-5 h-5" />
-          <span className="text-[10px] mt-1 font-bold">VELTEX PRIME</span>
-        </button>
         <button aria-label="Trading history" onClick={() => setActiveTab('HISTORY')} className={`flex flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
           <Clock className="w-5 h-5" />
           <span className="text-[10px] mt-1">History</span>
