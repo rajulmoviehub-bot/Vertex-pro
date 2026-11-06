@@ -3,7 +3,7 @@ export const config = { runtime: "nodejs" };
 const OWNER_EMAIL = "rajulmoviehub@gmail.com";
 
 function bearer(req) {
-  return String(req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() || "";
+  return String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 }
 
 export default async function handler(req, res) {
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok:false, error:"Method not allowed" });
   }
 
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const token = bearer(req);
   if (!url || !serviceKey) return res.status(503).json({ ok:false, error:"Secure admin verification is not configured." });
