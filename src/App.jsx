@@ -974,9 +974,10 @@ export default function App() {
                 <div className="space-y-2 rounded-xl border border-slate-700 bg-[#101d29] p-3">
                   <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="ml-auto text-right"><span className="block text-lg font-black text-cyan-200">{deepScan.percentage}%</span><span className={'inline-block rounded-md px-2 py-1 text-[9px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div></div>
                   <p className="text-[9px] leading-relaxed text-slate-400">Observed frequency in the last 12 ticks only; this score is not a prediction or win probability.</p>
-                  {deepScan.appeared && !deepScan.tradeStarted && !activeTrade && (
+                  {deepScan.appeared && !deepScan.tradeStarted && (
                     <div className="space-y-2">
-                      <p role="status" aria-live="polite" className="text-center text-xs font-black text-emerald-300">MATCH FOUND · BEEP · CHOOSE YOUR SIDE</p>
+                      <p role="status" aria-live="polite" className="text-center text-xs font-black text-emerald-300">MATCH FOUND · BEEP · CHOOSE WHETHER TO TRADE</p>
+                      {activeTrade && <p role="status" className="text-center text-[10px] text-amber-300">Another trade is still running. Choose after it finishes.</p>}
                       <p className="text-center text-[10px] text-slate-300">Stake: ${Number(stake).toFixed(2)} · Demo manual trade</p>
                       <div className="grid grid-cols-2 gap-2">
                         <button type="button" onClick={() => {
@@ -984,13 +985,13 @@ export default function App() {
                           if (activeTrade || deepScan.tradeStarted || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
                           setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'DEEP_SCAN' });
                           setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'EVEN' } : previous);
-                        }} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade}>EVEN</button>
+                        }} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted}>EVEN</button>
                         <button type="button" onClick={() => {
                           if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
                           if (activeTrade || deepScan.tradeStarted || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
                           setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'DEEP_SCAN' });
                           setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'ODD' } : previous);
-                        }} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade}>ODD</button>
+                        }} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted}>ODD</button>
                       </div>
                     </div>
                   )}
