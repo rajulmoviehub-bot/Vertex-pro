@@ -28,6 +28,7 @@ export default async function handler(req, res) {
     const deposit = rows?.[0];
     if (!lookup.ok || !deposit) return res.status(404).json({ ok:false });
     if (deposit.status === "confirmed") return res.status(200).json({ ResultCode:0, ResultDesc:"Already processed" });
+    if (deposit.status !== "pending") return res.status(200).json({ ResultCode:0, ResultDesc:"Deposit is not pending; no wallet credit was made." });
 
     const resultCode = Number(cb.ResultCode);
     if (resultCode !== 0) {
