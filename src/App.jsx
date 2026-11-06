@@ -1048,7 +1048,7 @@ export default function App() {
         <main className="p-4 max-w-lg mx-auto w-full space-y-3">
           <section className="bg-[#121824] border border-slate-600 rounded-xl p-4 space-y-3">
             <h2 className="text-lg font-black text-white">AAA- 3 Admin Panel</h2>
-            <p className="text-xs text-amber-200">Owner dashboard preview. Customer registration, deposits, withdrawal requests, central wallet and licence sharing are not connected to a secure server yet. No money movement or approvals can be performed here.</p>
+            <p className="text-xs text-amber-200">Owner controls. Withdrawal requests use a server-side wallet reservation and a manual review queue. Approval does not send money; rejected requests are never refunded automatically.</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">Demo balance</p><p className="text-lg font-black text-white">${demoWallet.toFixed(2)}</p></div>
               <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">Session P/L</p><p className="text-lg font-black text-white">${sessionPL.toFixed(2)}</p></div>
@@ -1087,7 +1087,7 @@ export default function App() {
                 {mpesaPreflightResult.limitations?.map((item, index) => <p key={index}>{item}</p>)}
               </div>}
             </div>}
-            {adminSection === 'OVERVIEW' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">System status</h3><p className="text-xs text-gray-300">Customer deposits: Not connected</p><p className="text-xs text-gray-300">Verified registrations: Not connected</p><p className="text-xs text-gray-300">Withdrawal requests: Not connected</p><p className="text-xs text-gray-300">Central wallet: Not connected</p><p className="text-xs text-gray-300">Bot licence transfer: Not connected</p></div>}
+            {adminSection === 'OVERVIEW' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">System status</h3><p className="text-xs text-gray-300">Customer deposits: Not connected</p><p className="text-xs text-gray-300">Verified registrations: Not connected</p><p className="text-xs text-gray-300">Withdrawal requests: Manual review; manual refunds only</p><p className="text-xs text-gray-300">Central wallet: Not connected</p><p className="text-xs text-gray-300">Bot licence transfer: Not connected</p></div>}
             {adminSection === 'DEPOSITS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Customer deposits</h3><p className="text-xs text-amber-200">No customer deposit feed is connected. The records below, if any, are only local browser entries and are not proof of payment.</p>{transactions.filter(tx => tx.type === 'DEPOSIT').length === 0 ? <p className="text-sm text-gray-400">No local deposit entries.</p> : transactions.filter(tx => tx.type === 'DEPOSIT').map(tx => <p key={tx.id} className="text-xs text-gray-300">{tx.time} · ${tx.amount.toFixed(2)} · {tx.status}</p>)}</div>}
             {adminSection === 'REGISTRATIONS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Registered customers</h3><p className="text-2xl font-black text-white">Unavailable</p><p className="text-xs text-gray-400">Email registration and verification are not connected to a customer database, so a real registration count and customer list cannot be shown yet.</p></div>}
             {adminSection === 'CAPITAL' && <div className="rounded-lg border border-emerald-800 bg-[#090d14] p-4 space-y-3">
@@ -1190,7 +1190,7 @@ export default function App() {
             <h3 className="font-bold text-white">Common questions</h3>
             <p><strong className="text-white">How do I practise?</strong> Select DEMO. It starts at $10,000 and can be reset. Demo results are simulated and are not cash.</p>
             <p><strong className="text-white">Can I deposit with Safaricom M-Pesa?</strong> M-Pesa Express is connected through Safaricom Daraja. Wallet credit happens only after Safaricom confirms payment.</p>
-            <p><strong className="text-white">Can I withdraw?</strong> Withdrawals are not enabled yet. Do not treat your VELTEX wallet balance as withdrawable cash.</p>
+            <p><strong className="text-white">Can I withdraw?</strong> M-Pesa withdrawal requests require a verified account, available balance and manual owner review. Payouts are sent manually outside VELTEX; rejected requests are not refunded automatically.</p>
             <p><strong className="text-white">Does it copy another trader?</strong> No copy-trading feature is offered.</p>
             <p><strong className="text-white">Does the scanner guarantee a win?</strong> No. Digit statistics and the current scanner are informational/simulated only and do not establish a reliable prediction.</p>
           </section>
@@ -1207,7 +1207,7 @@ export default function App() {
               <li>Trading involves substantial risk and you may lose all money committed. Past or simulated results do not predict future results.</li>
               <li>No profit, income, accuracy, recovery or return is promised or guaranteed.</li>
               <li>Do not share your account, passwords, verification codes, device access or broker credentials. No copy trading is provided.</li>
-              <li>Only pay through the verified M-Pesa prompt shown by VELTEX. Withdrawals are not automatically paid or refunded; the owner handles review and any refund manually.</li>
+              <li>Only pay through the verified M-Pesa prompt shown by VELTEX. Withdrawals require manual owner review. Rejected requests are never automatically refunded; any refund is a separate manual owner action.</li>
               <li>Any buyer licence transfer must be processed through a secure, verified owner service. A transfer must revoke the previous activation before the new buyer is activated; this enforcement is not yet live.</li>
               <li>Users are responsible for complying with applicable laws and the rules of their broker and payment providers.</li>
               <li>Regulatory licensing is not claimed. BCLB status is unverified until valid documentation is supplied and checked.</li>
