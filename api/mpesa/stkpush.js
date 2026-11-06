@@ -111,7 +111,7 @@ export default async function handler(req, res) {
     if (!user?.id || !user.email_confirmed_at && !user.confirmed_at) return json(res, 403, { ok:false, error:"Verify your email before depositing." });
 
     const pending = await supabaseFetch("/rest/v1/deposit_requests", serviceKey, {
-      method:"POST", headers:{ Prefer:"return=representation" },
+      method:"POST", headers:{ Prefer:"return=representation", Authorization:`Bearer ${accessToken}` },
       body:JSON.stringify([{ user_id:user.id, provider:"safaricom_daraja_stk", amount:amountUsd, currency:"USD", amount_kes:amountKes, exchange_rate_kes_per_usd:kesPerUsd, exchange_rate_updated_at:exchangeRate.updatedAt, phone_number:phone, status:"pending" }])
     });
     const pendingBody = await pending.text().catch(()=>"");
