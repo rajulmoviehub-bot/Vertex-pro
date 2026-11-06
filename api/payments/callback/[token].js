@@ -43,7 +43,8 @@ export default async function handler(req, res) {
     const paidKes = Number(value("Amount"));
     const phone = String(value("PhoneNumber") || "");
     const expectedPhone = String(deposit.phone_number || "").replace(/\D/g, "");
-    if (!receipt || !Number.isFinite(paidKes) || paidKes <= 0 || Math.abs(paidKes - Number(deposit.amount_kes)) > 0.01 || (expectedPhone && phone && expectedPhone !== phone)) {
+    const callbackPhone = phone.replace(/\D/g, "");
+    if (!receipt || !Number.isFinite(paidKes) || paidKes <= 0 || Math.abs(paidKes - Number(deposit.amount_kes)) > 0.01 || !expectedPhone || !callbackPhone || expectedPhone !== callbackPhone) {
       await db(`/rest/v1/deposit_requests?id=eq.${deposit.id}`, serviceKey, {
         method:"PATCH", body:JSON.stringify({ status:"failed", result_description:"Callback amount or receipt did not match the pending deposit." })
       });
@@ -72,10 +73,11 @@ export default async function handler(req, res) {
     });
     if (!credit.ok) return res.status(500).json({ ok:false, error:"Wallet credit failed; payment needs reconciliation." });
 
-    await db(`/rest/v1/deposit_requests?id=eq.${deposit.id}`, serviceKey, {
+    const marked = await db(`/rest/v1/deposit_requests?id=eq.${deposit.id}`, serviceKey, {
       method:"PATCH",
       body:JSON.stringify({ status:"confirmed", verified_at:new Date().toISOString(), mpesa_receipt_number:receipt, result_description:"Payment confirmed by Safaricom callback." })
     });
+    if (!marked.ok) return res.status(500).json({ ok:false, error:"Wallet credit posted; deposit status update needs retry." });
     return res.status(200).json({ ResultCode:0, ResultDesc:"Accepted" });
   } catch {
     return res.status(500).json({ ok:false });
