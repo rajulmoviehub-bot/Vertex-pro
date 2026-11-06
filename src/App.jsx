@@ -117,10 +117,13 @@ export default function App() {
   }, [autoBotRunning, accountMode, feedStatus, activeTrade, totalTicks, sessionPL, target, stopLoss, demoWallet, stake, digitCounts, lastDigit]);
 
   useEffect(() => {
-    if (!deepScan || deepScan.appeared || totalTicks <= deepScan.scanTick) return;
-    if (lastDigit === deepScan.digit) {
-      setDeepScan(previous => previous ? { ...previous, appeared: true } : previous);
-      playSound('win');
+    if (!deepScan || !deepScan.loaded || deepScan.tradeStarted || deepScan.expired) return;
+    if (!deepScan.appeared && totalTicks > deepScan.scanTick && lastDigit === deepScan.digit) {
+      setDeepScan(previous => previous ? { ...previous, appeared: true, matchedTick: totalTicks } : previous);
+      return;
+    }
+    if (deepScan.appeared && totalTicks > deepScan.matchedTick) {
+      setDeepScan(previous => previous ? { ...previous, expired: true } : previous);
     }
   }, [totalTicks, lastDigit, deepScan]);
 
@@ -486,7 +489,7 @@ export default function App() {
       const selected = counts[0];
       const sideCount = digits.filter(value => (value % 2 === 0 ? 'EVEN' : 'ODD') === selected.side).length;
       const observedFrequency = Math.round((sideCount / digits.length) * 100);
-      setDeepScan({ ...selected, percentage: observedFrequency, qualifies: observedFrequency > 50, highSignal: false, sampleSize: digits.length, scanTick: totalTicks, appeared: false });
+      setDeepScan({ ...selected, percentage: observedFrequency, qualifies: observedFrequency > 50, highSignal: false, sampleSize: digits.length, scanTick: totalTicks, loaded: false, appeared: false, expired: false, tradeStarted: false });
       setDeepScanning(false);
       setActiveTab('DEEPSCAN');
     }, 700);
@@ -969,33 +972,35 @@ export default function App() {
                 <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: (Math.min(priceHistory.length / 12, 1) * 100) + '%' }} /></div>
                 {priceHistory.length < 12 && <p className="text-[11px] text-slate-400">Collecting live ticks: {priceHistory.length}/12</p>}
               </div>
-              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12} className="flex w-full items-center justify-center gap-2 rounded-lg bg-rose-500 py-2.5 text-[11px] font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
+              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12 || !!activeTrade} className="flex w-full items-center justify-center gap-2 rounded-lg bg-rose-500 py-2.5 text-[11px] font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
               {deepScan && (
                 <div className="space-y-2 rounded-xl border border-slate-700 bg-[#101d29] p-3">
                   <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="ml-auto text-right"><span className="block text-lg font-black text-cyan-200">{deepScan.percentage}%</span><span className={'inline-block rounded-md px-2 py-1 text-[9px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div></div>
-                  <p className="text-[9px] leading-relaxed text-slate-400">Observed frequency in the last 12 ticks only; this score is not a prediction or win probability.</p>
-                  {deepScan.appeared && !deepScan.tradeStarted && (
+                  <p className="text-[9px] leading-relaxed text-slate-400">Observed frequency from the last 12 ticks only. The score is historical frequency, not a prediction or guaranteed win probability.</p>
+                  {!deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: totalTicks } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
+                  {deepScan.loaded && !deepScan.appeared && !deepScan.expired && <p role="status" className="text-center text-xs font-bold text-cyan-200">MARKET LOADED · WAITING FOR DIGIT {deepScan.digit}</p>}
+                  {deepScan.appeared && !deepScan.tradeStarted && !deepScan.expired && (
                     <div className="space-y-2">
-                      <p role="status" aria-live="polite" className="text-center text-xs font-black text-emerald-300">MATCH FOUND · BEEP · CHOOSE WHETHER TO TRADE</p>
-                      {activeTrade && <p role="status" className="text-center text-[10px] text-amber-300">Another trade is still running. Choose after it finishes.</p>}
+                      <p role="status" aria-live="polite" className="text-center text-xs font-black text-emerald-300">TARGET {deepScan.digit} REACHED · CHOOSE NOW</p>
                       <p className="text-center text-[10px] text-slate-300">Stake: ${Number(stake).toFixed(2)} · Demo manual trade</p>
                       <div className="grid grid-cols-2 gap-2">
                         <button type="button" onClick={() => {
                           if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
-                          if (activeTrade || deepScan.tradeStarted || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
+                          if (activeTrade || deepScan.tradeStarted || deepScan.expired || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
                           setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'DEEP_SCAN' });
                           setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'EVEN' } : previous);
-                        }} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted}>EVEN</button>
+                        }} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted || deepScan.expired}>EVEN</button>
                         <button type="button" onClick={() => {
                           if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
-                          if (activeTrade || deepScan.tradeStarted || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
+                          if (activeTrade || deepScan.tradeStarted || deepScan.expired || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
                           setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'DEEP_SCAN' });
                           setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'ODD' } : previous);
-                        }} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted}>ODD</button>
+                        }} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted || deepScan.expired}>ODD</button>
                       </div>
                     </div>
                   )}
-                  {deepScan.tradeStarted && <p role="status" aria-live="polite" className="text-center text-xs font-bold text-cyan-200">Manual {deepScan.chosenSide} trade running…</p>}
+                  {deepScan.expired && <div className="space-y-2"><p role="status" className="text-center text-xs font-black text-rose-300">TARGET PASSED · SIGNAL MISSED</p><button type="button" onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12 || !!activeTrade} className="w-full rounded-lg bg-rose-600 py-3 text-xs font-black text-white disabled:opacity-40">SCAN AGAIN</button></div>}
+                  {deepScan.tradeStarted && <p role="status" className="text-center text-xs font-bold text-cyan-200">Manual {deepScan.chosenSide} trade running…</p>}
                 </div>
               )}
             </div>
