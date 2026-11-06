@@ -17,7 +17,12 @@ export default function App() {
   };
   const [user, setUser] = useState({ loggedIn: false, email: '', fullName: '', refCode: 'VELTEX-7892' });
   const [authModal, setAuthModal] = useState(null);
-  const [authInput, setAuthInput] = useState({ fullName: '', email: '', password: '', ref: '' });
+  const [authInput, setAuthInput] = useState({ fullName: '', email: '', password: '', mobileNumber: '', ref: '' });
+  const [botLicence, setBotLicence] = useState(null);
+  const [licenceEmail, setLicenceEmail] = useState('');
+  const [licenceMobile, setLicenceMobile] = useState('');
+  const [licenceRows, setLicenceRows] = useState([]);
+  const [licenceBusy, setLicenceBusy] = useState(false);
 
   const [initialStake, setInitialStake] = useState(0.75);
   const [stake, setStake] = useState(0.75);
@@ -174,10 +179,12 @@ export default function App() {
       if (!mounted) return;
       if (!session?.user) {
         setUser({ loggedIn: false, email: '', fullName: '', refCode: 'VELTEX-7892' });
+        setBotLicence(null);
         setMainWallet(0);
         return;
       }
       setUser({ loggedIn: true, email: session.user.email || '', fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '', refCode: 'VELTEX-7892' });
+      fetch('/api/bot-license', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(r => r.json()).then(result => { if (mounted && result.ok) setBotLicence(result.licence || null); }).catch(() => {});
       setLoginWelcome(true);
       const { data, error } = await supabase
         .from('wallets')
@@ -557,6 +564,36 @@ export default function App() {
     }
   };
 
+  const loadAdminLicences = async () => {
+    if (!supabase || !adminUnlocked || !isOwner) return;
+    setLicenceBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
+      const response = await fetch('/api/bot-license?admin=1', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Could not load bot licences.');
+      setLicenceRows(Array.isArray(result.licences) ? result.licences : []);
+    } catch (error) { alert(error.message || 'Could not load bot licences.'); }
+    finally { setLicenceBusy(false); }
+  };
+  const adminBotLicenceAction = async (action) => {
+    if (!supabase || !adminUnlocked || !isOwner) return;
+    const email = licenceEmail.trim().toLowerCase(); const mobileNumber = licenceMobile.trim();
+    if (!email || !mobileNumber) { alert('Enter the buyer email and registered mobile number.'); return; }
+    if (!window.confirm(action === 'activate' ? 'Activate MV6 AUTO BOT for this exact VELTEX account only?' : 'Revoke the MV6 AUTO BOT licence for this account?')) return;
+    setLicenceBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
+      const response = await fetch('/api/bot-license', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ action, email, mobileNumber }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Bot licence action failed.');
+      alert(result.message || 'Licence updated.'); await loadAdminLicences();
+    } catch (error) { alert(error.message || 'Bot licence action failed.'); }
+    finally { setLicenceBusy(false); }
+  };
+
   const loadAdminWithdrawals = async () => {
     if (!supabase || !adminUnlocked || !isOwner) return;
     setWithdrawalAdminBusy(true);
@@ -639,8 +676,8 @@ export default function App() {
     }
     const email = authInput.email.trim();
     const password = authInput.password;
-    if (!email || !password || (authModal === 'signup' && !authInput.fullName.trim())) {
-      alert(authModal === 'signup' ? 'Enter your full name, email and password.' : 'Enter your email and password.');
+    if (!email || !password || (authModal === 'signup' && (!authInput.fullName.trim() || !authInput.mobileNumber.trim()))) {
+      alert(authModal === 'signup' ? 'Enter your full name, email, mobile number and password.' : 'Enter your email and password.');
       return;
     }
     try {
@@ -650,7 +687,7 @@ export default function App() {
           password,
           options: {
             emailRedirectTo: 'https://vertexpromax.vercel.app',
-            data: { full_name: authInput.fullName.trim(), name: authInput.fullName.trim(), referral_code: authInput.ref.trim() || null }
+            data: { full_name: authInput.fullName.trim(), name: authInput.fullName.trim(), mobile_number: authInput.mobileNumber.trim(), referral_code: authInput.ref.trim() || null }
           }
         });
         if (error) throw error;
@@ -679,7 +716,7 @@ export default function App() {
         }
       }
       setAuthModal(null);
-      setAuthInput({ fullName: '', email: '', password: '', ref: '' });
+      setAuthInput({ fullName: '', email: '', password: '', mobileNumber: '', ref: '' });
     } catch (error) {
       alert(error?.message || 'Authentication failed. Please try again.');
     }
@@ -744,11 +781,11 @@ export default function App() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-2">
             <button onClick={() => { setAccountMode('DEMO');  setActiveTrade(null); }} aria-pressed={accountMode === 'DEMO'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'DEMO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>DEMO · $10,000 START</button>
-            <button onClick={() => { setAccountMode('REAL');  setActiveTrade(null); }} aria-pressed={accountMode === 'REAL'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'REAL' ? 'bg-red-600 text-white border-red-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>LIVE</button>
+            <button onClick={() => { if (botLicence?.status !== 'active') { alert('LIVE access requires a paid MV6 AUTO BOT licence assigned by the VELTEX owner to this account.'); return; } setAccountMode('REAL'); setActiveTrade(null); }} aria-pressed={accountMode === 'REAL'} aria-disabled={botLicence?.status !== 'active'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'REAL' ? 'bg-red-600 text-white border-red-500' : 'bg-[#121824] text-gray-300 border-gray-700'} ${botLicence?.status !== 'active' ? 'opacity-60' : ''}`}>LIVE · {botLicence?.status === 'active' ? 'UNLOCKED' : 'LOCKED'}</button>
           </div>
           {accountMode === 'DEMO' && <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]);  setActiveTrade(null); }} className="text-xs font-bold text-yellow-300 underline">Reset Demo $10,000</button>}
         </div>
-        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? 'Practice mode: demo funds only. No real deposits or withdrawals.' : 'Separate local wallet view. Live broker trading and real-money execution are not connected.'}</p>
+        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? 'Practice mode: demo funds only. No real deposits or withdrawals. DEMO is free.' : botLicence?.status === 'active' ? 'Paid bot licence verified for this account. External broker execution is not connected in this build; no real trades are being placed.' : 'LIVE access is locked until this account has an active paid bot licence.'}</p>
       </section>
 
       {/* Tabs */}
@@ -1163,8 +1200,7 @@ export default function App() {
             </div>}
             {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VELTEX Account Management · Admin Only</h3><p className="text-xs text-gray-300">This section is for managing accounts registered on the VELTEX platform only. No broker account or external trading platform is used.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><p className="text-xs text-amber-200">Customer account directory and account actions must be connected to the secure VELTEX admin service before users can be listed, suspended, or edited here.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3">View my VELTEX account</button></div>}
             {adminSection === 'CENTRAL' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Central wallet withdrawal</h3><p className="text-xs text-gray-300">Central wallet balance: Not connected. No business wallet or payout provider is linked.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Request central withdrawal · unavailable</button><p className="text-[11px] text-amber-200">This panel cannot access or move customer or company funds.</p></div>}
-            {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Bot sharing / licence transfer</h3><label className="block text-xs text-gray-300" htmlFor="share-customer-number">Customer phone number</label><input id="share-customer-number" value={shareCustomerNumber} onChange={e => setShareCustomerNumber(e.target.value)} placeholder="e.g. 07XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={!shareCustomerNumber.trim()} onClick={() => alert('Licence transfer is not connected. No customer was activated and no previous licence was revoked.')} className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 disabled:opacity-50">Transfer bot licence · unavailable</button><p className="text-[11px] text-amber-200">No bot is shared by this form. A secure server must verify payment, activate the buyer and revoke the previous activation atomically.</p></div>}
-            {adminSection === 'OVERVIEW' && <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]);  setActiveTrade(null); }} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3">Reset demo account to $10,000</button>}
+            {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">MV6 AUTO BOT · Buyer activation</h3><p className="text-xs text-gray-300">Enter the email and mobile number already registered on the buyer's verified VELTEX account. Activation is tied to that account's unique ID; another account cannot use it.</p><label className="block text-xs text-gray-300" htmlFor="licence-buyer-email">Buyer VELTEX email</label><input id="licence-buyer-email" type="email" autoComplete="email" value={licenceEmail} onChange={e => setLicenceEmail(e.target.value)} placeholder="buyer@example.com" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><label className="block text-xs text-gray-300" htmlFor="licence-buyer-mobile">Registered mobile number</label><input id="licence-buyer-mobile" type="tel" autoComplete="tel" value={licenceMobile} onChange={e => setLicenceMobile(e.target.value)} placeholder="07XXXXXXXX or 2547XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('activate')} className="w-full rounded-lg bg-emerald-700 text-white font-bold text-sm py-3 disabled:opacity-50">ACTIVATE & ASSIGN BOT</button><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('revoke')} className="w-full rounded-lg bg-red-900 border border-red-700 text-red-100 font-bold text-sm py-3 disabled:opacity-50">REVOKE LICENCE</button><button disabled={licenceBusy} onClick={loadAdminLicences} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-2.5 disabled:opacity-50">{licenceBusy ? 'PLEASE WAIT…' : 'REFRESH LICENCE LIST'}</button><div className="space-y-2"><h4 className="text-xs font-bold text-white">Assigned bot licences ({licenceRows.length})</h4>{licenceRows.length === 0 ? <p className="text-xs text-gray-400">No licence records loaded. Press Refresh licence list.</p> : licenceRows.map(item => <div key={item.user_id} className="rounded-lg border border-gray-700 bg-[#121824] p-3 space-y-1"><p className="text-xs font-bold text-white">{item.customer_email}</p><p className="text-xs text-gray-300">Mobile: {item.mobile_number}</p><p className={`text-xs font-black ${item.status === 'active' ? 'text-emerald-300' : 'text-red-300'}`}>Status: {item.status.toUpperCase()}</p><p className="text-[10px] text-gray-400">Account ID: {item.user_id}</p></div>)}</div><p className="text-[11px] text-amber-200">Confirm payment before activation. This grants account access only; it does not connect a broker or execute trades.</p></div>}{adminSection === 'OVERVIEW' && <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]);  setActiveTrade(null); }} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3">Reset demo account to $10,000</button>}
             <button onClick={() => { setAdminUnlocked(false); setAdminSection('OVERVIEW'); setActiveTab('TRADE'); }} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Lock Admin Panel</button>
           </section>
         </main>
@@ -1353,6 +1389,7 @@ export default function App() {
             {authModal === 'signup' && (
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Full name</label>
+                <input type="tel" inputMode="tel" autoComplete="tel" placeholder="07XXXXXXXX" value={authInput.mobileNumber} onChange={(e) => setAuthInput({ ...authInput, mobileNumber: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
                 <input type="text" autoComplete="name" placeholder="Enter your full name" value={authInput.fullName} onChange={(e) => setAuthInput({ ...authInput, fullName: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
               </div>
             )}
