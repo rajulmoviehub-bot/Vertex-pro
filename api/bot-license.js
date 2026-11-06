@@ -39,8 +39,17 @@ export default async function handler(req, res) {
     if (req.method === "GET" && req.query?.admin !== "1") {
       const response = await fetch(`${url}/rest/v1/bot_licenses?user_id=eq.${encodeURIComponent(user.id)}&select=status,activated_at,revoked_at&limit=1`, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" });
       const rows = await response.json().catch(() => []);
-      if (!response.ok) return res.status(503).json({ ok: false, error: "Could not check your bot licence. Apply the licence database migration first." });
-      return res.status(200).json({ ok: true, licence: rows[0] || null });
+      if (!response.ok) return res.status(503).json({ ok: false, error: "Could not check your bot licence. Apply the bot licence database migration first." });
+      const licence = rows[0] || null;
+      if (licence?.status === "active") {
+        const accountPhone = phoneDigits(user.user_metadata?.mobile_number || user.user_metadata?.phone || user.phone || "");
+        const licensedPhone = phoneDigits(licence.mobile_number);
+        const sameEmail = cleanEmail(licence.customer_email) === cleanEmail(user.email);
+        if (!accountPhone || !licensedPhone || accountPhone !== licensedPhone || !sameEmail) {
+          return res.status(200).json({ ok: true, licence: { ...licence, status: "revoked" }, accessDenied: true, reason: "This licence does not match the verified email and mobile number on this account." });
+        }
+      }
+      return res.status(200).json({ ok: true, licence });
     }
     if (req.method === "GET") {
       const response = await fetch(`${url}/rest/v1/bot_licenses?select=user_id,customer_email,mobile_number,status,activated_at,revoked_at&order=activated_at.desc&limit=200`, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" });
