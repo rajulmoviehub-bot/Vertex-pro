@@ -1389,8 +1389,11 @@ export default function App() {
             {authModal === 'signup' && (
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Full name</label>
-                <input type="tel" inputMode="tel" autoComplete="tel" placeholder="07XXXXXXXX" value={authInput.mobileNumber} onChange={(e) => setAuthInput({ ...authInput, mobileNumber: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
                 <input type="text" autoComplete="name" placeholder="Enter your full name" value={authInput.fullName} onChange={(e) => setAuthInput({ ...authInput, fullName: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Mobile number (required for bot licence)</label>
+                <input type="tel" inputMode="tel" autoComplete="tel" placeholder="07XXXXXXXX" value={authInput.mobileNumber} onChange={(e) => setAuthInput({ ...authInput, mobileNumber: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
               </div>
             )}
             {authModal === 'signup' && (
