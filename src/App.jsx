@@ -74,7 +74,7 @@ export default function App() {
   const displayUserName = user.loggedIn ? (user.fullName?.trim() || user.email?.split('@')[0] || 'Customer') : 'Guest';
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
-  const [depositAmount, setDepositAmount] = useState(5);
+  const [depositAmount, setDepositAmount] = useState('5');
   const [depositPhone, setDepositPhone] = useState('');
   const [depositBusy, setDepositBusy] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState(5);
@@ -492,6 +492,11 @@ export default function App() {
   };
 
   const handleDeposit = async () => {
+    const requestedDepositAmount = Number(depositAmount);
+    if (!Number.isFinite(requestedDepositAmount) || requestedDepositAmount < 5 || requestedDepositAmount > 10000) {
+      alert('Enter a deposit amount between USD 5 and USD 10,000.');
+      return;
+    }
     if (depositMethod !== 'M-PESA') {
       alert('This payment method is listed but not connected yet. Do not send funds until VELTEX displays verified payment instructions.');
       return;
@@ -512,7 +517,7 @@ export default function App() {
       const response = await fetch('/api/mpesa/stkpush', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ phone: depositPhone, amountUsd: depositAmount })
+        body: JSON.stringify({ phone: depositPhone, amountUsd: requestedDepositAmount })
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error([result.error || 'Could not start M-Pesa payment.', result.diagnostic].filter(Boolean).join(' — '));
@@ -976,14 +981,15 @@ export default function App() {
                 <label className="text-xs text-gray-400 block mb-1 font-bold">Quick deposit amounts (USD)</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[5, 10, 25, 50, 100, 250].map(amount => (
-                    <button type="button" key={amount} onClick={() => setDepositAmount(amount)} aria-pressed={depositAmount === amount} className={`rounded-lg border px-3 py-3 text-sm font-black ${depositAmount === amount ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
+                    <button type="button" key={amount} onClick={() => setDepositAmount(String(amount)) aria-pressed={depositAmount === amount} className={`rounded-lg border px-3 py-3 text-sm font-black ${depositAmount === amount ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
                   ))}
                 </div>
                 <label className="text-xs text-gray-400 block mb-1 mt-3 font-bold">Custom amount (USD)</label>
-                <input type="number" min="5" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
+                <input type="number" min="5" max="10000" step="0.01" inputMode="decimal" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="Enter any amount (USD)" aria-label="Custom deposit amount in US dollars" className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
+                <p className="mt-1 text-[10px] text-gray-500">Enter your own amount. Minimum USD 5; current M-Pesa limit USD 10,000 per request.</p>
               </div>
               {depositMethod === 'M-PESA' && <p className="text-[10px] text-gray-500">M-Pesa payments are processed through Safaricom Daraja. Your wallet is credited only after Safaricom confirms the payment.</p>}
-              <button disabled={depositBusy || depositMethod !== 'M-PESA'} onClick={() => depositAmount < 5 ? alert('Minimum deposit is USD 5.') : handleDeposit()} className="w-full bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-lg shadow-lg">{depositBusy ? 'SENDING PAYMENT PROMPT…' : depositMethod === 'M-PESA' ? 'CONTINUE WITH M-PESA' : 'METHOD SETUP REQUIRED'}</button>
+              <button disabled={depositBusy || depositMethod !== 'M-PESA'} onClick={handleDeposit} className="w-full bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-lg shadow-lg">{depositBusy ? 'SENDING PAYMENT PROMPT…' : depositMethod === 'M-PESA' ? 'CONTINUE WITH M-PESA' : 'METHOD SETUP REQUIRED'}</button>
             </div>
           </div>
         </div>
