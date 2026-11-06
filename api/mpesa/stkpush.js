@@ -149,7 +149,7 @@ export default async function handler(req, res) {
 
     const timestamp = new Date().toISOString().replace(/[^0-9]/g,"").slice(0,14);
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
-    const callbackUrl = `${siteUrl.replace(/\/$/,"")}/api/mpesa/callback?key=${encodeURIComponent(callbackToken)}`;
+    const callbackUrl = `${siteUrl.replace(/\/$/,"")}/api/payments/callback/${encodeURIComponent(callbackToken)}`;
     const stkResponse = await fetch(`${apiBase}/mpesa/stkpush/v1/processrequest`, {
       method:"POST",
       headers:{ Authorization:`Bearer ${tokenData.access_token}`, "Content-Type":"application/json" },
