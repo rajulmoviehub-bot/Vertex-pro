@@ -866,16 +866,10 @@ export default function App() {
 
           {/* Controls */}
           <div className="p-3.5 space-y-3">
-            <section className="rounded-xl border border-cyan-700 bg-[#101d29] p-3 space-y-2" aria-label="MV6 AUTO BOT automatic trading controls">
-              <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-black text-white">MV6 AUTO BOT</h2><span role="status" className={`text-[10px] font-black ${autoBotRunning ? 'text-emerald-300' : 'text-gray-400'}`}>{autoBotRunning ? 'AUTO BOT RUNNING' : 'BOT STOPPED'}</span></div>
-              <p className="text-[11px] text-gray-300">Automatically opens simulated DEMO trades using observed tick-frequency data. It does not connect to a broker or place live orders.</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" disabled={autoBotRunning || accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(target)) || Number(target) <= 0 || !Number.isFinite(Number(stopLoss)) || Number(stopLoss) <= 0} onClick={() => { autoLastEntryTickRef.current = totalTicks - 1; setAutoBotRunning(true); }} className="rounded-lg bg-emerald-700 py-3 text-sm font-black text-white disabled:opacity-40">START AUTO BOT</button>
-                <button type="button" disabled={!autoBotRunning} onClick={() => setAutoBotRunning(false)} className="rounded-lg border border-red-500 bg-red-950/50 py-3 text-sm font-black text-red-200 disabled:opacity-40">STOP BOT</button>
-              </div>
-              <p className="text-[10px] text-amber-200">Automatic ticks: {totalTicks} · Target: +${Math.max(0, Number(target) || 0).toFixed(2)} · Stop-loss: -${Math.max(0, Number(stopLoss) || 0).toFixed(2)}. Bot stops opening new trades when either limit is reached.</p>
-              {accountMode !== 'DEMO' && <p className="text-[10px] text-red-300">Switch to DEMO to use auto-trading. LIVE broker execution is not connected.</p>}
-            </section>
+            <div className="grid grid-cols-2 gap-2 px-3" aria-label="MV6 AUTO BOT controls">
+              <button type="button" disabled={autoBotRunning || accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(target)) || Number(target) <= 0 || !Number.isFinite(Number(stopLoss)) || Number(stopLoss) <= 0} onClick={() => { autoLastEntryTickRef.current = totalTicks - 1; setAutoBotRunning(true); }} className="rounded-lg bg-emerald-700 py-3 text-sm font-black text-white disabled:opacity-40">START AUTO BOT</button>
+              <button type="button" disabled={!autoBotRunning} onClick={() => setAutoBotRunning(false)} className="rounded-lg border border-red-500 bg-red-950/50 py-3 text-sm font-black text-red-200 disabled:opacity-40">STOP BOT</button>
+            </div>
             <div className="bg-[#121824] border border-gray-800 rounded-xl p-3">
               <div className="flex justify-between text-xs text-gray-400 mb-2 font-medium">
                 <span>DURATION</span>
