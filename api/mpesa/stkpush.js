@@ -89,8 +89,8 @@ export default async function handler(req, res) {
   if (!accessToken || accessToken.length > 8192) return json(res, 401, { ok:false, error:"Please sign in first." });
   const amountKesRequested = Number(req.body?.amountKes);
   const phone = phone254(req.body?.phone);
-  if (!phone || !Number.isSafeInteger(amountKesRequested) || amountKesRequested < 10 || amountKesRequested > 250000) {
-    return json(res, 400, { ok:false, error:"Enter a valid Kenyan M-Pesa number and amount (KES 10–250,000)." });
+  if (!phone || !Number.isSafeInteger(amountKesRequested) || amountKesRequested < 650 || amountKesRequested > 250000) {
+    return json(res, 400, { ok:false, error:"Enter a valid Kenyan M-Pesa number and amount (KES 650–250,000)." });
   }
   let exchangeRate;
   try {
