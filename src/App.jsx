@@ -72,6 +72,10 @@ export default function App() {
   const [depositBusy, setDepositBusy] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState(5);
   const [withdrawMethod, setWithdrawMethod] = useState('M-PESA');
+  const [withdrawPhone, setWithdrawPhone] = useState('');
+  const [withdrawBusy, setWithdrawBusy] = useState(false);
+  const [withdrawalRequests, setWithdrawalRequests] = useState([]);
+  const [withdrawalAdminBusy, setWithdrawalAdminBusy] = useState(false);
   const [startupShown, setStartupShown] = useState(false);
 
   useEffect(() => {
@@ -480,6 +484,88 @@ export default function App() {
     }
   };
 
+  const handleWithdrawalRequest = async () => {
+    if (!user.loggedIn || !supabase) {
+      alert('Please sign in before requesting a withdrawal.');
+      setAuthModal('login');
+      return;
+    }
+    if (withdrawMethod !== 'M-PESA') {
+      alert('Only M-Pesa withdrawal requests are enabled. Other methods are not connected.');
+      return;
+    }
+    if (!/^((\\+?254)|0)?[71]\\d{8}$/.test(withdrawPhone.replace(/[\\s-]/g, ''))) {
+      alert('Enter a valid Kenyan M-Pesa number.');
+      return;
+    }
+    if (!Number.isFinite(Number(withdrawAmount)) || Number(withdrawAmount) < 5 || Number(withdrawAmount) > 10000) {
+      alert('Withdrawal amount must be between $5 and $10,000.');
+      return;
+    }
+    setWithdrawBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Your session expired. Sign in again.');
+      const response = await fetch('/api/withdrawals/request', {
+        method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({amountUsd:Number(withdrawAmount),method:withdrawMethod,destination:withdrawPhone})
+      });
+      const result = await response.json().catch(()=>({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Withdrawal request could not be submitted.');
+      if (result.availableBalance !== null && result.availableBalance !== undefined) setMainWallet(Number(result.availableBalance));
+      alert(`Withdrawal request submitted. Request ID: ${result.requestId}. Amount: ${Number(result.amountUsd).toFixed(2)}. Funds are reserved for manual review. No payout or refund is automatic.`);
+      setWithdrawPhone('');
+      setActiveTab('HISTORY');
+    } catch (error) {
+      alert(error.message || 'Withdrawal request failed.');
+    } finally {
+      setWithdrawBusy(false);
+    }
+  };
+
+  const loadAdminWithdrawals = async () => {
+    if (!supabase || !adminUnlocked || !isOwner) return;
+    setWithdrawalAdminBusy(true);
+    try {
+      const {data:{session}} = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
+      const response = await fetch('/api/admin/withdrawals', {headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+      const result = await response.json().catch(()=>({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Could not load withdrawal requests.');
+      setWithdrawalRequests(Array.isArray(result.requests) ? result.requests : []);
+    } catch (error) {
+      alert(error.message || 'Could not load withdrawal requests.');
+    } finally {
+      setWithdrawalAdminBusy(false);
+    }
+  };
+
+  const adminWithdrawalAction = async (requestId, action) => {
+    if (!supabase || !adminUnlocked || !isOwner) return;
+    const labels = {approve:'approve this request for manual payout',reject:'reject this request without refunding automatically',refund:'manually refund this rejected request',paid:'mark this request paid after you have sent the money outside VELTEX',reveal:'reveal the saved payout number'};
+    if (!window.confirm(`Are you sure you want to ${labels[action]}?`)) return;
+    setWithdrawalAdminBusy(true);
+    try {
+      const {data:{session}} = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
+      const response = await fetch('/api/admin/withdrawals', {
+        method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({requestId,action})
+      });
+      const result = await response.json().catch(()=>({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Withdrawal action failed.');
+      if (action === 'reveal') alert(`Payout destination: ${result.destination}`);
+      else alert(result.message || 'Withdrawal request updated.');
+      await loadAdminWithdrawals();
+    } catch (error) {
+      alert(error.message || 'Withdrawal action failed.');
+    } finally {
+      setWithdrawalAdminBusy(false);
+    }
+  };
+
   const handleAdminCapital = async () => {
     const email = capitalEmail.trim().toLowerCase();
     const amount = Number(capitalAmount);
@@ -803,16 +889,18 @@ export default function App() {
             </div>
             <label className="block text-xs text-gray-400 font-bold">Withdrawal method</label>
             <select value={withdrawMethod} onChange={e => setWithdrawMethod(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 text-sm font-bold">
-              <option value="M-PESA">M-Pesa</option>
-              <option value="AIRTEL_MONEY">Airtel Money · setup required</option>
-              <option value="CRYPTO">Crypto · setup required</option>
-              <option value="USDT_P2P">USDT P2P · setup required</option>
-              <option value="WORLDCOIN">Worldcoin (WLD) · setup required</option>
+              <option value="M-PESA">M-Pesa · available for requests</option>
+              <option value="AIRTEL_MONEY" disabled>Airtel Money · not connected</option>
+              <option value="CRYPTO" disabled>Crypto · not connected</option>
+              <option value="USDT_P2P" disabled>USDT P2P · not connected</option>
+              <option value="WORLDCOIN" disabled>Worldcoin (WLD) · not connected</option>
             </select>
+            <label className="block text-xs text-gray-400 font-bold">M-Pesa payout phone number</label>
+            <input type="tel" inputMode="tel" autoComplete="tel" value={withdrawPhone} onChange={e => setWithdrawPhone(e.target.value)} placeholder="07XXXXXXXX or 2547XXXXXXXX" className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
             <label className="block text-xs text-gray-400 font-bold">Withdrawal amount (USD)</label>
-            <input type="number" min="5" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
-            <button disabled className="w-full bg-gray-700 text-gray-300 font-bold text-sm py-3 rounded-lg opacity-70 cursor-not-allowed">Withdrawal request setup required</button>
-            <p className="text-[11px] text-amber-200">Withdrawal requests are not enabled yet. Once enabled, every request will be reviewed manually. Rejected requests will NOT be refunded automatically; the owner must issue any refund manually from Admin.</p>
+            <input type="number" min="5" max="10000" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
+            <button disabled={withdrawBusy || !user.loggedIn || withdrawMethod !== 'M-PESA'} onClick={handleWithdrawalRequest} className="w-full bg-emerald-700 disabled:bg-gray-700 text-white font-bold text-sm py-3 rounded-lg">{withdrawBusy ? 'SUBMITTING REQUEST…' : 'SUBMIT WITHDRAWAL REQUEST'}</button>
+            <p className="text-[11px] text-amber-200">Submitting reserves the requested amount from your available wallet balance. The owner reviews the request and sends any payout manually outside VELTEX. If rejected, there is NO automatic refund; only the owner can issue a separate manual refund.</p>
           </section>
         </div>
       )}
@@ -1012,7 +1100,25 @@ export default function App() {
               <button onClick={handleAdminCapital} disabled={capitalBusy || !capitalEmail.trim() || !capitalAmount} className="w-full rounded-lg bg-emerald-700 py-3 text-sm font-black text-white disabled:opacity-50">{capitalBusy ? 'ADDING CAPITAL…' : 'ADD CAPITAL'}</button>
               <p className="text-[11px] leading-relaxed text-amber-200">Admin credit only. It increases the selected customer's recorded wallet balance; it does not represent a customer deposit or external funds received. Every credit is ledger-recorded.</p>
             </div>}
-            {adminSection === 'WITHDRAWALS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Withdrawal request approvals</h3><p className="text-xs text-gray-300">No withdrawal request system or server-side approval queue is connected. No pending requests are available to review.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Approve request · unavailable</button><p className="text-[11px] text-amber-200">Approval controls will only be enabled after verified customer identity, request records and secure payout integration are implemented.</p></div>}
+            {adminSection === 'WITHDRAWALS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3">
+              <h3 className="font-bold text-white">Withdrawal requests · manual review</h3>
+              <p className="text-xs text-amber-200">Rejecting never refunds automatically. Use the separate MANUAL REFUND action only when you decide to return the reserved funds. APPROVE does not send money; pay the customer outside VELTEX, then mark PAID.</p>
+              <button type="button" disabled={withdrawalAdminBusy} onClick={loadAdminWithdrawals} className="w-full rounded-lg bg-cyan-800 py-3 text-sm font-bold text-white disabled:opacity-50">{withdrawalAdminBusy ? 'LOADING REQUESTS…' : 'REFRESH WITHDRAWAL REQUESTS'}</button>
+              {withdrawalRequests.length === 0 ? <p className="text-sm text-gray-400">No withdrawal requests loaded.</p> : withdrawalRequests.map(item => <div key={item.id} className="rounded-lg border border-gray-700 bg-[#121824] p-3 space-y-2">
+                <p className="text-sm font-bold text-white">${Number(item.amount).toFixed(2)} · {item.payment_method || 'M-PESA'} · {String(item.status).toUpperCase()}</p>
+                <p className="text-xs text-gray-300">Customer ID: {item.user_id}</p>
+                <p className="text-xs text-gray-300">Destination: {item.destination_masked || 'Not available'}</p>
+                <p className="text-[10px] text-gray-500">Request: {item.id} · {item.created_at ? new Date(item.created_at).toLocaleString() : ''}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" disabled={withdrawalAdminBusy} onClick={() => adminWithdrawalAction(item.id,'reveal')} className="rounded bg-slate-700 px-2 py-2 text-xs font-bold text-white">REVEAL PAYOUT NUMBER</button>
+                  {item.status === 'pending' && <button type="button" disabled={withdrawalAdminBusy} onClick={() => adminWithdrawalAction(item.id,'approve')} className="rounded bg-emerald-800 px-2 py-2 text-xs font-bold text-white">APPROVE</button>}
+                  {item.status === 'pending' && <button type="button" disabled={withdrawalAdminBusy} onClick={() => adminWithdrawalAction(item.id,'reject')} className="rounded bg-red-900 px-2 py-2 text-xs font-bold text-white">REJECT · NO REFUND</button>}
+                  {['approved','processing'].includes(item.status) && <button type="button" disabled={withdrawalAdminBusy} onClick={() => adminWithdrawalAction(item.id,'paid')} className="rounded bg-emerald-700 px-2 py-2 text-xs font-bold text-white">MARK PAID</button>}
+                  {item.status === 'rejected' && !item.refund_transaction_id && !item.refunded_at && <button type="button" disabled={withdrawalAdminBusy} onClick={() => adminWithdrawalAction(item.id,'refund')} className="rounded bg-amber-700 px-2 py-2 text-xs font-bold text-white">MANUAL REFUND</button>}
+                  {item.refunded_at && <p className="col-span-2 text-xs font-bold text-emerald-300">Manual refund recorded: {new Date(item.refunded_at).toLocaleString()}</p>}
+                </div>
+              </div>)}
+            </div>}
             {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VELTEX Account Management · Admin Only</h3><p className="text-xs text-gray-300">This section is for managing accounts registered on the VELTEX platform only. No broker account or external trading platform is used.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><p className="text-xs text-amber-200">Customer account directory and account actions must be connected to the secure VELTEX admin service before users can be listed, suspended, or edited here.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3">View my VELTEX account</button></div>}
             {adminSection === 'CENTRAL' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Central wallet withdrawal</h3><p className="text-xs text-gray-300">Central wallet balance: Not connected. No business wallet or payout provider is linked.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Request central withdrawal · unavailable</button><p className="text-[11px] text-amber-200">This panel cannot access or move customer or company funds.</p></div>}
             {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Bot sharing / licence transfer</h3><label className="block text-xs text-gray-300" htmlFor="share-customer-number">Customer phone number</label><input id="share-customer-number" value={shareCustomerNumber} onChange={e => setShareCustomerNumber(e.target.value)} placeholder="e.g. 07XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={!shareCustomerNumber.trim()} onClick={() => alert('Licence transfer is not connected. No customer was activated and no previous licence was revoked.')} className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 disabled:opacity-50">Transfer bot licence · unavailable</button><p className="text-[11px] text-amber-200">No bot is shared by this form. A secure server must verify payment, activate the buyer and revoke the previous activation atomically.</p></div>}
