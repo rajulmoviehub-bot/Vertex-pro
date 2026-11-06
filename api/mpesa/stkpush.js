@@ -77,6 +77,7 @@ export default async function handler(req, res) {
         }])
       }
     );
+    // VELTEX FX cache writes are non-blocking; keep deposits available if cache storage is unavailable.
     // FX cache is an optimization; a cache write failure must not block a deposit.
     if (!cacheWrite.ok) {
       console.error("VELTEX FX cache write failed:", cacheWrite.status, await cacheWrite.text().catch(() => ""));
