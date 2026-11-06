@@ -47,7 +47,7 @@ export default async function handler(req, res) {
 
     const checks = {
       environment: environment === "production" || environment === "sandbox",
-      shortcode_present_and_numeric: /^\\d{5,7}$/.test(shortcode),
+      shortcode_present_and_numeric: /^\d{5,7}$/.test(shortcode),
       transaction_type_supported: ["CustomerBuyGoodsOnline", "CustomerPayBillOnline"].includes(transactionType),
       consumer_key_present: Boolean(consumerKey),
       consumer_secret_present: Boolean(consumerSecret),
