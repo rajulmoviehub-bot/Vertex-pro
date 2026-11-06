@@ -63,7 +63,7 @@ export default function App() {
   const displayUserName = user.loggedIn ? (user.fullName?.trim() || user.email?.split('@')[0] || 'Customer') : 'Guest';
   const isOwner = user.loggedIn && user.email?.trim().toLowerCase() === 'rajulmoviehub@gmail.com';
   const [depositMethod, setDepositMethod] = useState('M-PESA');
-  const [depositAmount, setDepositAmount] = useState(650);
+  const [depositAmount, setDepositAmount] = useState(5);
   const [depositPhone, setDepositPhone] = useState('');
   const [depositBusy, setDepositBusy] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState(5);
@@ -414,11 +414,11 @@ export default function App() {
       const response = await fetch('/api/mpesa/stkpush', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ phone: depositPhone, amountKes: depositAmount })
+        body: JSON.stringify({ phone: depositPhone, amountUsd: depositAmount })
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error([result.error || 'Could not start M-Pesa payment.', result.diagnostic].filter(Boolean).join(' — '));
-      alert(`M-Pesa prompt sent to ${depositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} on your phone. Automatic reference rate used: 1 USD = KES ${Number(result.exchangeRate).toFixed(4)}. Your VELTEX wallet is credited only after Safaricom confirms payment.`);
+      alert(`M-Pesa prompt sent to ${depositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} (about USD ${Number(result.amountUsd).toFixed(2)}). Automatic reference rate: 1 USD = KES ${Number(result.exchangeRate).toFixed(4)}. Your VELTEX wallet is credited only after Safaricom confirms payment.`);
     } catch (error) {
       alert(error.message || 'M-Pesa deposit could not be started.');
     } finally {
@@ -768,7 +768,7 @@ export default function App() {
         <div className="p-4 space-y-4 max-w-md mx-auto w-full">
           <div className="bg-[#121824] border border-gray-800 rounded-xl p-4">
             <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2"><ArrowDownLeft className="w-5 h-5 text-emerald-400" /> Deposit Funds</h2>
-            <p className="text-xs text-gray-400 mb-4">Minimum deposit: KSh 650.00</p>
+            <p className="text-xs text-gray-400 mb-4">Minimum deposit: $5.00 USD</p>
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-gray-400 block mb-1 font-bold">Deposit method</label>
@@ -786,11 +786,11 @@ export default function App() {
               </div>}
               {depositMethod !== 'M-PESA' && <p className="rounded-lg border border-amber-700 bg-amber-950/30 p-3 text-xs text-amber-200">{depositMethod === 'AIRTEL_MONEY' ? 'Airtel Money' : depositMethod === 'CRYPTO' ? 'Crypto' : depositMethod === 'USDT_P2P' ? 'USDT P2P' : 'Worldcoin (WLD)'} is listed for setup, but its verified receiving account/address and payment confirmation integration are not configured yet. Do not send funds to an unverified address.</p>}
               <div>
-                <label className="text-xs text-gray-400 block mb-1 font-bold">Amount (KES)</label>
-                <input type="number" min="650" step="1" value={depositAmount} onChange={(e) => setDepositAmount(Math.max(650, Math.floor(Number(e.target.value) || 650)))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
+                <label className="text-xs text-gray-400 block mb-1 font-bold">Amount (USD)</label>
+                <input type="number" min="5" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
               </div>
               {depositMethod === 'M-PESA' && <p className="text-[10px] text-gray-500">M-Pesa is currently connected in Daraja Sandbox testing only. Wallet credit happens only after Safaricom confirms payment.</p>}
-              <button disabled={depositBusy || depositMethod !== 'M-PESA'} onClick={() => depositAmount < 650 ? alert('Minimum deposit is KSh 650.') : handleDeposit()} className="w-full bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-lg shadow-lg">{depositBusy ? 'SENDING PAYMENT PROMPT…' : depositMethod === 'M-PESA' ? 'CONTINUE WITH M-PESA' : 'METHOD SETUP REQUIRED'}</button>
+              <button disabled={depositBusy || depositMethod !== 'M-PESA'} onClick={() => depositAmount < 5 ? alert('Minimum deposit is USD 5.') : handleDeposit()} className="w-full bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-lg shadow-lg">{depositBusy ? 'SENDING PAYMENT PROMPT…' : depositMethod === 'M-PESA' ? 'CONTINUE WITH M-PESA' : 'METHOD SETUP REQUIRED'}</button>
             </div>
           </div>
         </div>
