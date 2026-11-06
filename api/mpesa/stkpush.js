@@ -167,12 +167,20 @@ export default async function handler(req, res) {
         TransactionDesc:"VELTEX wallet deposit"
       })
     });
-    const stk = await stkResponse.json().catch(()=>({}));
+    const stkRaw = await stkResponse.text().catch(()=>"");
+    let stk = {};
+    try { stk = stkRaw ? JSON.parse(stkRaw) : {}; } catch {}
     if (!stkResponse.ok || stk.ResponseCode !== "0" || !stk.CheckoutRequestID) {
+      const reason = stk.errorMessage || stk.ResponseDescription || "Safaricom rejected the STK Push request."; 
+      console.error("VELTEX Daraja STK rejected:", stkResponse.status, stkRaw, "Callback host:", new URL(callbackUrl).host);
       await supabaseFetch(`/rest/v1/deposit_requests?id=eq.${depositId}`, serviceKey, {
-        method:"PATCH", body:JSON.stringify({ status:"failed", result_description:stk.errorMessage || stk.ResponseDescription || "STK request failed" })
+        method:"PATCH", body:JSON.stringify({ status:"failed", result_description:String(reason).slice(0,500) })
       });
-      return json(res, 502, { ok:false, error:stk.errorMessage || stk.ResponseDescription || "Safaricom rejected the STK Push request." });
+      return json(res, 502, {
+        ok:false, error:reason, safaricomHttpStatus:stkResponse.status,
+        responseCode:stk.ResponseCode || null, requestId:stk.requestId || stk.RequestId || null,
+        callbackHost:new URL(callbackUrl).host, callbackHttps:callbackUrl.startsWith("https://")
+      });
     }
 
     await supabaseFetch(`/rest/v1/deposit_requests?id=eq.${depositId}`, serviceKey, {
