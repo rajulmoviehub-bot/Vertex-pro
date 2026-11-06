@@ -768,15 +768,6 @@ export default function App() {
         </div>
       </header>
 
-      <section aria-label="Permanent bot sale notice" className="bg-amber-950/50 border-b border-amber-700 px-3 py-1.5 animate-pulse">
-        <p className="text-[11px] font-black text-amber-200">VELTEX PRIME V6 AUTO BOT · SALE</p>
-        <p className="text-base font-black text-white">SALE PRICE: $192.53 USD</p>
-        <p className="text-[10px] text-amber-100">VELTEX PRIME V6 AUTO BOT · Price: $192.53 USD (KSh 25,000).</p>
-        <div className="mt-2">
-          <button onClick={() => setActiveTab('INFO')} className="rounded bg-amber-500 text-black text-[11px] font-bold px-3 py-1.5">BOT SALE DETAILS</button>
-        </div>
-      </section>
-
       <section className="bg-[#0d131f] border-b border-gray-800 px-3 py-2" aria-label="Account mode">
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-2">
@@ -1416,23 +1407,27 @@ export default function App() {
         <button onClick={() => setActiveTab('INFO')} className="block mx-auto mt-1 text-red-400 underline">Terms and Conditions</button>
       </footer>
 
-      {/* Fixed bottom navigation */}
-      <nav aria-label="Main navigation" className="bg-[#121824] border-t border-gray-800 fixed bottom-0 left-0 right-0 py-2 px-3 flex items-center justify-around z-50">
-        <button aria-label="MV6 AUTO BOT auto trade" onClick={() => setActiveTab('TRADE')} className={`flex flex-col items-center ${activeTab === 'TRADE' ? 'text-emerald-300' : 'text-emerald-400'}`}>
-          <Zap className="w-5 h-5" />
-          <span className="text-[10px] mt-1 font-bold">MV6 AUTO BOT</span>
+      {/* Fixed bottom navigation with always-visible MV6 bot controls */}
+      <nav aria-label="Main navigation and auto bot controls" className="bg-[#121824] border-t border-gray-800 fixed bottom-0 left-0 right-0 py-2 px-2 flex items-center justify-around gap-1 z-50">
+        <button type="button" aria-label="Start MV6 auto bot" disabled={autoBotRunning || accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(target)) || Number(target) <= 0 || !Number.isFinite(Number(stopLoss)) || Number(stopLoss) <= 0} onClick={() => { autoLastEntryTickRef.current = totalTicks - 1; setAutoBotRunning(true); setActiveTab('TRADE'); }} className="min-w-0 flex-1 rounded-lg bg-emerald-700 px-2 py-2 text-center text-[10px] font-black text-white disabled:opacity-40">
+          <span className="block"><Zap className="mx-auto mb-0.5 h-4 w-4" /></span>
+          START BOT
         </button>
-        <button aria-label="Trade tab" onClick={() => setActiveTab('TRADE')} className={`flex flex-col items-center ${activeTab === 'TRADE' ? 'text-red-500' : 'text-gray-400'}`}>
-          <BarChart2 className="w-5 h-5" />
-          <span className="text-[10px] mt-1 font-bold">Trade</span>
+        <button type="button" aria-label="Stop MV6 auto bot" onClick={() => setAutoBotRunning(false)} className="min-w-0 flex-1 rounded-lg border border-red-500 bg-red-950/70 px-2 py-2 text-center text-[10px] font-black text-red-100">
+          <span className="block"><Square className="mx-auto mb-0.5 h-4 w-4" /></span>
+          STOP BOT
         </button>
-        <button aria-label="DeepScan analysis" onClick={() => setActiveTab('DEEPSCAN')} className={`flex flex-col items-center ${activeTab === 'DEEPSCAN' ? 'text-violet-300' : 'text-gray-400'}`}>
-          <ScanLine className="w-5 h-5" />
-          <span className="text-[10px] mt-1 font-bold">DeepScan</span>
+        <button aria-label="Trade tab" onClick={() => setActiveTab('TRADE')} className={`flex min-w-0 flex-1 flex-col items-center ${activeTab === 'TRADE' ? 'text-red-500' : 'text-gray-400'}`}>
+          <BarChart2 className="h-4 w-4" />
+          <span className="mt-1 text-[10px] font-bold">Trade</span>
         </button>
-        <button aria-label="Trading history" onClick={() => setActiveTab('HISTORY')} className={`flex flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
-          <Clock className="w-5 h-5" />
-          <span className="text-[10px] mt-1">History</span>
+        <button aria-label="DeepScan analysis" onClick={() => setActiveTab('DEEPSCAN')} className={`flex min-w-0 flex-1 flex-col items-center ${activeTab === 'DEEPSCAN' ? 'text-violet-300' : 'text-gray-400'}`}>
+          <ScanLine className="h-4 w-4" />
+          <span className="mt-1 text-[10px] font-bold">DeepScan</span>
+        </button>
+        <button aria-label="Trading history" onClick={() => setActiveTab('HISTORY')} className={`flex min-w-0 flex-1 flex-col items-center ${activeTab === 'HISTORY' ? 'text-red-500' : 'text-gray-400'}`}>
+          <Clock className="h-4 w-4" />
+          <span className="mt-1 text-[10px]">History</span>
         </button>
       </nav>
 
