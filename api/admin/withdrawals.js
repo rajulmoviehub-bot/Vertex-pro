@@ -4,7 +4,9 @@ const OWNER_EMAIL = "rajulmoviehub@gmail.com";
 const bearer = req => String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 function decryptDestination(value,keyText) {
   const [version,ivText,tagText,dataText] = String(value || "").split(".");
-  const key = Buffer.from(String(keyText || ""),"base64");
+  const rawKey = String(keyText || "");
+  const decodedKey = Buffer.from(rawKey,"base64");
+  const key = Buffer.byteLength(rawKey,"utf8") === 32 ? Buffer.from(rawKey,"utf8") : decodedKey;
   if (version !== "v1" || key.length !== 32 || !ivText || !tagText || !dataText) throw new Error("Encrypted destination or encryption key is invalid.");
   const decipher = createDecipheriv("aes-256-gcm",key,Buffer.from(ivText,"base64"));
   decipher.setAuthTag(Buffer.from(tagText,"base64"));
