@@ -488,7 +488,7 @@ export default function App() {
       const observedFrequency = Math.round((sideCount / digits.length) * 100);
       setDeepScan({ ...selected, percentage: observedFrequency, qualifies: observedFrequency > 50, highSignal: false, sampleSize: digits.length, scanTick: totalTicks, appeared: false });
       setDeepScanning(false);
-      setActiveTab('TRADE');
+      setActiveTab('DEEPSCAN');
     }, 700);
   };
 
