@@ -921,8 +921,8 @@ export default function App() {
             </div>
 
           </div>
-            {/* Manual EVEN / ODD controls are hidden while MV6 AUTO BOT is running. */}
-            {!autoBotRunning && <div className="mx-3 mt-3 rounded-xl border border-slate-700 bg-[#101d29] p-3 space-y-2">
+            {/* Show manual EVEN / ODD only when the auto bot and all trades are idle. */}
+            {!autoBotRunning && !activeTrade && <div className="mx-3 mt-3 rounded-xl border border-slate-700 bg-[#101d29] p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-black text-white">MANUAL ENTRY</span>
                 <span className="text-[10px] text-slate-400">{deepScan ? `WAIT FOR DIGIT ${deepScan.digit}` : 'RUN DEEPSCAN FIRST'}</span>
