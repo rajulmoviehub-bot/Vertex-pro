@@ -87,10 +87,10 @@ export default async function handler(req, res) {
 
   const accessToken = bearer(req);
   if (!accessToken || accessToken.length > 8192) return json(res, 401, { ok:false, error:"Please sign in first." });
-  const amountUsd = Number(req.body?.amountUsd);
+  const amountKesRequested = Number(req.body?.amountKes);
   const phone = phone254(req.body?.phone);
-  if (!phone || !Number.isFinite(amountUsd) || amountUsd < 5 || amountUsd > 10000) {
-    return json(res, 400, { ok:false, error:"Enter a valid Kenyan M-Pesa number and deposit amount (USD 5–10,000)." });
+  if (!phone || !Number.isSafeInteger(amountKesRequested) || amountKesRequested < 10 || amountKesRequested > 250000) {
+    return json(res, 400, { ok:false, error:"Enter a valid Kenyan M-Pesa number and amount (KES 10–250,000)." });
   }
   let exchangeRate;
   try {
@@ -99,7 +99,8 @@ export default async function handler(req, res) {
     return json(res, 503, { ok:false, error:error.message || "Automatic exchange rate unavailable." });
   }
   const kesPerUsd = exchangeRate.rate;
-  const amountKes = Math.ceil(amountUsd * kesPerUsd);
+  const amountKes = amountKesRequested;
+  const amountUsd = Number((amountKes / kesPerUsd).toFixed(8));
   if (amountKes < 1 || amountKes > 250000) return json(res, 400, { ok:false, error:"The KES amount is outside the allowed STK Push limit." });
 
   try {
