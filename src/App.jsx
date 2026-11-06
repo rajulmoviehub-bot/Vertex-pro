@@ -67,6 +67,7 @@ export default function App() {
   const [depositPhone, setDepositPhone] = useState('');
   const [depositBusy, setDepositBusy] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState(5);
+  const [withdrawMethod, setWithdrawMethod] = useState('M-PESA');
   const [startupShown, setStartupShown] = useState(false);
 
   useEffect(() => {
@@ -394,7 +395,7 @@ export default function App() {
 
   const handleDeposit = async () => {
     if (depositMethod !== 'M-PESA') {
-      alert('Only M-Pesa Express is configured. Select M-PESA to continue.');
+      alert('This payment method is listed but not connected yet. Do not send funds until VELTEX displays verified payment instructions.');
       return;
     }
     if (!user.loggedIn || !supabase) {
@@ -746,10 +747,18 @@ export default function App() {
                 <button key={amount} onClick={() => setWithdrawAmount(amount)} aria-pressed={withdrawAmount === amount} className={`rounded-lg border px-3 py-3 text-sm font-black ${withdrawAmount === amount ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
               ))}
             </div>
+            <label className="block text-xs text-gray-400 font-bold">Withdrawal method</label>
+            <select value={withdrawMethod} onChange={e => setWithdrawMethod(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 text-sm font-bold">
+              <option value="M-PESA">M-Pesa</option>
+              <option value="AIRTEL_MONEY">Airtel Money · setup required</option>
+              <option value="CRYPTO">Crypto · setup required</option>
+              <option value="USDT_P2P">USDT P2P · setup required</option>
+              <option value="WORLDCOIN">Worldcoin (WLD) · setup required</option>
+            </select>
             <label className="block text-xs text-gray-400 font-bold">Withdrawal amount (USD)</label>
             <input type="number" min="5" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
-            <button disabled className="w-full bg-gray-700 text-gray-300 font-bold text-sm py-3 rounded-lg opacity-70 cursor-not-allowed">Withdrawal requests not enabled yet</button>
-            <p className="text-[11px] text-amber-200">This screen is a preview only. Secure wallet withdrawal processing and payment-provider verification are not connected, so no money can be requested or sent yet.</p>
+            <button disabled className="w-full bg-gray-700 text-gray-300 font-bold text-sm py-3 rounded-lg opacity-70 cursor-not-allowed">Withdrawal request setup required</button>
+            <p className="text-[11px] text-amber-200">All five methods are being prepared. Withdrawals will use manual admin review; no request is accepted and no payout is sent until the secure wallet reservation, destination verification and approval system is connected.</p>
           </section>
         </div>
       )}
@@ -762,21 +771,26 @@ export default function App() {
             <p className="text-xs text-gray-400 mb-4">Minimum deposit $5.00</p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-400 block mb-1 font-bold">Gateway</label>
+                <label className="text-xs text-gray-400 block mb-1 font-bold">Deposit method</label>
                 <select value={depositMethod} onChange={(e) => setDepositMethod(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-bold">
-                  <option value="M-PESA">M-Pesa Express</option>
+                  <option value="M-PESA">M-Pesa</option>
+                  <option value="AIRTEL_MONEY">Airtel Money · setup required</option>
+                  <option value="CRYPTO">Crypto · setup required</option>
+                  <option value="USDT_P2P">USDT P2P · setup required</option>
+                  <option value="WORLDCOIN">Worldcoin (WLD) · setup required</option>
                 </select>
               </div>
-              <div>
+              {depositMethod === 'M-PESA' && <div>
                 <label className="text-xs text-gray-400 block mb-1 font-bold">M-Pesa phone number</label>
                 <input type="tel" inputMode="tel" autoComplete="tel" value={depositPhone} onChange={(e) => setDepositPhone(e.target.value)} placeholder="07XXXXXXXX" className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
-              </div>
+              </div>}
+              {depositMethod !== 'M-PESA' && <p className="rounded-lg border border-amber-700 bg-amber-950/30 p-3 text-xs text-amber-200">{depositMethod === 'AIRTEL_MONEY' ? 'Airtel Money' : depositMethod === 'CRYPTO' ? 'Crypto' : depositMethod === 'USDT_P2P' ? 'USDT P2P' : 'Worldcoin (WLD)'} is listed for setup, but its verified receiving account/address and payment confirmation integration are not configured yet. Do not send funds to an unverified address.</p>}
               <div>
                 <label className="text-xs text-gray-400 block mb-1 font-bold">Amount (USD)</label>
                 <input type="number" min="5" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
               </div>
-              <p className="text-[10px] text-gray-500">M-Pesa deposits use an automatically refreshed USD/KES reference rate (updated daily). The rate used is saved with each deposit, so wallet credit uses the same rate. Rates by <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer" className="underline text-gray-300">ExchangeRate-API</a>. Wallet credit happens only after Safaricom confirms payment.</p>
-              <button disabled={depositBusy} onClick={() => depositAmount < 5 ? alert('Minimum deposit is $5.00.') : handleDeposit()} className="w-full bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-lg shadow-lg">{depositBusy ? 'SENDING PAYMENT PROMPT…' : 'PAY WITH M-PESA'}</button>
+              {depositMethod === 'M-PESA' && <p className="text-[10px] text-gray-500">M-Pesa is currently connected in Daraja Sandbox testing only. Wallet credit happens only after Safaricom confirms payment.</p>}
+              <button disabled={depositBusy || depositMethod !== 'M-PESA'} onClick={() => depositAmount < 5 ? alert('Minimum deposit is $5.00.') : handleDeposit()} className="w-full bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-lg shadow-lg">{depositBusy ? 'SENDING PAYMENT PROMPT…' : depositMethod === 'M-PESA' ? 'CONTINUE WITH M-PESA' : 'METHOD SETUP REQUIRED'}</button>
             </div>
           </div>
         </div>
