@@ -77,7 +77,7 @@ export default function App() {
   const [depositAmount, setDepositAmount] = useState('5');
   const [depositPhone, setDepositPhone] = useState('');
   const [depositBusy, setDepositBusy] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState(5);
+  const [withdrawAmount, setWithdrawAmount] = useState('5');
   const [withdrawMethod, setWithdrawMethod] = useState('M-PESA');
   const [withdrawPhone, setWithdrawPhone] = useState('');
   const [withdrawBusy, setWithdrawBusy] = useState(false);
@@ -881,10 +881,10 @@ export default function App() {
         <div className="p-4 space-y-4 max-w-md mx-auto w-full">
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-3">
             <h2 className="text-base font-bold text-white flex items-center gap-2"><ArrowUpRight className="w-5 h-5 text-emerald-400" /> Withdraw Funds</h2>
-            <p className="text-xs text-gray-400">Minimum withdrawal: $5.00</p>
+            <p className="text-xs text-gray-400">Enter a custom amount or clear the field and type again. Minimum $5; maximum $10,000 per request.</p>
             <div className="grid grid-cols-3 gap-2">
               {[5, 10, 25, 50, 100, 250].map(amount => (
-                <button key={amount} onClick={() => setWithdrawAmount(amount)} aria-pressed={withdrawAmount === amount} className={`rounded-lg border px-3 py-3 text-sm font-black ${withdrawAmount === amount ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
+                <button key={amount} onClick={() => setWithdrawAmount(amount)} aria-pressed={Number(withdrawAmount) === amount} className={`rounded-lg border px-3 py-3 text-sm font-black ${withdrawAmount === amount ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
               ))}
             </div>
             <label className="block text-xs text-gray-400 font-bold">Withdrawal method</label>
@@ -898,7 +898,7 @@ export default function App() {
             <label className="block text-xs text-gray-400 font-bold">M-Pesa payout phone number</label>
             <input type="tel" inputMode="tel" autoComplete="tel" value={withdrawPhone} onChange={e => setWithdrawPhone(e.target.value)} placeholder="07XXXXXXXX or 2547XXXXXXXX" className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
             <label className="block text-xs text-gray-400 font-bold">Withdrawal amount (USD)</label>
-            <input type="number" min="5" max="10000" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(Math.max(5, Number(e.target.value) || 5))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
+            <input type="number" min="5" max="10000" step="0.01" inputMode="decimal" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
             <button disabled={withdrawBusy || !user.loggedIn || withdrawMethod !== 'M-PESA'} onClick={handleWithdrawalRequest} className="w-full bg-emerald-700 disabled:bg-gray-700 text-white font-bold text-sm py-3 rounded-lg">{withdrawBusy ? 'SUBMITTING REQUEST…' : 'SUBMIT WITHDRAWAL REQUEST'}</button>
             <p className="text-[11px] text-amber-200">Submitting reserves the requested amount from your available wallet balance. The owner reviews the request and sends any payout manually outside VELTEX. If rejected, there is NO automatic refund; only the owner can issue a separate manual refund.</p>
           </section>
