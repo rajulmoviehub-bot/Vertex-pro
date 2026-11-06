@@ -416,7 +416,7 @@ export default function App() {
         body: JSON.stringify({ phone: depositPhone, amountUsd: depositAmount })
       });
       const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error || 'Could not start M-Pesa payment.');
+      if (!response.ok || !result.ok) throw new Error([result.error || 'Could not start M-Pesa payment.', result.diagnostic].filter(Boolean).join(' — '));
       alert(`M-Pesa prompt sent to ${depositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} on your phone. Automatic reference rate used: 1 USD = KES ${Number(result.exchangeRate).toFixed(4)}. Your VELTEX wallet is credited only after Safaricom confirms payment.`);
     } catch (error) {
       alert(error.message || 'M-Pesa deposit could not be started.');
