@@ -1,4 +1,4 @@
-// VER production deployment trigger: 2026-11-05
+// VERTEX production deployment trigger: 2026-11-05
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 
@@ -16,7 +16,7 @@ const normalizeKenyanMpesaPhone = (value) => {
 };
 
 export default function App() {
-  const [mainWallet, setMainWallet] = useState(0); // loaded from the authenticated VER wallet
+  const [mainWallet, setMainWallet] = useState(0); // loaded from the authenticated VERTEX wallet
   const [demoWallet, setDemoWallet] = useState(10000.00);
   const [accountMode, setAccountMode] = useState('DEMO');
   const [liveShowcaseMode, setLiveShowcaseMode] = useState(false);
@@ -30,7 +30,7 @@ export default function App() {
     if (accountMode === 'DEMO') setDemoWallet(prev => Math.max(0, prev + delta));
     else setMainWallet(prev => Math.max(0, prev + delta));
   };
-  const [user, setUser] = useState({ loggedIn: false, email: '', fullName: '', refCode: 'VER-7892' });
+  const [user, setUser] = useState({ loggedIn: false, email: '', fullName: '', refCode: 'VERTEX-7892' });
   const [authModal, setAuthModal] = useState(null);
   const [authInput, setAuthInput] = useState({ fullName: '', email: '', password: '', mobileNumber: '', ref: '' });
   const [botLicence, setBotLicence] = useState(null);
@@ -41,7 +41,7 @@ export default function App() {
 
   const [initialStake, setInitialStake] = useState(0.75);
   const [stake, setStake] = useState(0.75);
-  const [market, setMarket] = useState('VER Synthetic Index');
+  const [market, setMarket] = useState('VERTEX Synthetic Index');
   const [contractType, setContractType] = useState('Even/Odd');
   const [tradeMode, setTradeMode] = useState('AUTO'); 
   const [duration, setDuration] = useState(5); 
@@ -237,12 +237,12 @@ export default function App() {
     const syncSession = async (session) => {
       if (!mounted) return;
       if (!session?.user) {
-        setUser({ loggedIn: false, email: '', fullName: '', refCode: 'VER-7892' });
+        setUser({ loggedIn: false, email: '', fullName: '', refCode: 'VERTEX-7892' });
         setBotLicence(null);
         setMainWallet(0);
         return;
       }
-      setUser({ loggedIn: true, email: session.user.email || '', fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '', refCode: 'VER-7892' });
+      setUser({ loggedIn: true, email: session.user.email || '', fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '', refCode: 'VERTEX-7892' });
       fetch('/api/bot-license', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(r => r.json()).then(result => { if (mounted && result.ok) setBotLicence(result.licence || null); }).catch(() => {});
       setLoginWelcome(true);
       const { data, error } = await supabase
@@ -252,7 +252,7 @@ export default function App() {
         .maybeSingle();
       if (!mounted) return;
       if (error) {
-        console.error('VER wallet could not be loaded:', error.message);
+        console.error('VERTEX wallet could not be loaded:', error.message);
         setMainWallet(0);
         return;
       }
@@ -301,7 +301,7 @@ export default function App() {
 
   const runMpesaStkPreflight = async () => {
     if (!supabase || !adminUnlocked || !isOwner) {
-      alert('Only the verified VER owner can run this check.');
+      alert('Only the verified VERTEX owner can run this check.');
       return;
     }
     setMpesaPreflightBusy(true);
@@ -326,7 +326,7 @@ export default function App() {
 
   const runMpesaOAuthCheck = async () => {
     if (!supabase || !adminUnlocked || !isOwner) {
-      alert('Only the verified VER owner can run this check.');
+      alert('Only the verified VERTEX owner can run this check.');
       return;
     }
     setMpesaCheckBusy(true);
@@ -383,17 +383,17 @@ export default function App() {
   const startServerDemoTrade = async (prediction, source = 'MANUAL') => {
     if (Number(target) > 0 && sessionPL >= Number(target)) {
       setAutoBotRunning(false);
-      alert('Alhamdulillah 🤲 Target profit already reached. VER has stopped new trades for this session. Reset the session to trade again.');
+      alert('Alhamdulillah 🤲 Target profit already reached. VERTEX has stopped new trades for this session. Reset the session to trade again.');
       return false;
     }
     if (Number(stopLoss) > 0 && sessionPL <= -Math.abs(Number(stopLoss))) {
       setAutoBotRunning(false);
-      alert('VER stopped: session stop-loss limit reached. Reset the demo session or review your risk settings before trading again.');
+      alert('VERTEX stopped: session stop-loss limit reached. Reset the demo session or review your risk settings before trading again.');
       return false;
     }
     if (tradeRequestRef.current) return;
     if (!supabase || accountMode !== 'DEMO') {
-      alert('The VER server engine is currently available in Demo mode only.');
+      alert('The VERTEX server engine is currently available in Demo mode only.');
       return;
     }
     const numericStake = Number(stake);
@@ -407,7 +407,7 @@ export default function App() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         setAuthModal('login');
-        throw new Error('Sign in to use the VER demo engine.');
+        throw new Error('Sign in to use the VERTEX demo engine.');
       }
       const response = await fetch('/api/market/tick', {
         method: 'POST',
@@ -430,7 +430,7 @@ export default function App() {
       setActiveTab('TRADE');
       return true;
     } catch (error) {
-      alert(error?.message || 'VER could not open this demo trade.');
+      alert(error?.message || 'VERTEX could not open this demo trade.');
       return false;
     } finally {
       tradeRequestRef.current = false;
@@ -528,7 +528,7 @@ export default function App() {
         });
         const result = await response.json();
         if (response.status === 409) return;
-        if (!response.ok || !result.ok || !result.trade) throw new Error(result.error || 'VER could not settle this demo trade.');
+        if (!response.ok || !result.ok || !result.trade) throw new Error(result.error || 'VERTEX could not settle this demo trade.');
         const settled = result.trade;
         const isWin = settled.status === 'won';
         const netPayout = isWin ? Number(settled.stake) * 0.95 : -Number(settled.stake);
@@ -557,14 +557,14 @@ export default function App() {
         setLastTradeResult(finishedTrade);
         setActiveTrade(current => current?.serverTradeId === tradeId ? null : current);
       } catch (error) {
-        console.error('VER demo settlement pending:', error?.message || error);
+        console.error('VERTEX demo settlement pending:', error?.message || error);
       } finally {
         if (settlingTradeRef.current === tradeId) settlingTradeRef.current = null;
       }
     })();
   }, [accountMode, activeTrade?.serverTradeId, activeTrade?.ticksElapsed, activeTrade?.duration, duration, initialStake, multiplier]);
 
-  // Poll VER's server-side deterministic synthetic demo market.
+  // Poll VERTEX's server-side deterministic synthetic demo market.
   // The API discloses that these are simulated prices, not real-world quotes.
   useEffect(() => {
     let disposed = false;
@@ -585,7 +585,7 @@ export default function App() {
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok || !Array.isArray(payload.ticks) || !payload.tick) {
-          throw new Error(payload.error || 'VER market feed returned an invalid response');
+          throw new Error(payload.error || 'VERTEX market feed returned an invalid response');
         }
         const newTicks = payload.ticks.filter(tick =>
           Number.isSafeInteger(tick.sequence) &&
@@ -597,7 +597,7 @@ export default function App() {
         // Rebase to the oldest available tick instead of throwing on every poll;
         // otherwise the feed remains stuck in ERROR forever.
         if (lastSequence && newTicks.length && newTicks[0].sequence > lastSequence + 1) {
-          console.warn('VER market feed recovered after a tick gap; resynchronizing to the latest available ticks.');
+          console.warn('VERTEX market feed recovered after a tick gap; resynchronizing to the latest available ticks.');
           lastSequence = newTicks[0].sequence - 1;
           marketSequenceRef.current = lastSequence;
           setFeedStatus('CONNECTING');
@@ -612,7 +612,7 @@ export default function App() {
       } catch (error) {
         if (!disposed) {
           setFeedStatus('ERROR');
-          console.error('VER synthetic market feed error:', error);
+          console.error('VERTEX synthetic market feed error:', error);
         }
       } finally {
         busy = false;
@@ -694,11 +694,11 @@ export default function App() {
       return;
     }
     if (depositMethod !== 'M-PESA') {
-      alert('This payment method is listed but not connected yet. Do not send funds until VER displays verified payment instructions.');
+      alert('This payment method is listed but not connected yet. Do not send funds until VERTEX displays verified payment instructions.');
       return;
     }
     if (!user.loggedIn || !supabase) {
-      alert('Please sign in to your VER account before depositing.');
+      alert('Please sign in to your VERTEX account before depositing.');
       setAuthModal('login');
       return;
     }
@@ -718,7 +718,7 @@ export default function App() {
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error([result.error || 'Could not start M-Pesa payment.', result.diagnostic].filter(Boolean).join(' — '));
-      alert(`M-Pesa prompt sent to +${normalizedDepositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} (about USD ${Number(result.amountUsd).toFixed(2)}). Automatic reference rate: 1 USD = KES ${Number(result.exchangeRate).toFixed(4)}. Your VER wallet is credited only after Safaricom confirms payment.`);
+      alert(`M-Pesa prompt sent to +${normalizedDepositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} (about USD ${Number(result.amountUsd).toFixed(2)}). Automatic reference rate: 1 USD = KES ${Number(result.exchangeRate).toFixed(4)}. Your VERTEX wallet is credited only after Safaricom confirms payment.`);
     } catch (error) {
       alert(error.message || 'M-Pesa deposit could not be started.');
     } finally {
@@ -784,7 +784,7 @@ export default function App() {
     if (!supabase || !adminUnlocked || !isOwner) return;
     const email = licenceEmail.trim().toLowerCase(); const mobileNumber = licenceMobile.trim();
     if (!email || !mobileNumber) { alert('Enter the buyer email and registered mobile number.'); return; }
-    if (!window.confirm(action === 'activate' ? 'Activate MV6 AUTO BOT for this exact VER account only?' : 'Revoke the MV6 AUTO BOT licence for this account?')) return;
+    if (!window.confirm(action === 'activate' ? 'Activate MV6 AUTO BOT for this exact VERTEX account only?' : 'Revoke the MV6 AUTO BOT licence for this account?')) return;
     setLicenceBusy(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -816,7 +816,7 @@ export default function App() {
 
   const adminWithdrawalAction = async (requestId, action) => {
     if (!supabase || !adminUnlocked || !isOwner) return;
-    const labels = {approve:'approve this request for manual payout',reject:'reject this request without refunding automatically',refund:'manually refund this rejected request',paid:'mark this request paid after you have sent the money outside VER',reveal:'reveal the saved payout number'};
+    const labels = {approve:'approve this request for manual payout',reject:'reject this request without refunding automatically',refund:'manually refund this rejected request',paid:'mark this request paid after you have sent the money outside VERTEX',reveal:'reveal the saved payout number'};
     if (!window.confirm(`Are you sure you want to ${labels[action]}?`)) return;
     setWithdrawalAdminBusy(true);
     try {
@@ -847,7 +847,7 @@ export default function App() {
       return;
     }
     if (!supabase || !adminUnlocked || !isOwner) {
-      alert('Only the verified VER owner can add customer capital.');
+      alert('Only the verified VERTEX owner can add customer capital.');
       return;
     }
     setCapitalBusy(true);
@@ -895,7 +895,7 @@ export default function App() {
         });
         if (error) throw error;
         if (data.session) {
-          setUser({ loggedIn: true, email: data.user?.email || email, fullName: data.user?.user_metadata?.full_name || authInput.fullName.trim(), refCode: 'VER-7892' });
+          setUser({ loggedIn: true, email: data.user?.email || email, fullName: data.user?.user_metadata?.full_name || authInput.fullName.trim(), refCode: 'VERTEX-7892' });
         setLoginWelcome(true);
           alert('Your account was created. Your wallet will show once the database migration is applied.');
         } else {
@@ -904,7 +904,7 @@ export default function App() {
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        setUser({ loggedIn: true, email: data.user?.email || email, fullName: data.user?.user_metadata?.full_name || data.user?.user_metadata?.name || '', refCode: 'VER-7892' });
+        setUser({ loggedIn: true, email: data.user?.email || email, fullName: data.user?.user_metadata?.full_name || data.user?.user_metadata?.name || '', refCode: 'VERTEX-7892' });
         setLoginWelcome(true);
         const { data: wallet, error: walletError } = await supabase
           .from('wallets')
@@ -912,7 +912,7 @@ export default function App() {
           .eq('user_id', data.user.id)
           .maybeSingle();
         if (walletError) {
-          alert('Signed in, but the VER wallet could not load. Confirm that the database migration is applied.');
+          alert('Signed in, but the VERTEX wallet could not load. Confirm that the database migration is applied.');
           setMainWallet(0);
         } else {
           setMainWallet(Number(wallet?.available_balance || 0));
@@ -946,7 +946,7 @@ export default function App() {
         <div className="flex items-center gap-2.5">
           <button aria-label="Open navigation menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)} className="text-gray-300 p-1"><Menu className="w-5 h-5" /></button>
           <div className="flex items-center text-base font-bold tracking-tight">
-            <span className="text-white">VER</span><span className="text-red-500 font-black"> pro</span>
+            <span className="text-white">VERTEX</span><span className="text-red-500 font-black"> pro</span>
           </div>
         </div>
 
@@ -979,7 +979,7 @@ export default function App() {
           </div>
           {accountMode === 'DEMO' && <button onClick={resetTradingSession} disabled={!!activeTrade} className="text-xs font-bold text-yellow-300 underline disabled:opacity-50">Reset Trading Session</button>}
         </div>
-        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? (liveShowcaseMode ? 'LIVE SHOWCASE · 3-hour session. $500 virtual demo funds. Simulated VER market; no real-money orders or payouts.' : 'Practice mode: demo funds only. No real deposits or withdrawals. DEMO and DeepScan are free.') : 'LIVE display mode only. External broker execution is not connected, so no real trades are being placed. A paid MV6 AUTO BOT licence is optional and applies only to the AUTO BOT feature.'}</p>
+        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? (liveShowcaseMode ? 'LIVE SHOWCASE · 3-hour session. $500 virtual demo funds. Simulated VERTEX market; no real-money orders or payouts.' : 'Practice mode: demo funds only. No real deposits or withdrawals. DEMO and DeepScan are free.') : 'LIVE display mode only. External broker execution is not connected, so no real trades are being placed. A paid MV6 AUTO BOT licence is optional and applies only to the AUTO BOT feature.'}</p>
       </section>
 
       {/* Tabs */}
@@ -1007,7 +1007,7 @@ export default function App() {
       {activeTab === 'TRADE' && (
         <>
 
-          {/* VER Dynamic Market Chart */}
+          {/* VERTEX Dynamic Market Chart */}
           <div className="bg-[#121824] border-y border-gray-800 p-3.5 relative mt-2">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -1019,13 +1019,13 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-400' : 'text-amber-300'}`} role="status">{feedStatus === 'LIVE' ? 'VER SIMULATED MARKET' : `FEED ${feedStatus}`}</span>
+                <span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-400' : 'text-amber-300'}`} role="status">{feedStatus === 'LIVE' ? 'VERTEX SIMULATED MARKET' : `FEED ${feedStatus}`}</span>
                 <span className="bg-[#1a2233] border border-gray-700 text-gray-300 font-mono text-xs px-2 py-1 rounded font-bold">50%</span>
                 <button className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded shadow">View</button>
               </div>
             </div>
 
-            <p className="text-[10px] text-amber-300 mb-2">VER server-generated synthetic demo prices · not real-world asset prices. Last tick: {lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : 'Waiting for first tick'}.</p>
+            <p className="text-[10px] text-amber-300 mb-2">VERTEX server-generated synthetic demo prices · not real-world asset prices. Last tick: {lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : 'Waiting for first tick'}.</p>
             <div className="h-48 w-full relative flex items-end justify-between overflow-hidden border-b border-gray-800/80 pb-2 bg-[#0c1017]/40">
               <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d_1px,transparent_1px),linear-gradient(to_bottom,#1f293d_1px,transparent_1px)] bg-[size:40px_35px] opacity-30"></div>
               
@@ -1211,7 +1211,7 @@ export default function App() {
               <button aria-label="Close DeepScan" onClick={() => setActiveTab('TRADE')} className="p-2 text-gray-400 hover:text-white"><span className="text-2xl leading-none">×</span></button>
             </header>
             <div className="space-y-4 p-5">
-              <div className="rounded-xl bg-[#132331] p-4 text-sm leading-relaxed text-slate-300">Choose a market category. VER scans the latest 12 observed ticks for EVEN/ODD patterns.</div>
+              <div className="rounded-xl bg-[#132331] p-4 text-sm leading-relaxed text-slate-300">Choose a market category. VERTEX scans the latest 12 observed ticks for EVEN/ODD patterns.</div>
               <div className="space-y-2"><label className="block text-xs font-bold text-slate-300">Market</label><select value={deepScanMarket} onChange={e => setDeepScanMarket(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#08131d] p-4 text-sm font-bold text-white"><option>Even / Odd</option></select></div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-slate-300"><span>{deepScanning ? 'Scanning market ticks' : 'Ready to scan'}</span><span className="font-mono font-bold text-white">{Math.min(priceHistory.length, 12)}/12</span></div>
@@ -1238,10 +1238,10 @@ export default function App() {
                       <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-black tracking-wide text-cyan-200">LIVE MARKET GRAPH</span><span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-300' : 'text-amber-300'}`}>{feedStatus}</span></div>
                       <div className="relative h-36 w-full overflow-hidden rounded-lg border border-slate-800 bg-[#0c1017]">
                         <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(to right,#334155 1px,transparent 1px),linear-gradient(to bottom,#334155 1px,transparent 1px)', backgroundSize: '32px 28px' }} />
-                        <svg className="absolute inset-0 h-full w-full text-cyan-400" preserveAspectRatio="none" viewBox="0 0 400 150" role="img" aria-label="VER simulated market price graph"><polyline fill="none" stroke="currentColor" strokeWidth="2.5" points={svgPoints} /><circle cx={lastSvgPoint.x} cy={lastSvgPoint.y} r="4" fill="#ffffff" stroke="#22d3ee" strokeWidth="2" /></svg>
+                        <svg className="absolute inset-0 h-full w-full text-cyan-400" preserveAspectRatio="none" viewBox="0 0 400 150" role="img" aria-label="VERTEX simulated market price graph"><polyline fill="none" stroke="currentColor" strokeWidth="2.5" points={svgPoints} /><circle cx={lastSvgPoint.x} cy={lastSvgPoint.y} r="4" fill="#ffffff" stroke="#22d3ee" strokeWidth="2" /></svg>
                         <span className="absolute right-2 top-2 rounded bg-white px-2 py-1 font-mono text-[10px] font-bold text-black">{currentPrice}</span>
                       </div>
-                      <p className="text-[9px] text-slate-400">VER simulated demo prices · graph updates as new market ticks arrive.</p>
+                      <p className="text-[9px] text-slate-400">VERTEX simulated demo prices · graph updates as new market ticks arrive.</p>
                       <div className="grid grid-cols-10 gap-1 pt-1" aria-label="Live digits zero to nine">
                         {Array.from({ length: 10 }, (_, digit) => (
                           <div key={digit} className="flex min-w-0 flex-col items-center gap-1">
@@ -1287,11 +1287,11 @@ export default function App() {
       {activeTab === 'ACCURATE' && (
         <div className="p-4 pb-24 space-y-4 max-w-lg mx-auto w-full">
           <div className="rounded-xl border border-cyan-700/60 bg-[#121824] p-4 space-y-2">
-            <div className="flex items-center gap-2"><ScanLine className="w-5 h-5 text-cyan-300" /><h2 className="text-base font-black text-white">VER PRIME AUTO BOT</h2></div>
+            <div className="flex items-center gap-2"><ScanLine className="w-5 h-5 text-cyan-300" /><h2 className="text-base font-black text-white">VERTEX PRIME AUTO BOT</h2></div>
             <p className="text-xs text-gray-300">Independent analysis panel. Scans the latest observed demo-feed digits and reports their historical frequency.</p>
             <p className="text-[11px] text-amber-300">Historical frequency is not a prediction or guaranteed win probability. Current feed is simulated demo data.</p>
             <button onClick={runAccurateScan} disabled={accurateScanning || priceHistory.length === 0} className="w-full rounded-lg bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 py-3 text-sm font-black text-white">
-              {accurateScanning ? 'SCANNING DIGITS…' : 'RUN VER PRIME SCAN'}
+              {accurateScanning ? 'SCANNING DIGITS…' : 'RUN VERTEX PRIME SCAN'}
             </button>
           </div>
           {accurateScan && (
@@ -1405,7 +1405,7 @@ export default function App() {
             {adminSection === 'REGISTRATIONS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Registered customers</h3><p className="text-2xl font-black text-white">Unavailable</p><p className="text-xs text-gray-400">Email registration and verification are not connected to a customer database, so a real registration count and customer list cannot be shown yet.</p></div>}
             {adminSection === 'CAPITAL' && <div className="rounded-lg border border-emerald-800 bg-[#090d14] p-4 space-y-3">
               <h3 className="font-bold text-white">Add customer capital · USD</h3>
-              <p className="text-xs text-gray-300">Enter the customer's registered email. The credit is recorded against that customer's VER wallet and in the wallet ledger.</p>
+              <p className="text-xs text-gray-300">Enter the customer's registered email. The credit is recorded against that customer's VERTEX wallet and in the wallet ledger.</p>
               <label className="block text-xs font-bold text-gray-300">Customer account email</label>
               <input type="email" value={capitalEmail} onChange={e => setCapitalEmail(e.target.value)} placeholder="customer@example.com" className="w-full rounded-lg border border-gray-700 bg-[#121824] p-3 text-sm text-white" />
               <label className="block text-xs font-bold text-gray-300">Capital amount (USD)</label>
@@ -1415,7 +1415,7 @@ export default function App() {
             </div>}
             {adminSection === 'WITHDRAWALS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3">
               <h3 className="font-bold text-white">Withdrawal requests · manual review</h3>
-              <p className="text-xs text-amber-200">Rejecting never refunds automatically. Use the separate MANUAL REFUND action only when you decide to return the reserved funds. APPROVE does not send money; pay the customer outside VER, then mark PAID.</p>
+              <p className="text-xs text-amber-200">Rejecting never refunds automatically. Use the separate MANUAL REFUND action only when you decide to return the reserved funds. APPROVE does not send money; pay the customer outside VERTEX, then mark PAID.</p>
               <button type="button" disabled={withdrawalAdminBusy} onClick={loadAdminWithdrawals} className="w-full rounded-lg bg-cyan-800 py-3 text-sm font-bold text-white disabled:opacity-50">{withdrawalAdminBusy ? 'LOADING REQUESTS…' : 'REFRESH WITHDRAWAL REQUESTS'}</button>
               {withdrawalRequests.length === 0 ? <p className="text-sm text-gray-400">No withdrawal requests loaded.</p> : withdrawalRequests.map(item => <div key={item.id} className="rounded-lg border border-gray-700 bg-[#121824] p-3 space-y-2">
                 <p className="text-sm font-bold text-white">${Number(item.amount).toFixed(2)} · {item.payment_method || 'M-PESA'} · {String(item.status).toUpperCase()}</p>
@@ -1432,9 +1432,9 @@ export default function App() {
                 </div>
               </div>)}
             </div>}
-            {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VER Account Management · Admin Only</h3><p className="text-xs text-gray-300">This section is for managing accounts registered on the VER platform only. No broker account or external trading platform is used.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><p className="text-xs text-amber-200">Customer account directory and account actions must be connected to the secure VER admin service before users can be listed, suspended, or edited here.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3">View my VER account</button></div>}
+            {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VERTEX Account Management · Admin Only</h3><p className="text-xs text-gray-300">This section is for managing accounts registered on the VERTEX platform only. No broker account or external trading platform is used.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><p className="text-xs text-amber-200">Customer account directory and account actions must be connected to the secure VERTEX admin service before users can be listed, suspended, or edited here.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3">View my VERTEX account</button></div>}
             {adminSection === 'CENTRAL' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Central wallet withdrawal</h3><p className="text-xs text-gray-300">Central wallet balance: Not connected. No business wallet or payout provider is linked.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Request central withdrawal · unavailable</button><p className="text-[11px] text-amber-200">This panel cannot access or move customer or company funds.</p></div>}
-            {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">MV6 AUTO BOT · Buyer activation</h3><p className="text-xs text-gray-300">Enter the email and mobile number already registered on the buyer's verified VER account. Activation is tied to that account's unique ID; another account cannot use it.</p><label className="block text-xs text-gray-300" htmlFor="licence-buyer-email">Buyer VER email</label><input id="licence-buyer-email" type="email" autoComplete="email" value={licenceEmail} onChange={e => setLicenceEmail(e.target.value)} placeholder="buyer@example.com" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><label className="block text-xs text-gray-300" htmlFor="licence-buyer-mobile">Registered mobile number</label><input id="licence-buyer-mobile" type="tel" autoComplete="tel" value={licenceMobile} onChange={e => setLicenceMobile(e.target.value)} placeholder="07XXXXXXXX or 2547XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('activate')} className="w-full rounded-lg bg-emerald-700 text-white font-bold text-sm py-3 disabled:opacity-50">ACTIVATE & ASSIGN BOT</button><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('revoke')} className="w-full rounded-lg bg-red-900 border border-red-700 text-red-100 font-bold text-sm py-3 disabled:opacity-50">REVOKE LICENCE</button><button disabled={licenceBusy} onClick={loadAdminLicences} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-2.5 disabled:opacity-50">{licenceBusy ? 'PLEASE WAIT…' : 'REFRESH LICENCE LIST'}</button><div className="space-y-2"><h4 className="text-xs font-bold text-white">Assigned bot licences ({licenceRows.length})</h4>{licenceRows.length === 0 ? <p className="text-xs text-gray-400">No licence records loaded. Press Refresh licence list.</p> : licenceRows.map(item => <div key={item.user_id} className="rounded-lg border border-gray-700 bg-[#121824] p-3 space-y-1"><p className="text-xs font-bold text-white">{item.customer_email}</p><p className="text-xs text-gray-300">Mobile: {item.mobile_number}</p><p className={`text-xs font-black ${item.status === 'active' ? 'text-emerald-300' : 'text-red-300'}`}>Status: {item.status.toUpperCase()}</p><p className="text-[10px] text-gray-400">Account ID: {item.user_id}</p></div>)}</div><p className="text-[11px] text-amber-200">Confirm payment before activation. This grants account access only; it does not connect a broker or execute trades.</p></div>}{adminSection === 'OVERVIEW' && <button onClick={resetTradingSession} disabled={!!activeTrade} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3 disabled:opacity-50">Reset trading session (wallet unchanged)</button>}
+            {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">MV6 AUTO BOT · Buyer activation</h3><p className="text-xs text-gray-300">Enter the email and mobile number already registered on the buyer's verified VERTEX account. Activation is tied to that account's unique ID; another account cannot use it.</p><label className="block text-xs text-gray-300" htmlFor="licence-buyer-email">Buyer VERTEX email</label><input id="licence-buyer-email" type="email" autoComplete="email" value={licenceEmail} onChange={e => setLicenceEmail(e.target.value)} placeholder="buyer@example.com" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><label className="block text-xs text-gray-300" htmlFor="licence-buyer-mobile">Registered mobile number</label><input id="licence-buyer-mobile" type="tel" autoComplete="tel" value={licenceMobile} onChange={e => setLicenceMobile(e.target.value)} placeholder="07XXXXXXXX or 2547XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('activate')} className="w-full rounded-lg bg-emerald-700 text-white font-bold text-sm py-3 disabled:opacity-50">ACTIVATE & ASSIGN BOT</button><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('revoke')} className="w-full rounded-lg bg-red-900 border border-red-700 text-red-100 font-bold text-sm py-3 disabled:opacity-50">REVOKE LICENCE</button><button disabled={licenceBusy} onClick={loadAdminLicences} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-2.5 disabled:opacity-50">{licenceBusy ? 'PLEASE WAIT…' : 'REFRESH LICENCE LIST'}</button><div className="space-y-2"><h4 className="text-xs font-bold text-white">Assigned bot licences ({licenceRows.length})</h4>{licenceRows.length === 0 ? <p className="text-xs text-gray-400">No licence records loaded. Press Refresh licence list.</p> : licenceRows.map(item => <div key={item.user_id} className="rounded-lg border border-gray-700 bg-[#121824] p-3 space-y-1"><p className="text-xs font-bold text-white">{item.customer_email}</p><p className="text-xs text-gray-300">Mobile: {item.mobile_number}</p><p className={`text-xs font-black ${item.status === 'active' ? 'text-emerald-300' : 'text-red-300'}`}>Status: {item.status.toUpperCase()}</p><p className="text-[10px] text-gray-400">Account ID: {item.user_id}</p></div>)}</div><p className="text-[11px] text-amber-200">Confirm payment before activation. This grants account access only; it does not connect a broker or execute trades.</p></div>}{adminSection === 'OVERVIEW' && <button onClick={resetTradingSession} disabled={!!activeTrade} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3 disabled:opacity-50">Reset trading session (wallet unchanged)</button>}
             <button onClick={() => { setAdminUnlocked(false); setAdminSection('OVERVIEW'); setActiveTab('TRADE'); }} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Lock Admin Panel</button>
           </section>
         </main>
@@ -1444,10 +1444,10 @@ export default function App() {
         <main className="p-4 max-w-lg mx-auto w-full space-y-3">
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
             <h2 className="text-lg font-black text-white">Account management</h2>
-            <p className="text-sm text-gray-300">Manage the account identifier linked to your AUTO VER PRIME BOT licence.</p>
-            <p className="text-sm text-gray-300">This is your VER platform account. It is not connected to Deriv or any external broker.</p>
-            <div className="rounded-lg bg-[#090d14] border border-gray-700 p-3 space-y-1"><p className="text-xs text-gray-400">Account name</p><p className="text-base font-bold text-white">{user.fullName || displayUserName}</p><p className="text-xs text-gray-300">{user.email || 'Not signed in'}</p><p className="text-xs text-gray-400">VER customer account</p></div>
-            <p className="text-xs text-gray-400">Your login and account details belong to this VER platform. Admin-only account controls are available to the verified owner from the Admin Panel.</p>
+            <p className="text-sm text-gray-300">Manage the account identifier linked to your AUTO VERTEX PRIME BOT licence.</p>
+            <p className="text-sm text-gray-300">This is your VERTEX platform account. It is not connected to Deriv or any external broker.</p>
+            <div className="rounded-lg bg-[#090d14] border border-gray-700 p-3 space-y-1"><p className="text-xs text-gray-400">Account name</p><p className="text-base font-bold text-white">{user.fullName || displayUserName}</p><p className="text-xs text-gray-300">{user.email || 'Not signed in'}</p><p className="text-xs text-gray-400">VERTEX customer account</p></div>
+            <p className="text-xs text-gray-400">Your login and account details belong to this VERTEX platform. Admin-only account controls are available to the verified owner from the Admin Panel.</p>
           </section>
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
             <h3 className="text-base font-black text-white">50/50 profit-sharing rules</h3>
@@ -1481,13 +1481,13 @@ export default function App() {
       {activeTab === 'INFO' && (
         <main className="p-4 space-y-4 max-w-2xl mx-auto w-full text-sm">
           <section className="bg-[#121824] border border-gray-800 rounded-xl p-4 space-y-2">
-            <h2 className="text-lg font-black text-white">AUTO VER PRIME BOT</h2>
+            <h2 className="text-lg font-black text-white">AUTO VERTEX PRIME BOT</h2>
             <p className="text-gray-300">Trading education and a demo practice interface. The current build does not execute live broker trades or predict guaranteed outcomes.</p>
             <p className="text-amber-300 font-bold">Never deposit money you cannot afford to lose. There are no guaranteed profits.</p>
-            <p className="text-gray-300">VER PRIME V6 AUTO BOT sale price: $192.53 USD (KSh 25,000). For purchase enquiries, contact the seller directly and confirm the buyer licence and verified payment details before paying. Payments are not accepted inside this app yet.</p>
+            <p className="text-gray-300">VERTEX PRIME V6 AUTO BOT sale price: $192.53 USD (KSh 25,000). For purchase enquiries, contact the seller directly and confirm the buyer licence and verified payment details before paying. Payments are not accepted inside this app yet.</p>
           </section>
           <section className="bg-emerald-950/40 border border-emerald-600 rounded-xl p-4 space-y-3">
-            <h3 className="text-base font-black text-emerald-300">BUY VER PRIME V6 AUTO BOT</h3>
+            <h3 className="text-base font-black text-emerald-300">BUY VERTEX PRIME V6 AUTO BOT</h3>
             <p className="text-2xl font-black text-white">SALE PRICE: $192.53 USD</p>
             <p className="text-xs text-gray-300">Educational trading tool with demo practice and English-only TikTok LIVE education sessions. It does not guarantee profit. The current version is demo-only and does not place live broker trades.</p>
             <p className="text-xs text-amber-200">Interested customers should contact the seller directly to confirm availability, licence terms and verified payment details. No payment is processed by this website yet.</p>
@@ -1501,7 +1501,7 @@ export default function App() {
             <h3 className="font-bold text-white">Common questions</h3>
             <p><strong className="text-white">How do I practise?</strong> Select DEMO. It starts at $10,000 and can be reset. Demo results are simulated and are not cash.</p>
             <p><strong className="text-white">Can I deposit with Safaricom M-Pesa?</strong> M-Pesa Express is connected through Safaricom Daraja. Wallet credit happens only after Safaricom confirms payment.</p>
-            <p><strong className="text-white">Can I withdraw?</strong> M-Pesa withdrawal requests require a verified account, available balance and manual owner review. Payouts are sent manually outside VER; rejected requests are not refunded automatically.</p>
+            <p><strong className="text-white">Can I withdraw?</strong> M-Pesa withdrawal requests require a verified account, available balance and manual owner review. Payouts are sent manually outside VERTEX; rejected requests are not refunded automatically.</p>
             <p><strong className="text-white">Does it copy another trader?</strong> No copy-trading feature is offered.</p>
             <p><strong className="text-white">Does the scanner guarantee a win?</strong> No. Digit statistics and the current scanner are informational/simulated only and do not establish a reliable prediction.</p>
           </section>
@@ -1514,11 +1514,11 @@ export default function App() {
             <h3 className="font-bold text-white">Terms and conditions</h3>
             <ol className="list-decimal pl-5 space-y-1 text-gray-300">
               <li>Use the DEMO account to practise; its $10,000 balance is virtual and has no cash value.</li>
-              <li>M-Pesa deposits are processed through Safaricom confirmation. Withdrawals require manual review; rejected withdrawals are refunded manually by the VER owner, never automatically.</li>
+              <li>M-Pesa deposits are processed through Safaricom confirmation. Withdrawals require manual review; rejected withdrawals are refunded manually by the VERTEX owner, never automatically.</li>
               <li>Trading involves substantial risk and you may lose all money committed. Past or simulated results do not predict future results.</li>
               <li>No profit, income, accuracy, recovery or return is promised or guaranteed.</li>
               <li>Do not share your account, passwords, verification codes, device access or broker credentials. No copy trading is provided.</li>
-              <li>Only pay through the verified M-Pesa prompt shown by VER. Withdrawals require manual owner review. Rejected requests are never automatically refunded; any refund is a separate manual owner action.</li>
+              <li>Only pay through the verified M-Pesa prompt shown by VERTEX. Withdrawals require manual owner review. Rejected requests are never automatically refunded; any refund is a separate manual owner action.</li>
               <li>Any buyer licence transfer must be processed through a secure, verified owner service. A transfer must revoke the previous activation before the new buyer is activated; this enforcement is not yet live.</li>
               <li>Users are responsible for complying with applicable laws and the rules of their broker and payment providers.</li>
               <li>Regulatory licensing is not claimed. BCLB status is unverified until valid documentation is supplied and checked.</li>
@@ -1536,7 +1536,7 @@ export default function App() {
           <button aria-label="Close navigation menu" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-black/70 w-full h-full" />
           <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-[#121824] border-r border-gray-700 p-4 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <div><p className="text-white font-black">AUTO VER PRIME BOT</p><p className="text-xs text-gray-400">Navigation · {displayUserName}</p></div>
+              <div><p className="text-white font-black">AUTO VERTEX PRIME BOT</p><p className="text-xs text-gray-400">Navigation · {displayUserName}</p></div>
               <button aria-label="Close menu" onClick={() => setMenuOpen(false)} className="text-gray-300 text-2xl px-2">×</button>
             </div>
             <div className="space-y-2">
@@ -1545,7 +1545,7 @@ export default function App() {
               ].map(([tab,label]) => <button key={tab} onClick={() => { setActiveTab(tab); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">{label}</button>)}
               {isOwner && (
               <div className="rounded-lg border border-slate-500 bg-slate-900/70 p-3 space-y-2">
-                <p className="text-xs font-black uppercase tracking-wider text-amber-300">VER OWNER · ADMIN</p>
+                <p className="text-xs font-black uppercase tracking-wider text-amber-300">VERTEX OWNER · ADMIN</p>
                 <p className="text-[11px] text-gray-400">Admin sections are grouped here in the left navigation.</p>
                 {[
                   ['OVERVIEW','Dashboard Overview'],
@@ -1578,7 +1578,7 @@ export default function App() {
               <button onClick={() => { setAccountMode('DEMO');  setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
               <button onClick={() => { setActiveTab('ACCOUNT'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
               <button onClick={() => { if (resetTradingSession()) { setAccountMode('DEMO'); setMenuOpen(false); } }} disabled={!!activeTrade} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300 disabled:opacity-50">Reset trading session · wallet unchanged</button>
-              {!user.loggedIn ? <><button onClick={() => { setMenuOpen(false); setAuthModal('login'); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">Login</button><button onClick={() => { setMenuOpen(false); setAuthModal('signup'); }} className="w-full text-left rounded-lg bg-red-700 px-4 py-3 text-sm font-bold text-white">Sign up</button></> : <button onClick={async () => { try { const { error } = await supabase.auth.signOut(); if (error) throw error; setUser({ loggedIn: false, email: '', refCode: 'VER-7892' }); setMainWallet(0); setAdminUnlocked(false);  setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); setActiveTab('TRADE'); } catch (error) { alert(error?.message || 'Could not sign out. Please try again.'); } }} className="w-full flex items-center gap-2 text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200"><LogOut className="w-4 h-4" /> Log out</button>}
+              {!user.loggedIn ? <><button onClick={() => { setMenuOpen(false); setAuthModal('login'); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">Login</button><button onClick={() => { setMenuOpen(false); setAuthModal('signup'); }} className="w-full text-left rounded-lg bg-red-700 px-4 py-3 text-sm font-bold text-white">Sign up</button></> : <button onClick={async () => { try { const { error } = await supabase.auth.signOut(); if (error) throw error; setUser({ loggedIn: false, email: '', refCode: 'VERTEX-7892' }); setMainWallet(0); setAdminUnlocked(false);  setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); setActiveTab('TRADE'); } catch (error) { alert(error?.message || 'Could not sign out. Please try again.'); } }} className="w-full flex items-center gap-2 text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200"><LogOut className="w-4 h-4" /> Log out</button>}
             </div>
             <p className="text-[11px] text-gray-500 mt-5">M-Pesa deposits and withdrawal requests are available where configured. Trading uses a simulated demo market; live broker execution is not connected.</p>
           </aside>
@@ -1598,7 +1598,7 @@ export default function App() {
             <div className="my-6 flex h-28 items-end justify-center gap-2" aria-label="Animated candlestick welcome">
               {[38,68,48,88,58,76,44,96,62,82,52,72].map((height,index) => <span key={index} className="relative w-2 rounded-sm bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.35)] animate-pulse" style={{height:height+'%',animationDelay:(index*70)+'ms'}}><i className="absolute left-1/2 top-[-9px] h-3 w-px -translate-x-1/2 bg-red-200"/><i className="absolute bottom-[-8px] left-1/2 h-3 w-px -translate-x-1/2 bg-red-200"/></span>)}
             </div>
-            <p className="text-xs font-bold text-gray-100">Alhamdulillah — welcome to VER PRO BINARY.</p>
+            <p className="text-xs font-bold text-gray-100">Alhamdulillah — welcome to VERTEX PRO BINARY.</p>
             <p className="mt-1.5 text-[10px] text-gray-300">Bismillah. Trade with patience, wisdom and discipline. InshaAllah.</p>
           </div>
         </div>
@@ -1635,7 +1635,7 @@ export default function App() {
             {authModal === 'signup' && (
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Referral Code</label>
-                <input type="text" placeholder="VER-XXXX" value={authInput.ref} onChange={(e) => setAuthInput({ ...authInput, ref: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-mono" />
+                <input type="text" placeholder="VERTEX-XXXX" value={authInput.ref} onChange={(e) => setAuthInput({ ...authInput, ref: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-mono" />
               </div>
             )}
             <p className="text-[11px] text-amber-300">Registration and login use secure Supabase authentication. New customers must verify their email before signing in.</p>
@@ -1648,7 +1648,7 @@ export default function App() {
       )}
 
       <footer className="px-4 py-4 mb-16 text-center text-[10px] text-gray-500 border-t border-gray-800">
-        VER PRIME AUTO BOT · Demo only · Trading involves risk · BCLB licence status unverified
+        VERTEX PRIME AUTO BOT · Demo only · Trading involves risk · BCLB licence status unverified
         <button onClick={() => setActiveTab('INFO')} className="block mx-auto mt-1 text-red-400 underline">Terms and Conditions</button>
       </footer>
 
