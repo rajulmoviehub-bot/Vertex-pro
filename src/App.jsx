@@ -876,16 +876,18 @@ export default function App() {
                 <button className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-white">⊙</button>
               </div>
             </div>
+            <div className="flex justify-center pt-2" aria-label="Current tick indicator">
+              {stats[String(lastDigit)] !== undefined && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-bounce" />}
+            </div>
 
             {/* Live Dynamic 0-9 Digit Highlights */}
-            <div className="grid grid-cols-10 gap-1 mt-3 pt-1">
+            <div className="grid grid-cols-10 gap-1 mt-1 pt-1">
               {Object.entries(stats).map(([digit, val]) => (
                 <div key={digit} className="flex flex-col items-center gap-1">
                   <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-mono font-bold text-sm transition-all duration-200 ${Number(digit) === lastDigit ? 'border-red-500 bg-red-950 text-red-400 shadow-lg shadow-red-600 scale-110' : 'border-gray-700 bg-[#090d14] text-gray-300'}`}>
                     {digit}
                   </div>
                   <span className={`text-[10px] font-mono font-medium ${Number(digit) === lastDigit ? 'text-red-400 font-bold' : 'text-gray-400'}`}>{val}%</span>
-                  {Number(digit) === lastDigit && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-bounce"></span>}
                 </div>
               ))}
             </div>
