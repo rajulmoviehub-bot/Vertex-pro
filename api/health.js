@@ -16,7 +16,8 @@ export default async function handler(req, res) {
     mpesaConsumerSecret: Boolean(process.env.MPESA_CONSUMER_SECRET),
     mpesaShortcode: Boolean(process.env.MPESA_SHORTCODE),
     mpesaPasskey: Boolean(process.env.MPESA_PASSKEY),
-    mpesaCallbackUrl: Boolean(process.env.MPESA_CALLBACK_URL)
+    mpesaCallbackUrl: Boolean(process.env.MPESA_CALLBACK_URL),
+    withdrawalEncryptionKey: Boolean(process.env.WITHDRAWAL_ENCRYPTION_KEY)
   };
 
   return res.status(200).json({
@@ -25,6 +26,7 @@ export default async function handler(req, res) {
     checks,
     customerAuthReady: checks.supabaseUrl && checks.supabaseAnonKey,
     secureAdminVerificationReady: checks.supabaseUrl && checks.supabaseServiceRoleKey,
+    withdrawalServiceConfigured: checks.supabaseUrl && checks.supabaseServiceRoleKey && checks.withdrawalEncryptionKey,
     mpesaConfigurationPresent: checks.mpesaConsumerKey && checks.mpesaConsumerSecret &&
       checks.mpesaShortcode && checks.mpesaPasskey && checks.mpesaCallbackUrl,
     livePaymentsEnabled: false,
