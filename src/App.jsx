@@ -19,6 +19,12 @@ export default function App() {
   const [mainWallet, setMainWallet] = useState(0); // loaded from the authenticated VELTEX wallet
   const [demoWallet, setDemoWallet] = useState(10000.00);
   const [accountMode, setAccountMode] = useState('DEMO');
+  const [liveShowcaseMode, setLiveShowcaseMode] = useState(false);
+  useEffect(() => {
+    if (!liveShowcaseMode) return undefined;
+    const expiry = setTimeout(() => setLiveShowcaseMode(false), 3 * 60 * 60 * 1000);
+    return () => clearTimeout(expiry);
+  }, [liveShowcaseMode]);
   const activeWallet = accountMode === 'DEMO' ? demoWallet : mainWallet;
   const updateActiveWallet = (delta) => {
     if (accountMode === 'DEMO') setDemoWallet(prev => Math.max(0, prev + delta));
@@ -961,13 +967,13 @@ export default function App() {
       <section className="bg-[#0d131f] border-b border-gray-800 px-3 py-2" aria-label="Account mode">
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => { setAccountMode('DEMO'); setActiveTrade(null); }} aria-pressed={accountMode === 'DEMO'} className={`rounded-md px-3 py-2 text-xs font-black border ${accountMode === 'DEMO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>DEMO · $10,000 START</button>
+            <button onClick={() => { setAccountMode('DEMO'); setActiveTrade(null); }} aria-pressed={accountMode === 'DEMO'} className={`rounded-md px-3 py-2 text-xs font-black border ${accountMode === 'DEMO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>{liveShowcaseMode ? 'LIVE SHOWCASE · $500 VIRTUAL' : 'DEMO · $10,000 START'}</button>
             <button onClick={() => { setAccountMode('REAL'); setActiveTrade(null); }} aria-pressed={accountMode === 'REAL'} className={`rounded-md px-3 py-2 text-xs font-black border ${accountMode === 'REAL' ? 'bg-red-600 text-white border-red-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>LIVE · NOT CONNECTED</button>
-            <button onClick={() => { setAccountMode('DEMO'); setDemoWallet(500); setActiveTrade(null); setAutoBotRunning(false); setActiveTab('TRADE'); }} className="rounded-md px-3 py-2 text-xs font-black border border-cyan-500 bg-cyan-950 text-cyan-200">LIVE TRADE · $500 DEMO SHOWCASE</button>
+            <button onClick={() => { setAccountMode('DEMO'); setDemoWallet(500); setActiveTrade(null); setAutoBotRunning(false); setLiveShowcaseMode(true); setActiveTab('TRADE'); }} className="rounded-md px-3 py-2 text-xs font-black border border-cyan-500 bg-cyan-950 text-cyan-200">{liveShowcaseMode ? 'LIVE SHOWCASE · $500' : 'START 3H LIVE SHOWCASE · $500'}</button>
           </div>
           {accountMode === 'DEMO' && <button onClick={resetTradingSession} disabled={!!activeTrade} className="text-xs font-bold text-yellow-300 underline disabled:opacity-50">Reset Trading Session</button>}
         </div>
-        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? 'Practice mode: demo funds only. No real deposits or withdrawals. LIVE TRADE showcase uses a virtual $500 demo balance; no real-money orders are placed.' : 'LIVE display mode only. External broker execution is not connected, so no real trades are being placed. A paid MV6 AUTO BOT licence is optional and applies only to the AUTO BOT feature.'}</p>
+        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? (liveShowcaseMode ? 'LIVE SHOWCASE · 3-hour session. $500 virtual demo funds. Simulated VELTEX market; no real-money orders or payouts.' : 'Practice mode: demo funds only. No real deposits or withdrawals. DEMO and DeepScan are free.') : 'LIVE display mode only. External broker execution is not connected, so no real trades are being placed. A paid MV6 AUTO BOT licence is optional and applies only to the AUTO BOT feature.'}</p>
       </section>
 
       {/* Tabs */}
@@ -1351,10 +1357,10 @@ export default function App() {
             <h2 className="text-lg font-black text-white">AAA- 3 Admin Panel</h2>
             <p className="text-xs text-amber-200">Owner controls. Withdrawal requests use a server-side wallet reservation and a manual review queue. Approval does not send money; rejected requests are never refunded automatically.</p>
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">Demo balance</p><p className="text-lg font-black text-white">${demoWallet.toFixed(2)}</p></div>
+              <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">{liveShowcaseMode ? 'LIVE SHOWCASE BALANCE · VIRTUAL' : 'Demo balance'}</p><p className="text-lg font-black text-white">${demoWallet.toFixed(2)}</p></div>
               <div className="rounded-lg bg-[#090d14] p-3"><p className="text-xs text-gray-400">Session P/L</p><p className="text-lg font-black text-white">${sessionPL.toFixed(2)}</p></div>
             </div>
-            <p className="text-sm text-gray-300">Demo trades recorded in this browser: {trades.length}</p>
+            <p className="text-sm text-gray-300">{liveShowcaseMode ? 'Showcase trades (simulated)' : 'Demo trades recorded in this browser'}: {trades.length}</p>
             <div className="grid grid-cols-2 gap-2">
               {[
                 ['OVERVIEW','Dashboard overview'],
