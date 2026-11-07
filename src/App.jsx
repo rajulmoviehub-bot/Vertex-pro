@@ -1069,7 +1069,7 @@ export default function App() {
                       </div>
                     </div>
                   )}
-                  {deepScan.expired && <div className="space-y-2"><p role="status" className="text-center text-xs font-black text-rose-300">TARGET PASSED · SIGNAL MISSED</p><button type="button" onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12 || !!activeTrade} className="w-full rounded-lg bg-rose-600 py-3 text-xs font-black text-white disabled:opacity-40">SCAN AGAIN</button></div>}
+                  {deepScan.expired && <div className="space-y-2"><p role="status" className="text-center text-xs font-black text-rose-300">TARGET PASSED · SIGNAL MISSED</p><button type="button" onClick={runDeepScan} disabled={deepScanning || !!activeTrade} className="w-full rounded-lg bg-rose-600 py-3 text-xs font-black text-white disabled:opacity-40">SCAN AGAIN</button></div>}
                   {deepScan.tradeStarted && <p role="status" className="text-center text-xs font-bold text-cyan-200">Manual {deepScan.chosenSide} trade running…</p>}
                 </div>
               )}
