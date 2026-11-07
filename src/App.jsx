@@ -867,6 +867,19 @@ export default function App() {
             </div>
           </section>
 
+          <section aria-label="Risk controls" className="mx-3 mt-2 grid grid-cols-2 gap-2 rounded-xl border border-gray-700 bg-[#121824] p-3">
+            <div className="space-y-1">
+              <label htmlFor="veltex-stop-loss" className="block text-[10px] font-bold uppercase tracking-wider text-gray-300">Set Stop Loss (USD)</label>
+              <input id="veltex-stop-loss" type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={stopLoss} disabled={!!activeTrade} onChange={e => setStopLoss(e.target.value === '' ? '' : Math.min(100000, Math.max(1, Number(e.target.value))))} className="w-full rounded-lg border border-gray-600 bg-[#090d14] p-2 text-sm font-bold text-white disabled:opacity-50" aria-describedby="veltex-stop-loss-help" />
+              <p id="veltex-stop-loss-help" className="text-[9px] text-gray-500">Stops the auto bot after this session loss.</p>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="veltex-multiplier" className="block text-[10px] font-bold uppercase tracking-wider text-gray-300">Set Multiplier</label>
+              <input id="veltex-multiplier" type="number" min="1" max="10" step="0.1" inputMode="decimal" value={multiplier} disabled={!!activeTrade} onChange={e => setMultiplier(e.target.value === '' ? '' : Math.min(10, Math.max(1, Number(e.target.value))))} className="w-full rounded-lg border border-gray-600 bg-[#090d14] p-2 text-sm font-bold text-white disabled:opacity-50" aria-describedby="veltex-multiplier-help" />
+              <p id="veltex-multiplier-help" className="text-[9px] text-gray-500">Next stake after a loss = previous stake × multiplier.</p>
+            </div>
+          </section>
+
           {/* VELTEX Dynamic Market Chart */}
           <div className="bg-[#121824] border-y border-gray-800 p-3.5 relative mt-2">
             <div className="flex items-center justify-between mb-3">
