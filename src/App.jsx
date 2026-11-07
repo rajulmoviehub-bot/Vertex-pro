@@ -1,6 +1,14 @@
 // VELTEX production deployment trigger: 2026-11-05
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
+
+// Accept common Kenyan M-Pesa formats and normalize them to 254XXXXXXXXX.
+const normalizeKenyanMpesaPhone = (value) => {
+  const raw = String(value || '').trim().replace(/[\\s()-]/g, '');
+  const digits = raw.replace(/\\D/g, '');
+  const normalized = digits.startsWith('0') ? `254${digits.slice(1)}` : digits.startsWith('7') || digits.startsWith('1') ? `254${digits}` : digits;
+  return /^254[71]\\d{8}$/.test(normalized) ? normalized : '';
+};
 import { 
   TrendingUp, TrendingDown, RefreshCw, Zap, ShieldAlert, Award, 
   Activity, DollarSign, Settings, ChevronRight, Play, Square, History, BarChart2, MessageSquare, Clock, Volume2, VolumeX, Menu, Bell, UserCheck, LogIn, UserPlus, CreditCard, ArrowDownLeft, ArrowUpRight, Share2, ScanLine, Wallet, LogOut
@@ -539,8 +547,9 @@ export default function App() {
       setAuthModal('login');
       return;
     }
-    if (!depositPhone.trim()) {
-      alert('Enter the Kenyan M-Pesa phone number that should receive the payment prompt.');
+    const normalizedDepositPhone = normalizeKenyanMpesaPhone(depositPhone);
+    if (!normalizedDepositPhone) {
+      alert('Enter a valid Kenyan M-Pesa number: 07XXXXXXXX, 01XXXXXXXX, 2547XXXXXXXX, 2541XXXXXXXX, +2547XXXXXXXX or +2541XXXXXXXX.');
       return;
     }
     setDepositBusy(true);
@@ -550,11 +559,11 @@ export default function App() {
       const response = await fetch('/api/mpesa/stkpush', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ phone: depositPhone, amountUsd: requestedDepositAmount })
+        body: JSON.stringify({ phone: normalizedDepositPhone, amountUsd: requestedDepositAmount })
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error([result.error || 'Could not start M-Pesa payment.', result.diagnostic].filter(Boolean).join(' — '));
-      alert(`M-Pesa prompt sent to ${depositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} (about USD ${Number(result.amountUsd).toFixed(2)}). Automatic reference rate: 1 USD = KES ${Number(result.exchangeRate).toFixed(4)}. Your VELTEX wallet is credited only after Safaricom confirms payment.`);
+      alert(`M-Pesa prompt sent to +${normalizedDepositPhone}. Pay KES ${Number(result.amountKes).toLocaleString()} (about USD ${Number(result.amountUsd).toFixed(2)}). Automatic reference rate: 1 USD = KES ${Number(result.exchangeRate).toFixed(4)}. Your VELTEX wallet is credited only after Safaricom confirms payment.`);
     } catch (error) {
       alert(error.message || 'M-Pesa deposit could not be started.');
     } finally {
@@ -587,7 +596,7 @@ export default function App() {
       const response = await fetch('/api/withdrawals/request', {
         method:'POST',
         headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
-        body:JSON.stringify({amountUsd:Number(withdrawAmount),method:withdrawMethod,destination:withdrawPhone})
+        body:JSON.stringify({amountUsd:Number(withdrawAmount),method:withdrawMethod,destination:normalizedWithdrawalPhone})
       });
       const result = await response.json().catch(()=>({}));
       if (!response.ok || !result.ok) throw new Error(result.error || 'Withdrawal request could not be submitted.');
@@ -988,7 +997,7 @@ export default function App() {
               <option value="WORLDCOIN" disabled>Worldcoin (WLD) · not connected</option>
             </select>
             <label className="block text-xs text-gray-400 font-bold">M-Pesa payout phone number</label>
-            <input type="tel" inputMode="tel" autoComplete="tel" value={withdrawPhone} onChange={e => setWithdrawPhone(e.target.value)} placeholder="07XXXXXXXX or 2547XXXXXXXX" className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
+            <input type="tel" inputMode="tel" autoComplete="tel" value={withdrawPhone} onChange={e => setWithdrawPhone(e.target.value)} placeholder="07…, 01…, +2547… or +2541…" className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
             <label className="block text-xs text-gray-400 font-bold">Withdrawal amount (USD)</label>
             <input type="number" min="5" max="10000" step="0.01" inputMode="decimal" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
             <button disabled={withdrawBusy || !user.loggedIn || withdrawMethod !== 'M-PESA'} onClick={handleWithdrawalRequest} className="w-full bg-emerald-700 disabled:bg-gray-700 text-white font-bold text-sm py-3 rounded-lg">{withdrawBusy ? 'SUBMITTING REQUEST…' : 'SUBMIT WITHDRAWAL REQUEST'}</button>
@@ -1016,7 +1025,7 @@ export default function App() {
               </div>
               {depositMethod === 'M-PESA' && <div>
                 <label className="text-xs text-gray-400 block mb-1 font-bold">M-Pesa phone number</label>
-                <input type="tel" inputMode="tel" autoComplete="tel" value={depositPhone} onChange={(e) => setDepositPhone(e.target.value)} placeholder="07XXXXXXXX" className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
+                <input type="tel" inputMode="tel" autoComplete="tel" value={depositPhone} onChange={(e) => setDepositPhone(e.target.value)} placeholder="07…, 01…, +2547… or +2541…" className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-sm font-mono font-bold" />
               </div>}
               {depositMethod !== 'M-PESA' && <p className="rounded-lg border border-amber-700 bg-amber-950/30 p-3 text-xs text-amber-200">{depositMethod === 'AIRTEL_MONEY' ? 'Airtel Money' : depositMethod === 'CRYPTO' ? 'Crypto' : depositMethod === 'USDT_P2P' ? 'USDT P2P' : 'Worldcoin (WLD)'} is listed for setup, but its verified receiving account/address and payment confirmation integration are not configured yet. Do not send funds to an unverified address.</p>}
               <div>
