@@ -491,15 +491,18 @@ export default function App() {
         setDeepScanning(false);
         return;
       }
+      const evenCount = digits.filter(value => value % 2 === 0).length;
+      const oddCount = digits.length - evenCount;
+      const selectedSide = evenCount >= oddCount ? 'EVEN' : 'ODD';
+      const sideCount = Math.max(evenCount, oddCount);
+      const observedFrequency = Math.round((sideCount / digits.length) * 100);
       const counts = Array.from({ length: 10 }, (_, digit) => ({
         digit,
         side: digit % 2 === 0 ? 'EVEN' : 'ODD',
         count: digits.filter(value => value === digit).length
-      }));
+      })).filter(item => item.side === selectedSide);
       counts.sort((a, b) => b.count - a.count || a.digit - b.digit);
       const selected = counts[0];
-      const sideCount = digits.filter(value => (value % 2 === 0 ? 'EVEN' : 'ODD') === selected.side).length;
-      const observedFrequency = Math.round((sideCount / digits.length) * 100);
 
       // Educational strategy readings from the same observed sample; these are not predictions.
       const parityOf = value => value % 2 === 0 ? 'EVEN' : 'ODD';
@@ -523,7 +526,7 @@ export default function App() {
           detail: `Digit ${selected.digit} appeared ${selected.count} time(s) in last 12 ticks`
         }
       ];
-      setDeepScan({ ...selected, percentage: observedFrequency, qualifies: observedFrequency > 50, highSignal: false, sampleSize: digits.length, strategyInsights, scanTick: totalTicks, loaded: false, appeared: false, expired: false, tradeStarted: false });
+      setDeepScan({ ...selected, side: selectedSide, percentage: observedFrequency, qualifies: observedFrequency >= 75, highSignal: false, sampleSize: digits.length, strategyInsights, scanTick: totalTicks, loaded: false, appeared: false, expired: false, tradeStarted: false });
       setDeepScanning(false);
       setActiveTab('DEEPSCAN');
     }, 700);
@@ -1045,7 +1048,7 @@ export default function App() {
               <button type="button" disabled aria-disabled="true" className="w-full rounded-xl border border-slate-700 bg-[#101d29] py-3 text-sm font-bold text-slate-600 opacity-70">Load Deep Scanner Bot</button>
               {deepScan && (
                 <div className="rounded-xl border border-rose-900/70 bg-[#171b27] p-4 space-y-2">
-                  <p className="text-[11px] font-black uppercase tracking-wide text-rose-400">BEST ENTRY FOUND</p>
+                  <p className="text-[11px] font-black uppercase tracking-wide text-rose-400">{deepScan.qualifies ? 'BEST ENTRY FOUND' : 'NO STRONG ENTRY'}</p>
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-base font-black text-white">Even / Odd</p>
@@ -1053,8 +1056,8 @@ export default function App() {
                     </div>
                     <span className="shrink-0 rounded-lg bg-rose-950/70 px-3 py-2 text-base font-black text-rose-300">{deepScan.percentage}%</span>
                   </div>
-                  <p className="text-[10px] leading-relaxed text-slate-500">Historical frequency from {deepScan.sampleSize} observed ticks. Not a prediction or guaranteed win probability.</p>
-                  {!deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: totalTicks } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
+                  <p className="text-[10px] leading-relaxed text-slate-500">{deepScan.qualifies ? 'Historical sample passed the 75% display threshold.' : 'Below the 75% threshold. Scan again for a stronger historical sample.'} Based on {deepScan.sampleSize} observed ticks; not a prediction or guaranteed win probability.</p>
+                  {deepScan.qualifies && !deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: totalTicks } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
                   {deepScan.loaded && !deepScan.appeared && !deepScan.expired && <p role="status" className="text-center text-xs font-bold text-cyan-200">MARKET LOADED · WAITING FOR DIGIT {deepScan.digit}</p>}
                   {deepScan.appeared && !deepScan.tradeStarted && !deepScan.expired && (
                     <div className="space-y-2">
