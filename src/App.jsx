@@ -791,10 +791,10 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div aria-label="Current practice balance" className="bg-[#182232] border border-gray-700/80 rounded-full px-3 py-1 flex items-center gap-2">
-            <Wallet className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-sm font-mono font-bold text-white">${activeWallet.toFixed(2)}</span>
-          </div>
+          <button type="button" aria-label={`Wallet balance ${activeWallet.toFixed(2)} dollars. Session ${sessionPL >= 0 ? 'profit' : 'loss'} ${Math.abs(sessionPL).toFixed(2)} dollars. Open deposit.`} onClick={() => setActiveTab('DEPOSIT')} className={`border rounded-full px-3 py-1 flex items-center gap-2 transition-colors ${sessionPL > 0 ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : sessionPL < 0 ? 'bg-red-950 border-red-500 text-red-300' : 'bg-[#182232] border-gray-700/80 text-white'}`}>
+            <Wallet className={`w-3.5 h-3.5 ${sessionPL > 0 ? 'text-emerald-300' : sessionPL < 0 ? 'text-red-300' : 'text-gray-300'}`} />
+            <span className="text-sm font-mono font-bold">${activeWallet.toFixed(2)}</span>
+          </button>
 
           <button onClick={() => setSoundEnabled(!soundEnabled)} className="text-gray-400 hover:text-white p-1">
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-red-500" />}
