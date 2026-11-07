@@ -904,9 +904,9 @@ export default function App() {
               <label htmlFor="veltex-total-stake" className="block text-[10px] font-bold uppercase tracking-wide text-gray-400">TOTAL STAKE</label>
               <input id="veltex-total-stake" type="number" min="0.01" max="100000" step="0.01" inputMode="decimal" value={initialStake} disabled={!!activeTrade || autoBotRunning} onChange={e => { const value = e.target.value === '' ? '' : Math.min(100000, Math.max(0.01, Number(e.target.value))); setInitialStake(value); setStake(value); }} className="mt-2 w-full min-w-0 rounded-lg border border-gray-700 bg-[#090d14] px-2 py-2 text-center text-base font-bold text-red-400 disabled:opacity-50" />
             </div>
-            <div className="min-w-0 rounded-xl border border-gray-800 bg-[#121824] p-3 flex flex-col justify-center" aria-live="polite">
-              <span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400">SESSION P/L</span>
-              <span className={`mt-2 text-xl font-black font-mono ${sessionPL > 0 ? 'text-emerald-400' : sessionPL < 0 ? 'text-red-400' : 'text-gray-300'}`}>{sessionPL >= 0 ? '+' : '-'}${Math.abs(sessionPL).toFixed(2)}</span>
+            <div className="min-w-0 rounded-lg border border-gray-800 bg-[#121824] px-2 py-1.5 flex flex-col justify-center" aria-live="polite">
+              <span className="block text-[8px] font-bold uppercase tracking-wide text-gray-400">SESSION P/L</span>
+              <span className={`mt-0.5 text-sm font-black font-mono ${sessionPL > 0 ? 'text-emerald-400' : sessionPL < 0 ? 'text-red-400' : 'text-gray-300'}`}>{sessionPL >= 0 ? '+' : '-'}${Math.abs(sessionPL).toFixed(2)}</span>
             </div>
           </section>
           <section aria-label="Profit target stop loss and multiplier" className="mx-3 mt-2 grid grid-cols-3 gap-2">
