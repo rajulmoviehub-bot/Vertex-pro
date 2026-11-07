@@ -847,12 +847,24 @@ export default function App() {
       {activeTab === 'TRADE' && (
         <>
 
-          {/* Deriv-inspired total profit display: changes only when a trade settles. */}
-          <section aria-label="Total Profit" aria-live="polite" className="mx-3 mt-3 rounded-xl border border-gray-700 bg-[#121824] p-4">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">TOTAL PROFIT</p>
-            <p className={`mt-1 text-3xl font-black tabular-nums ${sessionPL > 0 ? 'text-emerald-400' : sessionPL < 0 ? 'text-red-400' : 'text-white'}`}>
-              {sessionPL > 0 ? '+' : sessionPL < 0 ? '−' : ''}${Math.abs(sessionPL).toFixed(2)}
-            </p>
+          {/* Compact trading metrics: cumulative stake, settled profit, configured stop loss and multiplier. */}
+          <section aria-label="Trading summary" aria-live="polite" className="mx-3 mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="rounded-lg border border-gray-700 bg-[#121824] p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">TOTAL STAKE</p>
+              <p className="mt-1 text-lg font-black tabular-nums text-white">${(trades.reduce((sum, trade) => sum + Number(trade.stake || 0), 0) + Number(activeTrade?.stake || 0)).toFixed(2)}</p>
+            </div>
+            <div className="rounded-lg border border-gray-700 bg-[#121824] p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">TOTAL PROFIT</p>
+              <p className={`mt-1 text-lg font-black tabular-nums ${sessionPL > 0 ? 'text-emerald-400' : sessionPL < 0 ? 'text-red-400' : 'text-white'}`}>{sessionPL > 0 ? '+' : sessionPL < 0 ? '−' : ''}${Math.abs(sessionPL).toFixed(2)}</p>
+            </div>
+            <div className="rounded-lg border border-gray-700 bg-[#121824] p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">STOP LOSS</p>
+              <p className="mt-1 text-lg font-black tabular-nums text-rose-300">${Math.abs(Number(stopLoss) || 0).toFixed(2)}</p>
+            </div>
+            <div className="rounded-lg border border-gray-700 bg-[#121824] p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">MULTIPLIER</p>
+              <p className="mt-1 text-lg font-black tabular-nums text-cyan-300">x{Number(multiplier).toFixed(2)}</p>
+            </div>
           </section>
 
           {/* VELTEX Dynamic Market Chart */}
