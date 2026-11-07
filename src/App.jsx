@@ -876,8 +876,12 @@ export default function App() {
                 <button className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-white">⊙</button>
               </div>
             </div>
-            <div className="flex justify-center pt-2" aria-label="Current tick indicator">
-              {stats[String(lastDigit)] !== undefined && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-bounce" />}
+            <div className="mt-2 flex items-center gap-2 rounded-md border border-orange-500/40 bg-orange-950/20 px-2 py-1.5" aria-live="polite" aria-label={activeTrade ? `Trade tick progress ${activeTrade.ticksElapsed} of ${duration}` : 'Current market tick indicator'}>
+              <span className="shrink-0 text-[10px] font-black uppercase text-orange-300">{activeTrade ? 'TRADE TICKS' : 'LIVE TICK'}</span>
+              <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-800">
+                <div className="h-full rounded-full bg-orange-500 transition-all duration-300" style={{ width: activeTrade ? `${Math.min(100, (activeTrade.ticksElapsed / duration) * 100)}%` : '100%' }} />
+              </div>
+              <span className="shrink-0 font-mono text-[10px] font-bold text-orange-300">{activeTrade ? `${activeTrade.ticksElapsed}/${duration}` : lastDigit}</span>
             </div>
 
             {/* Live Dynamic 0-9 Digit Highlights */}
