@@ -209,7 +209,7 @@ export default function App() {
         return;
       }
       setUser({ loggedIn: true, email: session.user.email || '', fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '', refCode: 'VELTEX-7892' });
-      fetch('/api/bot-license', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(r => r.json()).then(result => { if (mounted && result.ok) { setBotLicence(result.licence || null); if (result.licence?.status !== 'active') setAccountMode('DEMO'); } }).catch(() => {});
+      fetch('/api/bot-license', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(r => r.json()).then(result => { if (mounted && result.ok) setBotLicence(result.licence || null); }).catch(() => {});
       setLoginWelcome(true);
       const { data, error } = await supabase
         .from('wallets')
@@ -820,11 +820,11 @@ export default function App() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-2">
             <button onClick={() => { setAccountMode('DEMO');  setActiveTrade(null); }} aria-pressed={accountMode === 'DEMO'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'DEMO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>DEMO · $10,000 START</button>
-            <button onClick={() => { if (botLicence?.status !== 'active') { alert('LIVE access requires a paid MV6 AUTO BOT licence assigned by the VELTEX owner to this account.'); return; } setAccountMode('REAL'); setActiveTrade(null); }} aria-pressed={accountMode === 'REAL'} aria-disabled={botLicence?.status !== 'active'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'REAL' ? 'bg-red-600 text-white border-red-500' : 'bg-[#121824] text-gray-300 border-gray-700'} ${botLicence?.status !== 'active' ? 'opacity-60' : ''}`}>LIVE · {botLicence?.status === 'active' ? 'UNLOCKED' : 'LOCKED'}</button>
+            <button onClick={() => { setAccountMode('REAL'); setActiveTrade(null); }} aria-pressed={accountMode === 'REAL'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'REAL' ? 'bg-red-600 text-white border-red-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>LIVE · NOT CONNECTED</button>
           </div>
           {accountMode === 'DEMO' && <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]);  setActiveTrade(null); }} className="text-xs font-bold text-yellow-300 underline">Reset Demo $10,000</button>}
         </div>
-        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? 'Practice mode: demo funds only. No real deposits or withdrawals. DEMO is free.' : botLicence?.status === 'active' ? 'Paid bot licence verified for this account. External broker execution is not connected in this build; no real trades are being placed.' : 'LIVE access is locked until this account has an active paid bot licence.'}</p>
+        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? 'Practice mode: demo funds only. No real deposits or withdrawals. DEMO and DeepScan are free.' : 'LIVE display mode only. External broker execution is not connected, so no real trades are being placed. A paid MV6 AUTO BOT licence is optional and applies only to the AUTO BOT feature.'}</p>
       </section>
 
       {/* Tabs */}
