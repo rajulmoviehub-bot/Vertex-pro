@@ -2,17 +2,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 
-// Accept common Kenyan M-Pesa formats and normalize them to 254XXXXXXXXX.
-const normalizeKenyanMpesaPhone = (value) => {
-  const raw = String(value || '').trim().replace(/[\\s()-]/g, '');
-  const digits = raw.replace(/\\D/g, '');
-  const normalized = digits.startsWith('0') ? `254${digits.slice(1)}` : digits.startsWith('7') || digits.startsWith('1') ? `254${digits}` : digits;
-  return /^254[71]\\d{8}$/.test(normalized) ? normalized : '';
-};
 import { 
   TrendingUp, TrendingDown, RefreshCw, Zap, ShieldAlert, Award, 
   Activity, DollarSign, Settings, ChevronRight, Play, Square, History, BarChart2, MessageSquare, Clock, Volume2, VolumeX, Menu, Bell, UserCheck, LogIn, UserPlus, CreditCard, ArrowDownLeft, ArrowUpRight, Share2, ScanLine, Wallet, LogOut
 } from 'lucide-react';
+
+// Accept common Kenyan M-Pesa formats and normalize them to 254XXXXXXXXX.
+const normalizeKenyanMpesaPhone = (value) => {
+  const raw = String(value || '').trim().replace(/[\s()-]/g, '');
+  const digits = raw.replace(/\D/g, '');
+  const normalized = digits.startsWith('0') ? `254${digits.slice(1)}` : digits.startsWith('7') || digits.startsWith('1') ? `254${digits}` : digits;
+  return /^254[71]\d{8}$/.test(normalized) ? normalized : '';
+};
 
 export default function App() {
   const [mainWallet, setMainWallet] = useState(0); // loaded from the authenticated VELTEX wallet
@@ -581,8 +582,9 @@ export default function App() {
       alert('Only M-Pesa withdrawal requests are enabled. Other methods are not connected.');
       return;
     }
-    if (!/^((\+?254)|0)?[71]\d{8}$/.test(withdrawPhone.replace(/[\s-]/g, ''))) {
-      alert('Enter a valid Kenyan M-Pesa number.');
+    const normalizedWithdrawalPhone = normalizeKenyanMpesaPhone(withdrawPhone);
+    if (!normalizedWithdrawalPhone) {
+      alert('Enter a valid Kenyan M-Pesa number: 07XXXXXXXX, 01XXXXXXXX, 2547XXXXXXXX, 2541XXXXXXXX, +2547XXXXXXXX or +2541XXXXXXXX.');
       return;
     }
     if (!Number.isFinite(Number(withdrawAmount)) || Number(withdrawAmount) < 5 || Number(withdrawAmount) > 10000) {
