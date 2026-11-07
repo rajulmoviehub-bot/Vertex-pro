@@ -27,9 +27,28 @@ function makeTick(sequence) {
 }
 async function authenticate(req) {
   const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
   const token = bearer(req);
   if (!url || !key) return { error: "VELTEX engine is not configured on the server.", status: 503 };
+
+  // PostgREST needs a JWT carrying the service_role claim for privileged RPC calls.
+  // New sb_secret_* API keys are not JWTs and must not be used as the Bearer token here.
+  let serviceRole = "";
+  try {
+    const parts = key.split(".");
+    if (parts.length === 3) {
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+      serviceRole = String(payload?.role || "");
+    }
+  } catch {
+    serviceRole = "";
+  }
+  if (serviceRole !== "service_role") {
+    return {
+      error: "VELTEX server key is not a legacy Supabase service_role JWT. Set SUPABASE_SERVICE_ROLE_KEY to the legacy service_role JWT from Supabase API settings, then redeploy.",
+      status: 503
+    };
+  }
   if (!token || token.length > 8192) return { error: "Sign in to use the VELTEX demo engine.", status: 401 };
   const response = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" });
   if (!response.ok) return { error: "Your session is invalid or expired.", status: 401 };
