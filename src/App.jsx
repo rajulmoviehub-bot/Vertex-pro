@@ -54,6 +54,8 @@ export default function App() {
   const [deepScanning, setDeepScanning] = useState(false);
   const [deepScanMarket, setDeepScanMarket] = useState('Even / Odd');
   const [activeTrade, setActiveTrade] = useState(null);
+  const tradeRequestRef = useRef(false);
+  const settlingTradeRef = useRef(null);
   const [lastTradeResult, setLastTradeResult] = useState(null);
 
   const [priceHistory, setPriceHistory] = useState([]);
@@ -346,6 +348,51 @@ export default function App() {
     }
   };
 
+  const startServerDemoTrade = async (prediction, source = 'MANUAL') => {
+    if (tradeRequestRef.current) return;
+    if (!supabase || accountMode !== 'DEMO') {
+      alert('The VELTEX server engine is currently available in Demo mode only.');
+      return;
+    }
+    const numericStake = Number(stake);
+    if (activeTrade || !Number.isFinite(numericStake) || numericStake <= 0 || numericStake > 10000 || demoWallet < numericStake) {
+      alert('Check your demo balance and stake, then try again.');
+      return;
+    }
+    tradeRequestRef.current = true;
+    setLastTradeResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setAuthModal('login');
+        throw new Error('Sign in to use the VELTEX demo engine.');
+      }
+      const response = await fetch('/api/market/tick', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ action: 'open', contract: prediction.toUpperCase(), stake: numericStake, durationTicks: Number(duration) })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok || !result.trade?.id) throw new Error(result.error || 'Could not open the demo trade.');
+      const serverTrade = result.trade;
+      setActiveTrade({
+        serverTradeId: serverTrade.id,
+        prediction,
+        ticksElapsed: 0,
+        entryDigit: Number(serverTrade.entry_digit),
+        stake: Number(serverTrade.stake),
+        duration: Number(serverTrade.duration_ticks),
+        source
+      });
+      setActiveTab('TRADE');
+    } catch (error) {
+      alert(error?.message || 'VELTEX could not open this demo trade.');
+    } finally {
+      tradeRequestRef.current = false;
+    }
+  };
+
   const processNewTick = (quoteNum) => {
     if (!Number.isFinite(quoteNum)) return;
     const quoteStr = quoteNum.toFixed(3);
@@ -379,6 +426,9 @@ export default function App() {
     setActiveTrade(trade => {
       if (!trade) return null;
       const currentTickCount = trade.ticksElapsed + 1;
+
+      // Server-created demo trades are settled only by the authenticated server API.
+      if (trade.serverTradeId) return { ...trade, ticksElapsed: currentTickCount };
 
       if (currentTickCount >= duration) {
         const isWin = nextDigit % 2 === 0 ? trade.prediction === 'Even' : trade.prediction === 'Odd';
@@ -415,6 +465,63 @@ export default function App() {
       return { ...trade, ticksElapsed: currentTickCount };
     });
   };
+
+  // Settle server-opened demo trades using the server's authoritative exit tick.
+  useEffect(() => {
+    if (accountMode !== 'DEMO' || !activeTrade?.serverTradeId || activeTrade.ticksElapsed < Number(activeTrade.duration || duration)) return;
+    const tradeId = activeTrade.serverTradeId;
+    if (settlingTradeRef.current === tradeId) return;
+    settlingTradeRef.current = tradeId;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error('Your session expired. Sign in again to settle this demo trade.');
+        const response = await fetch('/api/market/tick', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({ action: 'settle', tradeId })
+        });
+        const result = await response.json();
+        if (response.status === 409) return;
+        if (!response.ok || !result.ok || !result.trade) throw new Error(result.error || 'VELTEX could not settle this demo trade.');
+        if (cancelled) return;
+        const settled = result.trade;
+        const isWin = settled.status === 'won';
+        const netPayout = isWin ? Number(settled.stake) * 0.95 : -Number(settled.stake);
+        setDemoWallet(prev => Math.max(0, prev + netPayout));
+        setSessionPL(prev => prev + netPayout);
+        if (isWin) {
+          playSound('win');
+          setStake(initialStake);
+        } else {
+          playSound('loss');
+          setStake(prev => Number(prev || initialStake) * Number(multiplier || 2));
+        }
+        const finishedTrade = {
+          id: settled.id,
+          time: settled.settled_at ? new Date(settled.settled_at).toLocaleTimeString() : new Date().toLocaleTimeString(),
+          type: 'Even/Odd',
+          prediction: activeTrade.prediction,
+          duration: Number(settled.duration_ticks),
+          entryDigit: Number(settled.entry_digit),
+          exitDigit: Number(settled.exit_digit),
+          stake: Number(settled.stake),
+          payout: netPayout,
+          status: isWin ? 'WIN' : 'LOSS'
+        };
+        setTrades(prev => [finishedTrade, ...prev]);
+        setLastTradeResult(finishedTrade);
+        setActiveTrade(current => current?.serverTradeId === tradeId ? null : current);
+      } catch (error) {
+        if (!cancelled) console.error('VELTEX demo settlement pending:', error?.message || error);
+      } finally {
+        if (settlingTradeRef.current === tradeId) settlingTradeRef.current = null;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [accountMode, activeTrade?.serverTradeId, activeTrade?.ticksElapsed, activeTrade?.duration, duration, initialStake, multiplier]);
 
   // Poll VELTEX's server-side deterministic synthetic demo market.
   // The API discloses that these are simulated prices, not real-world quotes.
@@ -944,11 +1051,11 @@ export default function App() {
           </section>
 
           <section aria-label="Manual trade choices" className="mx-3 mt-3 grid grid-cols-2 gap-2">
-            <button type="button" aria-label={`Place EVEN trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setLastTradeResult(null); setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-14 rounded-lg border border-emerald-700 bg-[#121824] p-2 text-left disabled:opacity-60">
+            <button type="button" aria-label={`Place EVEN trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } void startServerDemoTrade('Even', 'MANUAL'); }} className="min-h-14 rounded-lg border border-emerald-700 bg-[#121824] p-2 text-left disabled:opacity-60">
               <span className="flex items-center justify-between text-sm font-black text-white">EVEN <span className="text-emerald-400">${(Number(stake) * 1.95).toFixed(2)}</span></span>
               <span className="mt-1 block text-[9px] text-gray-400">95% payout · Demo estimate</span>
             </button>
-            <button type="button" aria-label={`Place ODD trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setLastTradeResult(null); setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-14 rounded-lg border border-red-700 bg-[#121824] p-2 text-left disabled:opacity-60">
+            <button type="button" aria-label={`Place ODD trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } void startServerDemoTrade('Odd', 'MANUAL'); }} className="min-h-14 rounded-lg border border-red-700 bg-[#121824] p-2 text-left disabled:opacity-60">
               <span className="flex items-center justify-between text-sm font-black text-red-400">ODD <span className="text-emerald-400">${(Number(stake) * 1.95).toFixed(2)}</span></span>
               <span className="mt-2 block text-[10px] text-gray-400">95% payout · Demo estimate</span>
             </button>
@@ -1106,14 +1213,16 @@ export default function App() {
                         <button type="button" onClick={() => {
                           if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
                           if (activeTrade || deepScan.tradeStarted || deepScan.expired || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
-                          setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'DEEP_SCAN' });
-                          setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'EVEN' } : previous);
+                          void startServerDemoTrade('Even', 'DEEP_SCAN').then(() => {
+                            if (activeTrade === null) setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'EVEN' } : previous);
+                          });
                         }} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted || deepScan.expired}>EVEN</button>
                         <button type="button" onClick={() => {
                           if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
                           if (activeTrade || deepScan.tradeStarted || deepScan.expired || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
-                          setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'DEEP_SCAN' });
-                          setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'ODD' } : previous);
+                          void startServerDemoTrade('Odd', 'DEEP_SCAN').then(() => {
+                            if (activeTrade === null) setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'ODD' } : previous);
+                          });
                         }} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted || deepScan.expired}>ODD</button>
                       </div>
                     </div>
