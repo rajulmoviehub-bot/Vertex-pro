@@ -487,11 +487,7 @@ export default function App() {
     setDeepScan(null);
     setTimeout(() => {
       const digits = priceHistory.slice(-12).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
-      if (digits.length < 12) {
-        setDeepScanning(false);
-        return;
-      }
-      // Demo-only randomized signal. This is not a measured probability or prediction.
+            // Demo-only randomized signal. This is not a measured probability or prediction.
       const selectedSide = Math.random() < 0.5 ? 'EVEN' : 'ODD';
       const sideDigits = digits.filter(value => (value % 2 === 0 ? 'EVEN' : 'ODD') === selectedSide);
       const selectedDigit = sideDigits.length ? sideDigits[Math.floor(Math.random() * sideDigits.length)] : Math.floor(Math.random() * 10);
@@ -506,7 +502,7 @@ export default function App() {
       const strategyInsights = [
         {
           name: 'Parity Frequency',
-          side: sideCount >= digits.length / 2 ? selected.side : (selected.side === 'EVEN' ? 'ODD' : 'EVEN'),
+          side: selected.side,
           detail: `${Math.max(recentEven, recentOdd)} of last 5 ticks were ${recentEven >= recentOdd ? 'EVEN' : 'ODD'}`
         },
         {
@@ -1036,9 +1032,9 @@ export default function App() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-slate-300"><span>{deepScanning ? 'Scanning market ticks' : 'Ready to scan'}</span><span className="font-mono font-bold text-white">{Math.min(priceHistory.length, 12)}/12</span></div>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: (Math.min(priceHistory.length / 12, 1) * 100) + '%' }} /></div>
-                {priceHistory.length < 12 && <p className="text-[11px] text-slate-400">Collecting live ticks: {priceHistory.length}/12</p>}
+                
               </div>
-              <button onClick={runDeepScan} disabled={deepScanning || priceHistory.length < 12 || !!activeTrade} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-4 text-sm font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
+              <button onClick={runDeepScan} disabled={deepScanning || !!activeTrade} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-4 text-sm font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
               <button type="button" disabled aria-disabled="true" className="w-full rounded-xl border border-slate-700 bg-[#101d29] py-3 text-sm font-bold text-slate-600 opacity-70">Load Deep Scanner Bot</button>
               {deepScan && (
                 <div className="rounded-xl border border-rose-900/70 bg-[#171b27] p-4 space-y-2">
