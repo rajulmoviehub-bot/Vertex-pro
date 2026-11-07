@@ -355,6 +355,11 @@ export default function App() {
   };
 
   const startServerDemoTrade = async (prediction, source = 'MANUAL') => {
+    if (Number(target) > 0 && sessionPL >= Number(target)) {
+      setAutoBotRunning(false);
+      alert('Alhamdulillah 🤲 Target profit already reached. VELTEX has stopped new trades for this session. Reset the session to trade again.');
+      return false;
+    }
     if (Number(stopLoss) > 0 && sessionPL <= -Math.abs(Number(stopLoss))) {
       setAutoBotRunning(false);
       alert('VELTEX stopped: session stop-loss limit reached. Reset the demo session or review your risk settings before trading again.');
