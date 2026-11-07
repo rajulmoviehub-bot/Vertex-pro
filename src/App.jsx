@@ -791,6 +791,10 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button type="button" aria-label={`Wallet balance ${activeWallet.toFixed(2)} dollars. Open deposit.`} onClick={() => setActiveTab('DEPOSIT')} className="rounded-full border border-gray-700 bg-[#182232] px-3 py-1.5 flex items-center gap-2 text-white">
+            <Wallet className="w-3.5 h-3.5 text-red-300" />
+            <span className="text-xs font-mono font-bold">${activeWallet.toFixed(2)}</span>
+          </button>
           <button onClick={() => setSoundEnabled(!soundEnabled)} className="text-gray-400 hover:text-white p-1">
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-red-500" />}
           </button>
@@ -894,24 +898,39 @@ export default function App() {
             </div>
           </div>
 
-          {/* Compact Deriv-style stake and risk settings below the market graph. */}
-          <section aria-label="Stake and trading targets" className="mx-3 mt-2 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          {/* Compact stake, session P/L and risk controls styled like the supplied reference. */}
+          <section aria-label="Stake and trading targets" className="mx-3 mt-2 grid grid-cols-2 gap-2">
             <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
               <label htmlFor="veltex-total-stake" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">TOTAL STAKE (USD)</label>
               <input id="veltex-total-stake" type="number" min="0.01" max="100000" step="0.01" inputMode="decimal" value={initialStake} disabled={!!activeTrade || autoBotRunning} onChange={e => { const value = e.target.value === '' ? '' : Math.min(100000, Math.max(0.01, Number(e.target.value))); setInitialStake(value); setStake(value); }} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
+            </div>
+            <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2 flex flex-col justify-center" aria-live="polite">
+              <span className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">SESSION P/L · PROFIT MADE</span>
+              <span className={`mt-1 text-lg font-black font-mono ${sessionPL > 0 ? 'text-emerald-400' : sessionPL < 0 ? 'text-red-400' : 'text-gray-300'}`}>{sessionPL >= 0 ? '+' : '-'}${Math.abs(sessionPL).toFixed(2)}</span>
+            </div>
+            <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
+              <label htmlFor="veltex-profit-target" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">TARGET PROFIT (USD)</label>
+              <input id="veltex-profit-target" type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={target} disabled={!!activeTrade || autoBotRunning} onChange={e => setTarget(e.target.value === '' ? '' : Math.min(100000, Math.max(1, Number(e.target.value))))} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
             </div>
             <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
               <label htmlFor="veltex-multiplier" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">MULTIPLIER</label>
               <input id="veltex-multiplier" type="number" min="1" max="10" step="0.1" inputMode="decimal" value={multiplier} disabled={!!activeTrade || autoBotRunning} onChange={e => setMultiplier(e.target.value === '' ? '' : Math.min(10, Math.max(1, Number(e.target.value))))} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
             </div>
             <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
-              <label htmlFor="veltex-profit-target" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">PROFIT TARGET (USD)</label>
-              <input id="veltex-profit-target" type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={target} disabled={!!activeTrade || autoBotRunning} onChange={e => setTarget(e.target.value === '' ? '' : Math.min(100000, Math.max(1, Number(e.target.value))))} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
-            </div>
-            <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
               <label htmlFor="veltex-stop-loss" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">STOP LOSS (USD)</label>
               <input id="veltex-stop-loss" type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={stopLoss} disabled={!!activeTrade || autoBotRunning} onChange={e => setStopLoss(e.target.value === '' ? '' : Math.min(100000, Math.max(1, Number(e.target.value))))} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
             </div>
+          </section>
+
+          <section aria-label="Manual trade choices" className="mx-3 mt-3 grid grid-cols-2 gap-2">
+            <button type="button" aria-label={`Place EVEN trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-20 rounded-xl border border-emerald-700 bg-[#121824] p-3 text-left disabled:opacity-60">
+              <span className="flex items-center justify-between text-sm font-black text-white">EVEN <span className="text-emerald-400">${(Number(stake) * 1.95).toFixed(2)}</span></span>
+              <span className="mt-2 block text-[10px] text-gray-400">95% payout · Demo estimate</span>
+            </button>
+            <button type="button" aria-label={`Place ODD trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-20 rounded-xl border border-red-700 bg-[#121824] p-3 text-left disabled:opacity-60">
+              <span className="flex items-center justify-between text-sm font-black text-red-400">ODD <span className="text-emerald-400">${(Number(stake) * 1.95).toFixed(2)}</span></span>
+              <span className="mt-2 block text-[10px] text-gray-400">95% payout · Demo estimate</span>
+            </button>
           </section>
 
           {/* Active Trade Banner */}
@@ -1429,18 +1448,6 @@ export default function App() {
 
       {/* Fixed footer: manual EVEN / ODD trade controls above app navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#121824] border-t border-gray-700 px-3 pt-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_rgba(0,0,0,0.35)]">
-        <div aria-label="Wallet and manual EVEN/ODD trade controls" className="grid grid-cols-3 gap-2 mb-2">
-          <button type="button" aria-label={`Wallet balance ${activeWallet.toFixed(2)} dollars. Session ${sessionPL >= 0 ? 'profit' : 'loss'} ${Math.abs(sessionPL).toFixed(2)} dollars. Open deposit.`} onClick={() => setActiveTab('DEPOSIT')} className={`min-h-11 rounded-lg border px-2 py-2 flex flex-col items-center justify-center transition-colors ${sessionPL > 0 ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : sessionPL < 0 ? 'bg-red-950 border-red-500 text-red-300' : 'bg-[#182232] border-gray-700 text-white'}`}>
-            <span className="text-[9px] font-bold uppercase">WALLET</span>
-            <span className="text-xs font-mono font-black">${activeWallet.toFixed(2)}</span>
-          </button>
-          <button type="button" aria-label="Place EVEN trade" disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-11 rounded-lg bg-emerald-700 px-3 py-2 text-center text-xs font-black text-white disabled:opacity-60">
-            EVEN
-          </button>
-          <button type="button" aria-label="Place ODD trade" disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-11 rounded-lg bg-rose-700 px-3 py-2 text-center text-xs font-black text-white disabled:opacity-60">
-            ODD
-          </button>
-        </div>
         <nav aria-label="Main navigation" className="flex items-center justify-around gap-2 border-t border-gray-800 pt-2 pb-1">
           <button aria-label="Trade tab" onClick={() => setActiveTab('TRADE')} className={`flex min-w-0 flex-1 flex-col items-center ${activeTab === 'TRADE' ? 'text-red-500' : 'text-gray-400'}`}>
             <BarChart2 className="h-4 w-4" />
