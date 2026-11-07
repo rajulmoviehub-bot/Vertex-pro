@@ -349,6 +349,11 @@ export default function App() {
   };
 
   const startServerDemoTrade = async (prediction, source = 'MANUAL') => {
+    if (Number(stopLoss) > 0 && sessionPL <= -Math.abs(Number(stopLoss))) {
+      setAutoBotRunning(false);
+      alert('VELTEX stopped: session stop-loss limit reached. Reset the demo session or review your risk settings before trading again.');
+      return false;
+    }
     if (tradeRequestRef.current) return;
     if (!supabase || accountMode !== 'DEMO') {
       alert('The VELTEX server engine is currently available in Demo mode only.');
@@ -1050,11 +1055,11 @@ export default function App() {
           </section>
 
           <section aria-label="Manual trade choices" className="mx-3 mt-3 grid grid-cols-2 gap-2">
-            <button type="button" aria-label={`Place EVEN trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } void startServerDemoTrade('Even', 'MANUAL'); }} className="min-h-14 rounded-lg border border-emerald-700 bg-[#121824] p-2 text-left disabled:opacity-60">
+            <button type="button" aria-label={`Place EVEN trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || (Number(stopLoss) > 0 && sessionPL <= -Math.abs(Number(stopLoss))) || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } void startServerDemoTrade('Even', 'MANUAL'); }} className="min-h-14 rounded-lg border border-emerald-700 bg-[#121824] p-2 text-left disabled:opacity-60">
               <span className="flex items-center justify-between text-sm font-black text-white">EVEN <span className="text-emerald-400">${(Number(stake) * 1.95).toFixed(2)}</span></span>
               <span className="mt-1 block text-[9px] text-gray-400">95% payout · Demo estimate</span>
             </button>
-            <button type="button" aria-label={`Place ODD trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } void startServerDemoTrade('Odd', 'MANUAL'); }} className="min-h-14 rounded-lg border border-red-700 bg-[#121824] p-2 text-left disabled:opacity-60">
+            <button type="button" aria-label={`Place ODD trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || (Number(stopLoss) > 0 && sessionPL <= -Math.abs(Number(stopLoss))) || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } void startServerDemoTrade('Odd', 'MANUAL'); }} className="min-h-14 rounded-lg border border-red-700 bg-[#121824] p-2 text-left disabled:opacity-60">
               <span className="flex items-center justify-between text-sm font-black text-red-400">ODD <span className="text-emerald-400">${(Number(stake) * 1.95).toFixed(2)}</span></span>
               <span className="mt-2 block text-[10px] text-gray-400">95% payout · Demo estimate</span>
             </button>
