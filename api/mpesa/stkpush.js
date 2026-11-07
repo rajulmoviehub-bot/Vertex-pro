@@ -31,12 +31,22 @@ export default async function handler(req, res) {
   const passkey = process.env.MPESA_PASSKEY;
   const shortcode = process.env.MPESA_SHORTCODE;
   const callbackToken = process.env.MPESA_CALLBACK_TOKEN;
+  const callbackUrl = String(process.env.MPESA_CALLBACK_URL || "").trim();
   const mpesaEnv = String(process.env.MPESA_ENV || "").trim().toLowerCase();
   if (mpesaEnv !== "sandbox" && mpesaEnv !== "production") {
     return json(res, 503, { ok:false, error:"M-Pesa environment is not configured correctly. Set MPESA_ENV to exactly sandbox or production in Vercel, then redeploy." });
   }
-  if (!supabaseUrl || !serviceKey || !consumerKey || !consumerSecret || !passkey || !shortcode || !callbackToken) {
-    return json(res, 503, { ok:false, error:"M-Pesa is not configured. Required server environment variables are missing." });
+  if (!supabaseUrl || !serviceKey || !consumerKey || !consumerSecret || !passkey || !shortcode || !callbackToken || !callbackUrl) {
+    return json(res, 503, { ok:false, error:"M-Pesa is not configured. Required server environment variables, including MPESA_CALLBACK_URL, are missing." });
+  }
+  try {
+    const callback = new URL(callbackUrl);
+    const expectedPath = `/api/payments/callback/${encodeURIComponent(callbackToken)}`;
+    if (callback.protocol !== "https:" || callback.pathname !== expectedPath || callback.search || callback.hash) {
+      return json(res, 503, { ok:false, error:"MPESA_CALLBACK_URL must be the HTTPS VERTEX callback URL ending in /api/payments/callback/<MPESA_CALLBACK_TOKEN>, with no query string or fragment." });
+    }
+  } catch {
+    return json(res, 503, { ok:false, error:"MPESA_CALLBACK_URL is not a valid HTTPS URL." });
   }
 
   async function getUsdKesRate() {
@@ -159,7 +169,6 @@ export default async function handler(req, res) {
 
     const timestamp = new Date().toISOString().replace(/[^0-9]/g,"").slice(0,14);
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
-    const callbackUrl = `https://vertexpromax.vercel.app/api/payments/callback/${encodeURIComponent(callbackToken)}`;
     const stkResponse = await fetch(`${apiBase}/mpesa/stkpush/v1/processrequest`, {
       method:"POST",
       headers:{ Authorization:`Bearer ${tokenData.access_token}`, "Content-Type":"application/json" },
