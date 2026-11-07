@@ -1412,7 +1412,7 @@ export default function App() {
               <button onClick={() => { setDemoWallet(10000); setStake(initialStake); setSessionPL(0); setTrades([]);  setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300">Reset demo balance</button>
               {!user.loggedIn ? <><button onClick={() => { setMenuOpen(false); setAuthModal('login'); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">Login</button><button onClick={() => { setMenuOpen(false); setAuthModal('signup'); }} className="w-full text-left rounded-lg bg-red-700 px-4 py-3 text-sm font-bold text-white">Sign up</button></> : <button onClick={async () => { try { const { error } = await supabase.auth.signOut(); if (error) throw error; setUser({ loggedIn: false, email: '', refCode: 'VELTEX-7892' }); setMainWallet(0); setAdminUnlocked(false);  setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); setActiveTab('TRADE'); } catch (error) { alert(error?.message || 'Could not sign out. Please try again.'); } }} className="w-full flex items-center gap-2 text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200"><LogOut className="w-4 h-4" /> Log out</button>}
             </div>
-            <p className="text-[11px] text-gray-500 mt-5">Trading and payment integrations are not connected. Demo only.</p>
+            <p className="text-[11px] text-gray-500 mt-5">M-Pesa deposits and withdrawal requests are available where configured. Trading uses a simulated demo market; live broker execution is not connected.</p>
           </aside>
         </div>
       )}
@@ -1442,7 +1442,7 @@ export default function App() {
           <div className="bg-[#121824] border border-gray-800 rounded-xl p-5 w-full max-w-sm space-y-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               {authModal === 'login' ? <LogIn className="w-5 h-5 text-red-500" /> : <UserPlus className="w-5 h-5 text-red-500" />}
-              {authModal === 'login' ? 'Login' : 'Sign Up ($1.00 Bonus)'}
+              {authModal === 'login' ? 'Login' : 'Create Customer Account'}
             </h3>
             <div>
               <label className="text-xs text-gray-400 block mb-1">Email</label>
