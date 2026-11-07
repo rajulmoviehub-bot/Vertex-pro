@@ -592,9 +592,15 @@ export default function App() {
           tick.sequence > lastSequence &&
           Number.isFinite(Number(tick.quote))
         );
+        // If the browser was backgrounded or offline for longer than the
+        // retained 30-tick window, the old sequence can no longer be replayed.
+        // Rebase to the oldest available tick instead of throwing on every poll;
+        // otherwise the feed remains stuck in ERROR forever.
         if (lastSequence && newTicks.length && newTicks[0].sequence > lastSequence + 1) {
-          setFeedStatus('GAP');
-          throw new Error('Market tick gap detected; waiting for a continuous feed');
+          console.warn('VELTEX market feed recovered after a tick gap; resynchronizing to the latest available ticks.');
+          lastSequence = newTicks[0].sequence - 1;
+          marketSequenceRef.current = lastSequence;
+          setFeedStatus('CONNECTING');
         }
         for (const tick of newTicks) {
           processNewTick(Number(tick.quote));
