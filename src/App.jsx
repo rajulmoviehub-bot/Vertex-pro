@@ -791,11 +791,6 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button type="button" aria-label={`Wallet balance ${activeWallet.toFixed(2)} dollars. Session ${sessionPL >= 0 ? 'profit' : 'loss'} ${Math.abs(sessionPL).toFixed(2)} dollars. Open deposit.`} onClick={() => setActiveTab('DEPOSIT')} className={`border rounded-full px-3 py-1 flex items-center gap-2 transition-colors ${sessionPL > 0 ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : sessionPL < 0 ? 'bg-red-950 border-red-500 text-red-300' : 'bg-[#182232] border-gray-700/80 text-white'}`}>
-            <Wallet className={`w-3.5 h-3.5 ${sessionPL > 0 ? 'text-emerald-300' : sessionPL < 0 ? 'text-red-300' : 'text-gray-300'}`} />
-            <span className="text-sm font-mono font-bold">${activeWallet.toFixed(2)}</span>
-          </button>
-
           <button onClick={() => setSoundEnabled(!soundEnabled)} className="text-gray-400 hover:text-white p-1">
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-red-500" />}
           </button>
@@ -1434,7 +1429,11 @@ export default function App() {
 
       {/* Fixed footer: manual EVEN / ODD trade controls above app navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#121824] border-t border-gray-700 px-3 pt-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_rgba(0,0,0,0.35)]">
-        <div aria-label="Manual EVEN and ODD trade controls" className="grid grid-cols-2 gap-2 mb-2">
+        <div aria-label="Wallet and manual EVEN/ODD trade controls" className="grid grid-cols-3 gap-2 mb-2">
+          <button type="button" aria-label={`Wallet balance ${activeWallet.toFixed(2)} dollars. Session ${sessionPL >= 0 ? 'profit' : 'loss'} ${Math.abs(sessionPL).toFixed(2)} dollars. Open deposit.`} onClick={() => setActiveTab('DEPOSIT')} className={`min-h-11 rounded-lg border px-2 py-2 flex flex-col items-center justify-center transition-colors ${sessionPL > 0 ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : sessionPL < 0 ? 'bg-red-950 border-red-500 text-red-300' : 'bg-[#182232] border-gray-700 text-white'}`}>
+            <span className="text-[9px] font-bold uppercase">WALLET</span>
+            <span className="text-xs font-mono font-black">${activeWallet.toFixed(2)}</span>
+          </button>
           <button type="button" aria-label="Place EVEN trade" disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-11 rounded-lg bg-emerald-700 px-3 py-2 text-center text-xs font-black text-white disabled:opacity-60">
             EVEN
           </button>
