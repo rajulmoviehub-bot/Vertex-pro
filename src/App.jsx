@@ -966,7 +966,7 @@ export default function App() {
                 <label className="text-xs text-gray-400 block mb-1 font-bold">Quick deposit amounts (USD)</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[5, 10, 25, 50, 100, 250].map(amount => (
-                    <button type="button" key={amount} onClick={() => setDepositAmount(String(amount))} aria-pressed={depositAmount === String(amount)} className={`rounded-lg border px-3 py-3 text-sm font-black ${depositAmount === amount ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
+                    <button type="button" key={amount} onClick={() => setDepositAmount(String(amount))} aria-pressed={depositAmount === String(amount)} className={`rounded-lg border px-3 py-3 text-sm font-black ${depositAmount === String(amount) ? 'border-emerald-400 bg-emerald-900/40 text-emerald-300' : 'border-gray-700 bg-[#090d14] text-white'}`}>${amount}</button>
                   ))}
                 </div>
                 <label className="text-xs text-gray-400 block mb-1 mt-3 font-bold">Custom amount (USD)</label>
