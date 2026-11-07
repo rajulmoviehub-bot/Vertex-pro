@@ -118,11 +118,22 @@ export default function App() {
 
   useEffect(() => {
     if (!deepScan || !deepScan.loaded || deepScan.tradeStarted || deepScan.expired) return;
-    if (!deepScan.appeared && totalTicks > deepScan.scanTick && lastDigit === deepScan.digit) {
-      setDeepScan(previous => previous ? { ...previous, appeared: true, matchedTick: totalTicks } : previous);
+    if (totalTicks <= deepScan.scanTick) return;
+
+    const appearances = deepScan.appearances || 0;
+    if (lastDigit === deepScan.digit && totalTicks > (deepScan.matchedTick || deepScan.scanTick)) {
+      setDeepScan(previous => previous ? {
+        ...previous,
+        appeared: true,
+        appearances: (previous.appearances || 0) + 1,
+        matchedTick: totalTicks
+      } : previous);
       return;
     }
-    if (deepScan.appeared && totalTicks > deepScan.matchedTick) {
+
+    // Keep the manual EVEN/ODD opportunity open after the first match.
+    // Expire only after the target has appeared twice and a later tick passes.
+    if (deepScan.appeared && appearances >= 2 && totalTicks > deepScan.matchedTick) {
       setDeepScan(previous => previous ? { ...previous, expired: true } : previous);
     }
   }, [totalTicks, lastDigit, deepScan]);
@@ -1014,7 +1025,7 @@ export default function App() {
                   {deepScan.loaded && !deepScan.appeared && !deepScan.expired && <p role="status" className="text-center text-xs font-bold text-cyan-200">MARKET LOADED · WAITING FOR DIGIT {deepScan.digit}</p>}
                   {deepScan.appeared && !deepScan.tradeStarted && !deepScan.expired && (
                     <div className="space-y-2">
-                      <p role="status" aria-live="polite" className="text-center text-xs font-black text-emerald-300">TARGET {deepScan.digit} REACHED · CHOOSE NOW</p>
+                      <p role="status" aria-live="polite" className="text-center text-xs font-black text-emerald-300">TARGET {deepScan.digit} · OPPORTUNITY {Math.min(deepScan.appearances || 1, 2)} OF 2 · CHOOSE NOW</p>
                       <p className="text-center text-[10px] text-slate-300">Stake: ${Number(stake).toFixed(2)} · Demo manual trade</p>
                       <div className="grid grid-cols-2 gap-2">
                         <button type="button" onClick={() => {
