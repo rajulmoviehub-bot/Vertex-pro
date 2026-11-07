@@ -106,7 +106,7 @@ export default function App() {
       targetAchievedRef.current = true;
       if (autoBotRunning) setAutoBotRunning(false);
       setShowTargetAchieved(true);
-      const timer = setTimeout(() => setShowTargetAchieved(false), 5000);
+      const timer = setTimeout(() => setShowTargetAchieved(false), 3000);
       return () => clearTimeout(timer);
     }
 
