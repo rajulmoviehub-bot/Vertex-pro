@@ -1409,14 +1409,14 @@ export default function App() {
         <button onClick={() => setActiveTab('INFO')} className="block mx-auto mt-1 text-red-400 underline">Terms and Conditions</button>
       </footer>
 
-      {/* Fixed two-row footer: always-visible bot controls above app navigation */}
+      {/* Fixed footer: manual EVEN / ODD trade controls above app navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#121824] border-t border-gray-700 px-3 pt-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_rgba(0,0,0,0.35)]">
-        <div aria-label="MV6 AUTO BOT controls" className="grid grid-cols-2 gap-2 mb-2">
-          <button type="button" aria-label="Start MV6 auto bot" disabled={autoBotRunning || accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(target)) || Number(target) <= 0 || !Number.isFinite(Number(stopLoss)) || Number(stopLoss) <= 0} onClick={() => { autoLastEntryTickRef.current = totalTicks - 1; setAutoBotRunning(true); setActiveTab('TRADE'); }} className="min-h-11 rounded-lg bg-emerald-700 px-3 py-2 text-center text-xs font-black text-white disabled:opacity-60">
-            <span className="inline-flex items-center justify-center gap-2"><Zap className="h-4 w-4" /> START AUTO BOT</span>
+        <div aria-label="Manual EVEN and ODD trade controls" className="grid grid-cols-2 gap-2 mb-2">
+          <button type="button" aria-label="Place EVEN trade" disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-11 rounded-lg bg-emerald-700 px-3 py-2 text-center text-xs font-black text-white disabled:opacity-60">
+            EVEN
           </button>
-          <button type="button" aria-label="Stop MV6 auto bot" onClick={() => setAutoBotRunning(false)} className="min-h-11 rounded-lg border border-red-500 bg-red-950/70 px-3 py-2 text-center text-xs font-black text-red-100">
-            <span className="inline-flex items-center justify-center gap-2"><Square className="h-4 w-4" /> STOP BOT</span>
+          <button type="button" aria-label="Place ODD trade" disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-11 rounded-lg bg-rose-700 px-3 py-2 text-center text-xs font-black text-white disabled:opacity-60">
+            ODD
           </button>
         </div>
         <nav aria-label="Main navigation" className="flex items-center justify-around gap-2 border-t border-gray-800 pt-2 pb-1">
