@@ -30,6 +30,19 @@ export default async function handler(req, res) {
     }
   }
 
+  const callbackUrl = String(process.env.MPESA_CALLBACK_URL || "").trim();
+  let mpesaCallbackUrlValid = false;
+  try {
+    const parsed = new URL(callbackUrl);
+    const token = String(process.env.MPESA_CALLBACK_TOKEN || "");
+    mpesaCallbackUrlValid = parsed.protocol === "https:" && !parsed.search && !parsed.hash &&
+      token.length >= 24 && parsed.pathname === `/api/payments/callback/${encodeURIComponent(token)}`;
+  } catch {}
+  const withdrawalKeyText = String(process.env.WITHDRAWAL_ENCRYPTION_KEY || "");
+  const withdrawalKeyBytes = Buffer.byteLength(withdrawalKeyText, "utf8") === 32
+    ? Buffer.from(withdrawalKeyText, "utf8")
+    : Buffer.from(withdrawalKeyText, "base64");
+
   const checks = {
     supabaseUrl: Boolean(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL),
     supabaseAnonKey: Boolean(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY),
@@ -39,7 +52,9 @@ export default async function handler(req, res) {
     mpesaShortcode: Boolean(process.env.MPESA_SHORTCODE),
     mpesaPasskey: Boolean(process.env.MPESA_PASSKEY),
     mpesaCallbackUrl: Boolean(process.env.MPESA_CALLBACK_URL),
-    withdrawalEncryptionKey: Boolean(process.env.WITHDRAWAL_ENCRYPTION_KEY)
+    withdrawalEncryptionKey: Boolean(withdrawalKeyText),
+    withdrawalEncryptionKeyValid: withdrawalKeyBytes.length === 32,
+    mpesaCallbackUrlValid
   };
 
   return res.status(200).json({
@@ -53,7 +68,7 @@ export default async function handler(req, res) {
     secureAdminVerificationReady: checks.supabaseUrl && checks.supabaseServiceRoleKey,
     withdrawalServiceConfigured: checks.supabaseUrl && checks.supabaseServiceRoleKey && checks.withdrawalEncryptionKey,
     mpesaConfigurationPresent: checks.mpesaConsumerKey && checks.mpesaConsumerSecret &&
-      checks.mpesaShortcode && checks.mpesaPasskey && checks.mpesaCallbackUrl,
+      checks.mpesaShortcode && checks.mpesaPasskey && checks.mpesaCallbackUrl && checks.mpesaCallbackUrlValid,
     livePaymentsEnabled: false,
     liveTradingEnabled: false,
     note: "This endpoint reports configuration presence and a non-secret key format classification only. It does not verify provider accounts, licensing, payment callbacks, or broker execution."
