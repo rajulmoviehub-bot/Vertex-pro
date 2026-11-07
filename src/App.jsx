@@ -1057,7 +1057,14 @@ export default function App() {
                         <span className="absolute right-2 top-2 rounded bg-white px-2 py-1 font-mono text-[10px] font-bold text-black">{currentPrice}</span>
                       </div>
                       <p className="text-[9px] text-slate-400">VELTEX simulated demo prices · graph updates as new market ticks arrive.</p>
-                    </div>
+                      <div className="grid grid-cols-10 gap-1 pt-1" aria-label="Live digits zero to nine">
+                        {Array.from({ length: 10 }, (_, digit) => (
+                          <div key={digit} className="flex min-w-0 flex-col items-center gap-1">
+                            <span className={`flex h-7 w-7 items-center justify-center rounded-full border font-mono text-[11px] font-black ${digit === lastDigit ? 'border-cyan-400 bg-cyan-950 text-cyan-200' : 'border-slate-700 bg-[#0c1017] text-slate-300'}`}>{digit}</span>
+                            <span className="text-[8px] font-mono text-slate-400">{stats[digit] ?? 0}%</span>
+                          </div>
+                        ))}
+                      </div>
                   )}
                   {deepScan.loaded && !deepScan.appeared && !deepScan.expired && <p role="status" className="text-center text-xs font-bold text-cyan-200">MARKET LOADED · WAITING FOR DIGIT {deepScan.digit}</p>}
                   {deepScan.appeared && !deepScan.tradeStarted && !deepScan.expired && (
