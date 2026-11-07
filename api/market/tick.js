@@ -31,21 +31,24 @@ async function authenticate(req) {
   const token = bearer(req);
   if (!url || !key) return { error: "VERTEX engine is not configured on the server.", status: 503 };
 
-  // PostgREST needs a JWT carrying the service_role claim for privileged RPC calls.
-  // New sb_secret_* API keys are not JWTs and must not be used as the Bearer token here.
-  let serviceRole = "";
-  try {
-    const parts = key.split(".");
-    if (parts.length === 3) {
-      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
-      serviceRole = String(payload?.role || "");
+  // Accept either the legacy service_role JWT or the newer Supabase secret key.
+  // Supabase's newer sb_secret_* keys are opaque and must not be parsed as JWTs.
+  const isNewSecretKey = key.startsWith("sb_secret_");
+  let isLegacyServiceRoleJwt = false;
+  if (!isNewSecretKey) {
+    try {
+      const parts = key.split(".");
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+        isLegacyServiceRoleJwt = String(payload?.role || "") === "service_role";
+      }
+    } catch {
+      isLegacyServiceRoleJwt = false;
     }
-  } catch {
-    serviceRole = "";
   }
-  if (serviceRole !== "service_role") {
+  if (!isNewSecretKey && !isLegacyServiceRoleJwt) {
     return {
-      error: "VERTEX server key is not a legacy Supabase service_role JWT. Set SUPABASE_SERVICE_ROLE_KEY to the legacy service_role JWT from Supabase API settings, then redeploy.",
+      error: "SUPABASE_SERVICE_ROLE_KEY must be a Supabase secret key (sb_secret_...) or legacy service_role JWT. Check the Vercel Production value and redeploy.",
       status: 503
     };
   }
