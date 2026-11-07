@@ -1543,7 +1543,7 @@ export default function App() {
 
       {showTargetAchieved && (
         <div role="alert" aria-live="assertive" className="pointer-events-none fixed inset-x-4 top-20 z-[110] mx-auto max-w-md bg-transparent px-2 py-2 text-center text-xl font-black text-lime-300 [text-shadow:0_0_8px_rgba(163,230,53,0.95),0_0_22px_rgba(132,204,22,0.8)]">
-          Mashallah 🕌💫 TARGET ACHIEVED!
+          Alhamdulillah 🤲✨ TARGET PROFIT MADE: ${sessionPL.toFixed(2)}!
         </div>
       )}
       {loginWelcome && (
