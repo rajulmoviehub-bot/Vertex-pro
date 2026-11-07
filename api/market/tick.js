@@ -5,7 +5,7 @@ export const config = { runtime: "nodejs" };
 const TICK_MS = 1000;
 const BASE_PRICE = 10000;
 const SYMBOL = "VELTEX-SIM-1";
-const SOURCE = "VELTEX proprietary simulated market";
+const SOURCE = "VER proprietary simulated market";
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const bearer = req => String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 
@@ -29,7 +29,7 @@ async function authenticate(req) {
   const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
   const token = bearer(req);
-  if (!url || !key) return { error: "VELTEX engine is not configured on the server.", status: 503 };
+  if (!url || !key) return { error: "VER engine is not configured on the server.", status: 503 };
 
   // PostgREST needs a JWT carrying the service_role claim for privileged RPC calls.
   // New sb_secret_* API keys are not JWTs and must not be used as the Bearer token here.
@@ -45,11 +45,11 @@ async function authenticate(req) {
   }
   if (serviceRole !== "service_role") {
     return {
-      error: "VELTEX server key is not a legacy Supabase service_role JWT. Set SUPABASE_SERVICE_ROLE_KEY to the legacy service_role JWT from Supabase API settings, then redeploy.",
+      error: "VER server key is not a legacy Supabase service_role JWT. Set SUPABASE_SERVICE_ROLE_KEY to the legacy service_role JWT from Supabase API settings, then redeploy.",
       status: 503
     };
   }
-  if (!token || token.length > 8192) return { error: "Sign in to use the VELTEX demo engine.", status: 401 };
+  if (!token || token.length > 8192) return { error: "Sign in to use the VER demo engine.", status: 401 };
   const response = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: "no-store" });
   if (!response.ok) return { error: "Your session is invalid or expired.", status: 401 };
   const user = await response.json();
@@ -64,7 +64,7 @@ async function rpc(url, key, name, args) {
   });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    const error = new Error(body?.message || body?.hint || "VELTEX engine database request failed.");
+    const error = new Error(body?.message || body?.hint || "VER engine database request failed.");
     error.status = response.status;
     throw error;
   }
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       market: {
-        symbol: SYMBOL, name: "VELTEX Synthetic Index", source: SOURCE,
+        symbol: SYMBOL, name: "VER Synthetic Index", source: SOURCE,
         market_type: "synthetic_demo", real_world_asset_price: false,
         real_money_trading_enabled: false,
         algorithm: "Deterministic published formula: multi-frequency sine waves plus sequence-hashed bounded noise",
@@ -145,7 +145,7 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ ok: false, error: "Action must be open or settle." });
   } catch (error) {
-    console.error("VELTEX demo engine error:", error?.message || "unknown");
-    return res.status(error?.status === 42501 ? 403 : 502).json({ ok: false, error: error?.message || "VELTEX engine request failed." });
+    console.error("VER demo engine error:", error?.message || "unknown");
+    return res.status(error?.status === 42501 ? 403 : 502).json({ ok: false, error: error?.message || "VER engine request failed." });
   }
 }
