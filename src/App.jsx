@@ -45,6 +45,7 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [loginWelcome, setLoginWelcome] = useState(false);
   const [showTargetAchieved, setShowTargetAchieved] = useState(false);
+  const targetAchievedRef = useRef(false);
   const [autoBotRunning, setAutoBotRunning] = useState(false);
   const autoLastEntryTickRef = useRef(-1);
 
@@ -98,13 +99,18 @@ export default function App() {
   const [startupShown, setStartupShown] = useState(false);
 
   useEffect(() => {
-    if (!autoBotRunning) return;
-    if (sessionPL >= Number(target) && Number(target) > 0) {
-      setAutoBotRunning(false);
+    const profitTarget = Number(target);
+    if (!(profitTarget > 0) || sessionPL < profitTarget) {
+      targetAchievedRef.current = false;
+    } else if (!targetAchievedRef.current) {
+      targetAchievedRef.current = true;
+      if (autoBotRunning) setAutoBotRunning(false);
       setShowTargetAchieved(true);
-      setTimeout(() => setShowTargetAchieved(false), 5000);
-      return;
+      const timer = setTimeout(() => setShowTargetAchieved(false), 5000);
+      return () => clearTimeout(timer);
     }
+
+    if (!autoBotRunning) return;
     if (Number(stopLoss) > 0 && sessionPL <= -Math.abs(Number(stopLoss))) {
       setAutoBotRunning(false);
       alert('MV6 AUTO BOT stopped: stop-loss limit reached.');
