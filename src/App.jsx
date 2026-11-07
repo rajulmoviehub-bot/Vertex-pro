@@ -1048,6 +1048,17 @@ export default function App() {
                   </div>
                   <p className="text-[10px] leading-relaxed text-slate-500">{deepScan.qualifies ? 'Random demo score generated for display.' : 'Random demo score generated for display.'} Randomly generated 75–100 demo score; not a real probability or prediction.</p>
                   {deepScan.qualifies && !deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: totalTicks } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
+                  {deepScan.loaded && (
+                    <div className="rounded-xl border border-cyan-800 bg-[#09131d] p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-black tracking-wide text-cyan-200">LIVE MARKET GRAPH</span><span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-300' : 'text-amber-300'}`}>{feedStatus}</span></div>
+                      <div className="relative h-36 w-full overflow-hidden rounded-lg border border-slate-800 bg-[#0c1017]">
+                        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(to right,#334155 1px,transparent 1px),linear-gradient(to bottom,#334155 1px,transparent 1px)', backgroundSize: '32px 28px' }} />
+                        <svg className="absolute inset-0 h-full w-full text-cyan-400" preserveAspectRatio="none" viewBox="0 0 400 150" role="img" aria-label="VELTEX simulated market price graph"><polyline fill="none" stroke="currentColor" strokeWidth="2.5" points={svgPoints} /><circle cx={lastSvgPoint.x} cy={lastSvgPoint.y} r="4" fill="#ffffff" stroke="#22d3ee" strokeWidth="2" /></svg>
+                        <span className="absolute right-2 top-2 rounded bg-white px-2 py-1 font-mono text-[10px] font-bold text-black">{currentPrice}</span>
+                      </div>
+                      <p className="text-[9px] text-slate-400">VELTEX simulated demo prices · graph updates as new market ticks arrive.</p>
+                    </div>
+                  )}
                   {deepScan.loaded && !deepScan.appeared && !deepScan.expired && <p role="status" className="text-center text-xs font-bold text-cyan-200">MARKET LOADED · WAITING FOR DIGIT {deepScan.digit}</p>}
                   {deepScan.appeared && !deepScan.tradeStarted && !deepScan.expired && (
                     <div className="space-y-2">
