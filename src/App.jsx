@@ -960,13 +960,14 @@ export default function App() {
 
       <section className="bg-[#0d131f] border-b border-gray-800 px-3 py-2" aria-label="Account mode">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-2">
-            <button onClick={() => { setAccountMode('DEMO');  setActiveTrade(null); }} aria-pressed={accountMode === 'DEMO'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'DEMO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>DEMO · $10,000 START</button>
-            <button onClick={() => { setAccountMode('REAL'); setActiveTrade(null); }} aria-pressed={accountMode === 'REAL'} className={`rounded-md px-4 py-2 text-xs font-black border ${accountMode === 'REAL' ? 'bg-red-600 text-white border-red-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>LIVE · NOT CONNECTED</button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => { setAccountMode('DEMO'); setActiveTrade(null); }} aria-pressed={accountMode === 'DEMO'} className={`rounded-md px-3 py-2 text-xs font-black border ${accountMode === 'DEMO' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>DEMO · $10,000 START</button>
+            <button onClick={() => { setAccountMode('REAL'); setActiveTrade(null); }} aria-pressed={accountMode === 'REAL'} className={`rounded-md px-3 py-2 text-xs font-black border ${accountMode === 'REAL' ? 'bg-red-600 text-white border-red-500' : 'bg-[#121824] text-gray-300 border-gray-700'}`}>LIVE · NOT CONNECTED</button>
+            <button onClick={() => { setAccountMode('DEMO'); setDemoWallet(500); setActiveTrade(null); setAutoBotRunning(false); setActiveTab('TRADE'); }} className="rounded-md px-3 py-2 text-xs font-black border border-cyan-500 bg-cyan-950 text-cyan-200">LIVE TRADE · $500 DEMO SHOWCASE</button>
           </div>
           {accountMode === 'DEMO' && <button onClick={resetTradingSession} disabled={!!activeTrade} className="text-xs font-bold text-yellow-300 underline disabled:opacity-50">Reset Trading Session</button>}
         </div>
-        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? 'Practice mode: demo funds only. No real deposits or withdrawals. DEMO and DeepScan are free.' : 'LIVE display mode only. External broker execution is not connected, so no real trades are being placed. A paid MV6 AUTO BOT licence is optional and applies only to the AUTO BOT feature.'}</p>
+        <p className="mt-1 text-[10px] text-gray-400" role="status">{accountMode === 'DEMO' ? 'Practice mode: demo funds only. No real deposits or withdrawals. LIVE TRADE showcase uses a virtual $500 demo balance; no real-money orders are placed.' : 'LIVE display mode only. External broker execution is not connected, so no real trades are being placed. A paid MV6 AUTO BOT licence is optional and applies only to the AUTO BOT feature.'}</p>
       </section>
 
       {/* Tabs */}
