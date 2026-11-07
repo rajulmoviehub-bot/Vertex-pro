@@ -7,7 +7,7 @@ const BASE_PRICE = 10000;
 const SYMBOL = "VELTEX-SIM-1";
 const SOURCE = "VELTEX proprietary simulated market";
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-const bearer = req => String(req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() || "";
+const bearer = req => String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 
 function priceAt(sequence) {
   let x = (sequence + 0x9e3779b9) >>> 0;
@@ -26,7 +26,7 @@ function makeTick(sequence) {
   return { symbol: SYMBOL, sequence, timestamp: new Date(timestamp).toISOString(), epoch_ms: timestamp, quote: priceAt(sequence) };
 }
 async function authenticate(req) {
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const token = bearer(req);
   if (!url || !key) return { error: "VELTEX engine is not configured on the server.", status: 503 };
