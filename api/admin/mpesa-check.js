@@ -59,7 +59,14 @@ export default async function handler(req, res) {
     const transactionType = String(process.env.MPESA_TRANSACTION_TYPE || "CustomerBuyGoodsOnline").trim();
     const callbackToken = String(process.env.MPESA_CALLBACK_TOKEN || "");
     const passkey = process.env.MPESA_PASSKEY;
-    const callbackUrl = `https://vertexpromax.vercel.app/api/payments/callback/${encodeURIComponent(callbackToken)}`;
+    const callbackUrl = String(process.env.MPESA_CALLBACK_URL || "").trim();
+    let callbackUrlHttps = false;
+    let callbackUrlMatchesToken = false;
+    try {
+      const parsedCallback = new URL(callbackUrl);
+      callbackUrlHttps = parsedCallback.protocol === "https:" && !parsedCallback.search && !parsedCallback.hash;
+      callbackUrlMatchesToken = parsedCallback.pathname === `/api/payments/callback/${encodeURIComponent(callbackToken)}`;
+    } catch {}
     const checks = {
       environment:true,
       shortcode_present_and_numeric:/^\d{5,7}$/.test(shortcode),
@@ -69,7 +76,9 @@ export default async function handler(req, res) {
       passkey_present:Boolean(passkey),
       callback_token_present:callbackToken.length >= 24,
       service_role_key_present:Boolean(serviceKey),
-      callback_url_https:callbackUrl.startsWith("https://")
+      callback_url_configured:Boolean(callbackUrl),
+      callback_url_https:callbackUrlHttps,
+      callback_url_matches_token:callbackUrlMatchesToken
     };
     const failed = Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name);
     if (failed.length) return json(res, 200, { ok:false, environment, transactionType, checks, failed, message:"Configuration preflight found missing or invalid settings. No STK request was sent." });
