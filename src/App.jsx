@@ -899,39 +899,25 @@ export default function App() {
             </div>
           </div>
 
-          {/* Compact trading metrics: cumulative stake, settled profit, configured stop loss and multiplier. */}
-          <section aria-label="Trading summary" aria-live="polite" className="mx-3 mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="rounded-lg border border-gray-700 bg-[#121824] p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">TOTAL STAKE</p>
-              <p className="mt-1 text-lg font-black tabular-nums text-white">${(trades.reduce((sum, trade) => sum + Number(trade.stake || 0), 0) + Number(activeTrade?.stake || 0)).toFixed(2)}</p>
+          {/* Compact Deriv-style stake and risk settings below the market graph. */}
+          <section aria-label="Stake and trading targets" className="mx-3 mt-2 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
+              <label htmlFor="veltex-total-stake" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">TOTAL STAKE (USD)</label>
+              <input id="veltex-total-stake" type="number" min="0.01" max="100000" step="0.01" inputMode="decimal" value={initialStake} disabled={!!activeTrade || autoBotRunning} onChange={e => { const value = e.target.value === '' ? '' : Math.min(100000, Math.max(0.01, Number(e.target.value))); setInitialStake(value); setStake(value); }} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
             </div>
-            <div className="rounded-lg border border-gray-700 bg-[#121824] p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">TOTAL PROFIT</p>
-              <p className={`mt-1 text-lg font-black tabular-nums ${sessionPL > 0 ? 'text-emerald-400' : sessionPL < 0 ? 'text-red-400' : 'text-white'}`}>{sessionPL > 0 ? '+' : sessionPL < 0 ? '−' : ''}${Math.abs(sessionPL).toFixed(2)}</p>
+            <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
+              <label htmlFor="veltex-multiplier" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">MULTIPLIER</label>
+              <input id="veltex-multiplier" type="number" min="1" max="10" step="0.1" inputMode="decimal" value={multiplier} disabled={!!activeTrade || autoBotRunning} onChange={e => setMultiplier(e.target.value === '' ? '' : Math.min(10, Math.max(1, Number(e.target.value))))} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
             </div>
-            <div className="rounded-lg border border-gray-700 bg-[#121824] p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">STOP LOSS</p>
-              <p className="mt-1 text-lg font-black tabular-nums text-rose-300">${Math.abs(Number(stopLoss) || 0).toFixed(2)}</p>
+            <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
+              <label htmlFor="veltex-profit-target" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">PROFIT TARGET (USD)</label>
+              <input id="veltex-profit-target" type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={target} disabled={!!activeTrade || autoBotRunning} onChange={e => setTarget(e.target.value === '' ? '' : Math.min(100000, Math.max(1, Number(e.target.value))))} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
             </div>
-            <div className="rounded-lg border border-gray-700 bg-[#121824] p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">MULTIPLIER</p>
-              <p className="mt-1 text-lg font-black tabular-nums text-cyan-300">x{Number(multiplier).toFixed(2)}</p>
-            </div>
-          </section>
-
-          <section aria-label="Risk controls" className="mx-3 mt-2 grid grid-cols-2 gap-2 rounded-xl border border-gray-700 bg-[#121824] p-3">
-            <div className="space-y-1">
-              <label htmlFor="veltex-stop-loss" className="block text-[10px] font-bold uppercase tracking-wider text-gray-300">Set Stop Loss (USD)</label>
-              <input id="veltex-stop-loss" type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={stopLoss} disabled={!!activeTrade} onChange={e => setStopLoss(e.target.value === '' ? '' : Math.min(100000, Math.max(1, Number(e.target.value))))} className="w-full rounded-lg border border-gray-600 bg-[#090d14] p-2 text-sm font-bold text-white disabled:opacity-50" aria-describedby="veltex-stop-loss-help" />
-              <p id="veltex-stop-loss-help" className="text-[9px] text-gray-500">Stops the auto bot after this session loss.</p>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="veltex-multiplier" className="block text-[10px] font-bold uppercase tracking-wider text-gray-300">Set Multiplier</label>
-              <input id="veltex-multiplier" type="number" min="1" max="10" step="0.1" inputMode="decimal" value={multiplier} disabled={!!activeTrade} onChange={e => setMultiplier(e.target.value === '' ? '' : Math.min(10, Math.max(1, Number(e.target.value))))} className="w-full rounded-lg border border-gray-600 bg-[#090d14] p-2 text-sm font-bold text-white disabled:opacity-50" aria-describedby="veltex-multiplier-help" />
-              <p id="veltex-multiplier-help" className="text-[9px] text-gray-500">Next stake after a loss = previous stake × multiplier.</p>
+            <div className="min-w-0 rounded-md border border-gray-700 bg-[#121824] p-2">
+              <label htmlFor="veltex-stop-loss" className="block text-[9px] font-bold uppercase tracking-wide text-gray-400">STOP LOSS (USD)</label>
+              <input id="veltex-stop-loss" type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={stopLoss} disabled={!!activeTrade || autoBotRunning} onChange={e => setStopLoss(e.target.value === '' ? '' : Math.min(100000, Math.max(1, Number(e.target.value))))} className="mt-1 w-full min-w-0 rounded border border-gray-600 bg-[#090d14] px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50" />
             </div>
           </section>
-
 
           {/* Active Trade Banner */}
           {activeTrade && (
