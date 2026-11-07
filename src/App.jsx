@@ -1003,7 +1003,7 @@ export default function App() {
             <label className="block text-xs text-gray-400 font-bold">Withdrawal amount (USD)</label>
             <input type="number" min="5" max="10000" step="0.01" inputMode="decimal" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 font-mono font-bold" />
             <button disabled={withdrawBusy || !user.loggedIn || withdrawMethod !== 'M-PESA'} onClick={handleWithdrawalRequest} className="w-full bg-emerald-700 disabled:bg-gray-700 text-white font-bold text-sm py-3 rounded-lg">{withdrawBusy ? 'SUBMITTING REQUEST…' : 'SUBMIT WITHDRAWAL REQUEST'}</button>
-            <p className="text-[11px] text-amber-200">Submitting reserves the requested amount from your available wallet balance. The owner reviews the request and sends any payout manually outside VELTEX. If rejected, there is NO automatic refund; only the owner can issue a separate manual refund.</p>
+
           </section>
         </div>
       )}
