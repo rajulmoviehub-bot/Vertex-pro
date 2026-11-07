@@ -489,7 +489,30 @@ export default function App() {
       const selected = counts[0];
       const sideCount = digits.filter(value => (value % 2 === 0 ? 'EVEN' : 'ODD') === selected.side).length;
       const observedFrequency = Math.round((sideCount / digits.length) * 100);
-      setDeepScan({ ...selected, percentage: observedFrequency, qualifies: observedFrequency > 50, highSignal: false, sampleSize: digits.length, scanTick: totalTicks, loaded: false, appeared: false, expired: false, tradeStarted: false });
+
+      // Educational strategy readings from the same observed sample; these are not predictions.
+      const parityOf = value => value % 2 === 0 ? 'EVEN' : 'ODD';
+      const recent = digits.slice(-5);
+      const recentEven = recent.filter(value => parityOf(value) === 'EVEN').length;
+      const recentOdd = recent.length - recentEven;
+      const strategyInsights = [
+        {
+          name: 'Parity Frequency',
+          side: sideCount >= digits.length / 2 ? selected.side : (selected.side === 'EVEN' ? 'ODD' : 'EVEN'),
+          detail: `${Math.max(recentEven, recentOdd)} of last 5 ticks were ${recentEven >= recentOdd ? 'EVEN' : 'ODD'}`
+        },
+        {
+          name: 'Recent Momentum',
+          side: recentEven >= recentOdd ? 'EVEN' : 'ODD',
+          detail: `Last 5 ticks: ${recentEven} EVEN / ${recentOdd} ODD`
+        },
+        {
+          name: 'Digit Recurrence',
+          side: selected.side,
+          detail: `Digit ${selected.digit} appeared ${selected.count} time(s) in last 12 ticks`
+        }
+      ];
+      setDeepScan({ ...selected, percentage: observedFrequency, qualifies: observedFrequency > 50, highSignal: false, sampleSize: digits.length, strategyInsights, scanTick: totalTicks, loaded: false, appeared: false, expired: false, tradeStarted: false });
       setDeepScanning(false);
       setActiveTab('DEEPSCAN');
     }, 700);
@@ -977,6 +1000,16 @@ export default function App() {
                 <div className="space-y-2 rounded-xl border border-slate-700 bg-[#101d29] p-3">
                   <div className="flex items-center gap-3"><div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Selected digit</p><div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black text-white">{deepScan.digit}</span><span className={'text-base font-black ' + (deepScan.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{deepScan.side}</span></div></div><div className="ml-auto text-right"><span className="block text-lg font-black text-cyan-200">{deepScan.percentage}%</span><span className={'inline-block rounded-md px-2 py-1 text-[9px] font-black ' + (deepScan.qualifies ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300')}>{deepScan.qualifies ? 'SIGNAL FOUND' : 'WAIT'}</span></div></div>
                   <p className="text-[9px] leading-relaxed text-slate-400">Observed frequency from the last 12 ticks only. The score is historical frequency, not a prediction or guaranteed win probability.</p>
+                  <div className="rounded-lg border border-slate-700 bg-[#0b1520] p-2 space-y-2">
+                    <p className="text-[9px] font-black uppercase tracking-wider text-cyan-200">Market strategies · sample analysis</p>
+                    {deepScan.strategyInsights?.map(strategy => (
+                      <div key={strategy.name} className="flex items-start justify-between gap-2 text-[10px]">
+                        <div><span className="font-bold text-white">{strategy.name}</span><p className="text-slate-400">{strategy.detail}</p></div>
+                        <span className={'font-black ' + (strategy.side === 'EVEN' ? 'text-emerald-300' : 'text-rose-300')}>{strategy.side}</span>
+                      </div>
+                    ))}
+                    <p className="text-[9px] text-amber-300">Strategies describe past ticks only. They do not guarantee the next result or a profit.</p>
+                  </div>
                   {!deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: totalTicks } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
                   {deepScan.loaded && !deepScan.appeared && !deepScan.expired && <p role="status" className="text-center text-xs font-bold text-cyan-200">MARKET LOADED · WAITING FOR DIGIT {deepScan.digit}</p>}
                   {deepScan.appeared && !deepScan.tradeStarted && !deepScan.expired && (
