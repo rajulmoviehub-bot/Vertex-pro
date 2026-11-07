@@ -1066,6 +1066,7 @@ export default function App() {
                           </div>
                         ))}
                       </div>
+                    </div>
                   )}
                   {deepScan.loaded && !deepScan.appeared && !deepScan.expired && <p role="status" className="text-center text-xs font-bold text-cyan-200">MARKET LOADED · WAITING FOR DIGIT {deepScan.digit}</p>}
                   {deepScan.appeared && !deepScan.tradeStarted && !deepScan.expired && (
