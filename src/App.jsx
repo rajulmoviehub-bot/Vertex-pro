@@ -1592,7 +1592,7 @@ export default function App() {
       )}
       {loginWelcome && (
         <div role="status" aria-live="polite" className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#090d14]/95 px-5 text-center">
-          <div className="w-full max-w-md animate-[fadeIn_0.35s_ease-out] rounded-2xl border border-red-500/60 bg-[#121824] p-6 shadow-[0_0_35px_rgba(239,68,68,0.18)]">
+          <div className="w-full max-w-md animate-[fadeIn_0.35s_ease-out] bg-transparent p-6">
             <p className="text-lg font-black text-red-400">السلام عليكم ورحمة الله وبركاته</p>
             <p className="mt-2 text-2xl font-black tracking-wide text-white">WELCOME BACK, {displayUserName.toUpperCase()}!</p>
             <div className="my-6 flex h-28 items-end justify-center gap-2" aria-label="Animated candlestick welcome">
