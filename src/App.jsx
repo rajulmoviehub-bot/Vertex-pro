@@ -45,6 +45,7 @@ export default function App() {
   const [deepScanning, setDeepScanning] = useState(false);
   const [deepScanMarket, setDeepScanMarket] = useState('Even / Odd');
   const [activeTrade, setActiveTrade] = useState(null);
+  const [lastTradeResult, setLastTradeResult] = useState(null);
 
   const [priceHistory, setPriceHistory] = useState([]);
   const [lastDigit, setLastDigit] = useState(0);
@@ -398,6 +399,7 @@ export default function App() {
           status: isWin ? 'WIN' : 'LOSS'
         };
         setTrades(prev => [finishedTrade, ...prev]);
+        setLastTradeResult(finishedTrade);
         return null;
       }
 
@@ -931,15 +933,25 @@ export default function App() {
           </section>
 
           <section aria-label="Manual trade choices" className="mx-3 mt-3 grid grid-cols-2 gap-2">
-            <button type="button" aria-label={`Place EVEN trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-14 rounded-lg border border-emerald-700 bg-[#121824] p-2 text-left disabled:opacity-60">
+            <button type="button" aria-label={`Place EVEN trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setLastTradeResult(null); setActiveTrade({ prediction: 'Even', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-14 rounded-lg border border-emerald-700 bg-[#121824] p-2 text-left disabled:opacity-60">
               <span className="flex items-center justify-between text-sm font-black text-white">EVEN <span className="text-emerald-400">${(Number(stake) * 1.95).toFixed(2)}</span></span>
               <span className="mt-1 block text-[9px] text-gray-400">95% payout · Demo estimate</span>
             </button>
-            <button type="button" aria-label={`Place ODD trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-14 rounded-lg border border-red-700 bg-[#121824] p-2 text-left disabled:opacity-60">
+            <button type="button" aria-label={`Place ODD trade. Potential demo payout ${(Number(stake) * 1.95).toFixed(2)} dollars.`} disabled={accountMode !== 'DEMO' || feedStatus !== 'LIVE' || activeTrade !== null || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)} onClick={() => { if (accountMode !== 'DEMO') { alert('Live trading is not connected. Manual trades are available in Demo only.'); return; } if (activeTrade || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; } setLastTradeResult(null); setActiveTrade({ prediction: 'Odd', ticksElapsed: 0, entryDigit: lastDigit, stake: Number(stake), source: 'MANUAL' }); setActiveTab('TRADE'); }} className="min-h-14 rounded-lg border border-red-700 bg-[#121824] p-2 text-left disabled:opacity-60">
               <span className="flex items-center justify-between text-sm font-black text-red-400">ODD <span className="text-emerald-400">${(Number(stake) * 1.95).toFixed(2)}</span></span>
               <span className="mt-2 block text-[10px] text-gray-400">95% payout · Demo estimate</span>
             </button>
           </section>
+
+          {lastTradeResult && !activeTrade && (
+            <div role="status" aria-live="assertive" className={`mx-3 mt-3 rounded-xl border p-3 ${lastTradeResult.status === 'WIN' ? 'border-emerald-500 bg-emerald-950/60 text-emerald-300' : 'border-red-500 bg-red-950/60 text-red-300'}`}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-black">{lastTradeResult.status === 'WIN' ? 'TRADE WON · WIN' : 'TRADE LOST · LOSS'}</span>
+                <span className="font-mono text-sm font-black">{lastTradeResult.payout >= 0 ? '+' : '-'}${Math.abs(lastTradeResult.payout).toFixed(2)}</span>
+              </div>
+              <p className="mt-1 text-[10px] font-bold">Exit digit: {lastTradeResult.exitDigit} · {lastTradeResult.prediction}</p>
+            </div>
+          )}
 
           {/* Active Trade Banner */}
           {activeTrade && (
