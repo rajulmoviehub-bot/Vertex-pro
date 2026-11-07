@@ -386,8 +386,10 @@ export default function App() {
         source
       });
       setActiveTab('TRADE');
+      return true;
     } catch (error) {
       alert(error?.message || 'VELTEX could not open this demo trade.');
+      return false;
     } finally {
       tradeRequestRef.current = false;
     }
@@ -472,7 +474,6 @@ export default function App() {
     const tradeId = activeTrade.serverTradeId;
     if (settlingTradeRef.current === tradeId) return;
     settlingTradeRef.current = tradeId;
-    let cancelled = false;
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -486,7 +487,6 @@ export default function App() {
         const result = await response.json();
         if (response.status === 409) return;
         if (!response.ok || !result.ok || !result.trade) throw new Error(result.error || 'VELTEX could not settle this demo trade.');
-        if (cancelled) return;
         const settled = result.trade;
         const isWin = settled.status === 'won';
         const netPayout = isWin ? Number(settled.stake) * 0.95 : -Number(settled.stake);
@@ -515,12 +515,11 @@ export default function App() {
         setLastTradeResult(finishedTrade);
         setActiveTrade(current => current?.serverTradeId === tradeId ? null : current);
       } catch (error) {
-        if (!cancelled) console.error('VELTEX demo settlement pending:', error?.message || error);
+        console.error('VELTEX demo settlement pending:', error?.message || error);
       } finally {
         if (settlingTradeRef.current === tradeId) settlingTradeRef.current = null;
       }
     })();
-    return () => { cancelled = true; };
   }, [accountMode, activeTrade?.serverTradeId, activeTrade?.ticksElapsed, activeTrade?.duration, duration, initialStake, multiplier]);
 
   // Poll VELTEX's server-side deterministic synthetic demo market.
@@ -1213,15 +1212,15 @@ export default function App() {
                         <button type="button" onClick={() => {
                           if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
                           if (activeTrade || deepScan.tradeStarted || deepScan.expired || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
-                          void startServerDemoTrade('Even', 'DEEP_SCAN').then(() => {
-                            if (activeTrade === null) setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'EVEN' } : previous);
+                          void startServerDemoTrade('Even', 'DEEP_SCAN').then(opened => {
+                            if (opened) setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'EVEN' } : previous);
                           });
                         }} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted || deepScan.expired}>EVEN</button>
                         <button type="button" onClick={() => {
                           if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
                           if (activeTrade || deepScan.tradeStarted || deepScan.expired || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
-                          void startServerDemoTrade('Odd', 'DEEP_SCAN').then(() => {
-                            if (activeTrade === null) setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'ODD' } : previous);
+                          void startServerDemoTrade('Odd', 'DEEP_SCAN').then(opened => {
+                            if (opened) setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'ODD' } : previous);
                           });
                         }} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted || deepScan.expired}>ODD</button>
                       </div>
