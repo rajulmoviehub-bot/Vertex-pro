@@ -1041,8 +1041,9 @@ export default function App() {
                   <p className="text-[11px] font-black uppercase tracking-wide text-rose-400">{deepScan.qualifies ? 'RANDOM DEMO SIGNAL' : 'NO STRONG ENTRY'}</p>
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-base font-black text-white">Even / Odd</p>
-                      <p className="text-sm text-slate-400">Suggested side: <span className={deepScan.side === 'EVEN' ? 'font-bold text-emerald-300' : 'font-bold text-rose-300'}>{deepScan.side === 'EVEN' ? 'Even' : 'Odd'}</span></p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Target tick number</p>
+                      <p className="text-3xl font-black text-cyan-300">DIGIT {deepScan.digit}</p>
+                      <p className="text-sm text-slate-300">Trade side: <span className={deepScan.side === 'EVEN' ? 'font-bold text-emerald-300' : 'font-bold text-rose-300'}>{deepScan.side === 'EVEN' ? 'EVEN' : 'ODD'}</span></p>
                     </div>
                     <span className="shrink-0 rounded-lg bg-rose-950/70 px-3 py-2 text-base font-black text-rose-300">{deepScan.percentage}%</span>
                   </div>
