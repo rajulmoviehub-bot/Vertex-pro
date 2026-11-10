@@ -1612,7 +1612,15 @@ export default function App() {
                 alert('ADMIN BOT · LIVE ONLY selected. Live broker order execution is not connected in this build, so no real trade can be placed.');
               }} className="w-full text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200">ADMIN BOT · LIVE ONLY</button>}
               <button onClick={() => { setAccountMode('DEMO');  setActiveTrade(null); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-emerald-900/40 border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-300">DEMO account · $10,000 start</button>
-              <button onClick={() => { setActiveTab('ACCOUNT'); setMenuOpen(false); }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
+              <button onClick={async () => {
+                if (!user.loggedIn) { setMenuOpen(false); setAuthModal('login'); return; }
+                if (!isOwner) { alert('Account Management is restricted to the verified VERTEX owner.'); return; }
+                if (!adminUnlocked && !(await unlockAdmin())) return;
+                if (Number(mainWallet) < 20) { alert(`Account Management requires a minimum VERTEX wallet balance of $20. Current balance: ${Number(mainWallet).toFixed(2)}.`); return; }
+                setAdminSection('ACCOUNTS');
+                setActiveTab('ADMIN');
+                setMenuOpen(false);
+              }} className="w-full text-left rounded-lg bg-cyan-950/60 border border-cyan-700 px-4 py-3 text-sm font-bold text-cyan-200">Account management</button>
               <button onClick={() => { if (resetTradingSession()) { setAccountMode('DEMO'); setMenuOpen(false); } }} disabled={!!activeTrade} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-yellow-300 disabled:opacity-50">Reset trading session · wallet unchanged</button>
               {!user.loggedIn ? <><button onClick={() => { setMenuOpen(false); setAuthModal('login'); }} className="w-full text-left rounded-lg bg-[#0c1017] border border-gray-700 px-4 py-3 text-sm font-bold text-white">Login</button><button onClick={() => { setMenuOpen(false); setAuthModal('signup'); }} className="w-full text-left rounded-lg bg-red-700 px-4 py-3 text-sm font-bold text-white">Sign up</button></> : <button onClick={async () => { try { const { error } = await supabase.auth.signOut(); if (error) throw error; setUser({ loggedIn: false, email: '', refCode: 'VERTEX-7892' }); setMainWallet(0); setAdminUnlocked(false);  setActiveTrade(null); setAccountMode('DEMO'); setMenuOpen(false); setActiveTab('TRADE'); } catch (error) { alert(error?.message || 'Could not sign out. Please try again.'); } }} className="w-full flex items-center gap-2 text-left rounded-lg bg-red-950/60 border border-red-700 px-4 py-3 text-sm font-bold text-red-200"><LogOut className="w-4 h-4" /> Log out</button>}
             </div>
