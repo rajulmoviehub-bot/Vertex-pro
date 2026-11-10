@@ -16,7 +16,6 @@ function roundSeed(master, roundId) {
 function describeRound(master, roundId, now) {
   const seed = roundSeed(master, roundId);
   const commitment = createHash("sha256").update(seed).digest("hex");
-  const result = hmac(seed, "VELTEX|settlement|v1");
   const priceBytes = hmac(seed, "VELTEX|price|v1");
   const raw = priceBytes.readUInt32BE(0) / 0xffffffff;
   const quote = Number((BASE_PRICE + raw * 100).toFixed(3));
@@ -34,8 +33,7 @@ function describeRound(master, roundId, now) {
     return { ...proof, status: "OPEN", symbol: SYMBOL, quote: null, digit: null, outcome: null, seed_revealed: false };
   }
   const digit = Number(quote.toFixed(3).slice(-1));
-  const parityBit = result[0] & 1;
-  const outcome = parityBit === 0 ? "EVEN" : "ODD";
+  const outcome = digit % 2 === 0 ? "EVEN" : "ODD";
   const revealedSeed = seed.toString("hex");
   const check = createHash("sha256").update(Buffer.from(revealedSeed, "hex")).digest("hex");
   const verified = timingSafeEqual(Buffer.from(check, "hex"), Buffer.from(commitment, "hex"));
@@ -50,7 +48,7 @@ function describeRound(master, roundId, now) {
     seed: revealedSeed,
     verification: {
       commitment_matches_revealed_seed: verified,
-      outcome_rule: "HMAC-SHA256(seed, 'VELTEX|settlement|v1'); first-byte least-significant bit: 0=EVEN, 1=ODD"
+      outcome_rule: "Take the final decimal digit of the published 3-decimal quote; even=EVEN, odd=ODD"
     }
   };
 }
