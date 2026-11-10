@@ -101,6 +101,9 @@ export default function App() {
   const [withdrawPhone, setWithdrawPhone] = useState('');
   const [withdrawBusy, setWithdrawBusy] = useState(false);
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
+  const [adminCustomers, setAdminCustomers] = useState([]);
+  const [adminCustomersBusy, setAdminCustomersBusy] = useState(false);
+  const [adminCustomersLoaded, setAdminCustomersLoaded] = useState(false);
   const [withdrawalAdminBusy, setWithdrawalAdminBusy] = useState(false);
   const [startupShown, setStartupShown] = useState(false);
 
@@ -447,8 +450,7 @@ export default function App() {
 
   const processNewTick = (quoteNum) => {
     if (!Number.isFinite(quoteNum)) return;
-    const quoteStr = quoteNum.toFixed(3);
-    const receivedAt = Date.now();
+    const quoteStr = quoteNum.toFixed(3);    const receivedAt = Date.now();
     lastTickAtRef.current = receivedAt;
     setLastTickAt(receivedAt);
     setFeedStatus('LIVE');
@@ -805,6 +807,30 @@ export default function App() {
     finally { setLicenceBusy(false); }
   };
 
+  const loadAdminCustomers = async () => {
+    if (!supabase || !adminUnlocked || !isOwner) {
+      alert('Only the verified VERTEX owner can view customer contact details.');
+      return;
+    }
+    setAdminCustomersBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Admin session expired. Sign in again.');
+      const response = await fetch('/api/admin/customers', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store'
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Could not load customer contacts.');
+      setAdminCustomers(Array.isArray(result.customers) ? result.customers : []);
+      setAdminCustomersLoaded(true);
+    } catch (error) {
+      alert(error.message || 'Could not load customer contacts.');
+    } finally {
+      setAdminCustomersBusy(false);
+    }
+  };
+
   const loadAdminWithdrawals = async () => {
     if (!supabase || !adminUnlocked || !isOwner) return;
     setWithdrawalAdminBusy(true);
@@ -897,8 +923,7 @@ export default function App() {
           email,
           password,
           options: {
-            emailRedirectTo: 'https://vertexpromax.vercel.app',
-            data: { full_name: authInput.fullName.trim(), name: authInput.fullName.trim(), mobile_number: authInput.mobileNumber.trim(), referral_code: authInput.ref.trim() || null }
+            emailRedirectTo: 'https://vertexpromax.vercel.app',            data: { full_name: authInput.fullName.trim(), name: authInput.fullName.trim(), mobile_number: authInput.mobileNumber.trim(), referral_code: authInput.ref.trim() || null }
           }
         });
         if (error) throw error;
@@ -1297,8 +1322,7 @@ export default function App() {
           <div className="rounded-xl border border-cyan-700/60 bg-[#121824] p-4 space-y-2">
             <div className="flex items-center gap-2"><ScanLine className="w-5 h-5 text-cyan-300" /><h2 className="text-base font-black text-white">VERTEX PRIME AUTO BOT</h2></div>
             <p className="text-xs text-gray-300">Independent analysis panel. Scans the latest observed demo-feed digits and reports their historical frequency.</p>
-            <p className="text-[11px] text-amber-300">Historical frequency is not a prediction or guaranteed win probability. Current feed is simulated demo data.</p>
-            <button onClick={runAccurateScan} disabled={accurateScanning || priceHistory.length === 0} className="w-full rounded-lg bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 py-3 text-sm font-black text-white">
+            <p className="text-[11px] text-amber-300">Historical frequency is not a prediction or guaranteed win probability. Current feed is simulated demo data.</p>            <button onClick={runAccurateScan} disabled={accurateScanning || priceHistory.length === 0} className="w-full rounded-lg bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 py-3 text-sm font-black text-white">
               {accurateScanning ? 'SCANNING DIGITS…' : 'RUN VERTEX PRIME SCAN'}
             </button>
           </div>
@@ -1440,7 +1464,7 @@ export default function App() {
                 </div>
               </div>)}
             </div>}
-            {adminSection === 'ACCOUNTS' && (Number(mainWallet) < 20 ? <div className="rounded-lg border border-amber-700 bg-[#090d14] p-4 space-y-2"><h3 className="font-bold text-white">Account Management locked</h3><p className="text-sm text-amber-200">A minimum VERTEX wallet balance of $20 is required to access Account Management.</p><p className="text-xs text-gray-300">Current wallet balance: ${Number(mainWallet).toFixed(2)}. Add funds until your balance reaches $20.</p></div> : <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VERTEX Account Management · Admin Only</h3><p className="text-xs text-gray-300">This section is for managing accounts registered on the VERTEX platform only. No broker account or external trading platform is used.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><p className="text-xs text-amber-200">Customer account directory and account actions must be connected to the secure VERTEX admin service before users can be listed, suspended, or edited here.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3">View my VERTEX account</button></div>)}
+            {adminSection === 'ACCOUNTS' && (Number(mainWallet) < 20 ? <div className="rounded-lg border border-amber-700 bg-[#090d14] p-4 space-y-2"><h3 className="font-bold text-white">Account Management locked</h3><p className="text-sm text-amber-200">A minimum VERTEX wallet balance of $20 is required to access Account Management.</p><p className="text-xs text-gray-300">Current wallet balance: ${Number(mainWallet).toFixed(2)}. Add funds until your balance reaches $20.</p></div> : <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VERTEX Account Management · Owner Only</h3><p className="text-xs text-gray-300">Only your verified owner account can retrieve this private customer directory. It displays customer email and registered phone number only.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><button type="button" onClick={loadAdminCustomers} disabled={adminCustomersBusy} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3 disabled:opacity-50">{adminCustomersBusy ? 'LOADING CUSTOMER CONTACTS…' : adminCustomersLoaded ? 'REFRESH CUSTOMER CONTACTS' : 'VIEW CUSTOMER EMAILS & PHONE NUMBERS'}</button>{adminCustomersLoaded && <div className="space-y-2"><p className="text-xs font-bold text-gray-300">Registered customers · {adminCustomers.length}</p>{adminCustomers.length === 0 ? <p className="rounded-lg bg-[#121824] p-3 text-xs text-gray-400">No registered customer accounts found.</p> : adminCustomers.map((customer,index) => <div key={customer.id || customer.email || index} className="rounded-lg border border-gray-700 bg-[#121824] p-3 space-y-1"><p className="text-sm font-bold text-white break-all">{customer.email || 'Email unavailable'}</p><p className="text-xs text-gray-300 break-all">Phone: {customer.phone || 'Not provided'}</p></div>)}</div>}<p className="text-[10px] text-gray-500">Contact details are fetched securely from registered VERTEX accounts and are not shown in customer-facing pages.</p></div>)}
             {adminSection === 'CENTRAL' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Central wallet withdrawal</h3><p className="text-xs text-gray-300">Central wallet balance: Not connected. No business wallet or payout provider is linked.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Request central withdrawal · unavailable</button><p className="text-[11px] text-amber-200">This panel cannot access or move customer or company funds.</p></div>}
             {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">MV6 AUTO BOT · Buyer activation</h3><p className="text-xs text-gray-300">Enter the email and mobile number already registered on the buyer's verified VERTEX account. Activation is tied to that account's unique ID; another account cannot use it.</p><label className="block text-xs text-gray-300" htmlFor="licence-buyer-email">Buyer VERTEX email</label><input id="licence-buyer-email" type="email" autoComplete="email" value={licenceEmail} onChange={e => setLicenceEmail(e.target.value)} placeholder="buyer@example.com" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><label className="block text-xs text-gray-300" htmlFor="licence-buyer-mobile">Registered mobile number</label><input id="licence-buyer-mobile" type="tel" autoComplete="tel" value={licenceMobile} onChange={e => setLicenceMobile(e.target.value)} placeholder="07XXXXXXXX or 2547XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('activate')} className="w-full rounded-lg bg-emerald-700 text-white font-bold text-sm py-3 disabled:opacity-50">ACTIVATE & ASSIGN BOT</button><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('revoke')} className="w-full rounded-lg bg-red-900 border border-red-700 text-red-100 font-bold text-sm py-3 disabled:opacity-50">REVOKE LICENCE</button><button disabled={licenceBusy} onClick={loadAdminLicences} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-2.5 disabled:opacity-50">{licenceBusy ? 'PLEASE WAIT…' : 'REFRESH LICENCE LIST'}</button><div className="space-y-2"><h4 className="text-xs font-bold text-white">Assigned bot licences ({licenceRows.length})</h4>{licenceRows.length === 0 ? <p className="text-xs text-gray-400">No licence records loaded. Press Refresh licence list.</p> : licenceRows.map(item => <div key={item.user_id} className="rounded-lg border border-gray-700 bg-[#121824] p-3 space-y-1"><p className="text-xs font-bold text-white">{item.customer_email}</p><p className="text-xs text-gray-300">Mobile: {item.mobile_number}</p><p className={`text-xs font-black ${item.status === 'active' ? 'text-emerald-300' : 'text-red-300'}`}>Status: {item.status.toUpperCase()}</p><p className="text-[10px] text-gray-400">Account ID: {item.user_id}</p></div>)}</div><p className="text-[11px] text-amber-200">Confirm payment before activation. This grants account access only; it does not connect a broker or execute trades.</p></div>}{adminSection === 'OVERVIEW' && <button onClick={resetTradingSession} disabled={!!activeTrade} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3 disabled:opacity-50">Reset trading session (wallet unchanged)</button>}
             <button onClick={() => { setAdminUnlocked(false); setAdminSection('OVERVIEW'); setActiveTab('TRADE'); }} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Lock Admin Panel</button>
