@@ -10,6 +10,7 @@ const handlers = {
   "/api/health": () => import("../server/routes/health.js"),
   "/api/market/catalog": () => import("../server/routes/market__catalog.js"),
   "/api/market/tick": () => import("../server/routes/market__tick.js"),
+  "/api/market/live": () => import("../server/routes/market__live.js"),
   "/api/market/fair": () => import("../server/routes/market__fair.js"),
   "/api/live/status": () => import("../server/routes/live__status.js"),
   "/api/mpesa/callback": () => import("../server/routes/mpesa__callback.js"),
