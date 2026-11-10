@@ -170,8 +170,12 @@ export default function App() {
     const oddCount = Object.entries(digitCounts).reduce((sum, [digit, count]) => sum + (Number(digit) % 2 === 1 ? count : 0), 0);
     const prediction = evenCount <= oddCount ? 'Even' : 'Odd';
     autoLastEntryTickRef.current = totalTicks;
-    setActiveTrade({ prediction, ticksElapsed: 0, entryDigit: lastDigit, stake });
-  }, [autoBotRunning, accountMode, feedStatus, activeTrade, totalTicks, sessionPL, target, stopLoss, demoWallet, stake, digitCounts, lastDigit]);
+    // AUTO BOT uses the same authenticated server ledger and settlement as manual Demo trades.
+    // It never creates a client-only trade or touches the customer's cash wallet.
+    void startServerDemoTrade(prediction, 'AUTO_BOT').then(opened => {
+      if (!opened) setAutoBotRunning(false);
+    });
+  }, [autoBotRunning, accountMode, feedStatus, activeTrade, totalTicks, sessionPL, target, stopLoss, demoWallet, stake, digitCounts]);
 
   useEffect(() => {
     if (!deepScan || !deepScan.loaded || deepScan.tradeStarted || deepScan.expired) return;
