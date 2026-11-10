@@ -660,43 +660,51 @@ export default function App() {
     }, 900);
   };
   const runDeepScan = () => {
+    if (priceHistory.length < 5) {
+      alert('Deep Scan needs at least 5 market ticks. Wait for the feed, then scan again.');
+      return;
+    }
     setDeepScanning(true);
     setDeepScan(null);
     setTimeout(() => {
       const digits = priceHistory.slice(-12).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
-            // Demo-only randomized signal. This is not a measured probability or prediction.
-      const selectedSide = Math.random() < 0.5 ? 'EVEN' : 'ODD';
-      const sideDigits = digits.filter(value => (value % 2 === 0 ? 'EVEN' : 'ODD') === selectedSide);
-      const selectedDigit = sideDigits.length ? sideDigits[Math.floor(Math.random() * sideDigits.length)] : Math.floor(Math.random() * 10);
-      const selected = { digit: selectedDigit, side: selectedSide, count: 0 };
-      const observedFrequency = 75 + Math.floor(Math.random() * 26);
-
-      // Educational strategy readings from the same observed sample; these are not predictions.
+      const evenDigits = digits.filter(value => value % 2 === 0);
+      const oddDigits = digits.filter(value => value % 2 === 1);
+      const selectedSide = evenDigits.length >= oddDigits.length ? 'EVEN' : 'ODD';
+      const sideDigits = selectedSide === 'EVEN' ? evenDigits : oddDigits;
+      const digitCountsInSide = Array.from({ length: 10 }, (_, digit) => ({
+        digit,
+        count: sideDigits.filter(value => value === digit).length
+      })).filter(item => item.digit % 2 === (selectedSide === 'EVEN' ? 0 : 1));
+      digitCountsInSide.sort((a,b) => b.count - a.count || a.digit - b.digit);
+      const selected = digitCountsInSide[0] || { digit: digits[digits.length - 1], count: 1 };
+      const observedFrequency = digits.length ? Math.round(sideDigits.length / digits.length * 100) : 0;
       const parityOf = value => value % 2 === 0 ? 'EVEN' : 'ODD';
       const recent = digits.slice(-5);
       const recentEven = recent.filter(value => parityOf(value) === 'EVEN').length;
       const recentOdd = recent.length - recentEven;
       const strategyInsights = [
-        {
-          name: 'Parity Frequency',
-          side: selected.side,
-          detail: `${Math.max(recentEven, recentOdd)} of last 5 ticks were ${recentEven >= recentOdd ? 'EVEN' : 'ODD'}`
-        },
-        {
-          name: 'Recent Momentum',
-          side: recentEven >= recentOdd ? 'EVEN' : 'ODD',
-          detail: `Last 5 ticks: ${recentEven} EVEN / ${recentOdd} ODD`
-        },
-        {
-          name: 'Digit Recurrence',
-          side: selected.side,
-          detail: `Digit ${selected.digit} appeared ${selected.count} time(s) in last 12 ticks`
-        }
+        { name: 'Parity Frequency', side: selectedSide, detail: `${sideDigits.length} of ${digits.length} sampled ticks were ${selectedSide}` },
+        { name: 'Recent Momentum', side: recentEven >= recentOdd ? 'EVEN' : 'ODD', detail: `Last ${recent.length} ticks: ${recentEven} EVEN / ${recentOdd} ODD` },
+        { name: 'Digit Recurrence', side: selectedSide, detail: `Digit ${selected.digit} appeared ${selected.count} time(s) in the last ${digits.length} ticks` }
       ];
-      setDeepScan({ ...selected, side: selectedSide, percentage: observedFrequency, qualifies: true, highSignal: false, sampleSize: digits.length, strategyInsights, scanTick: totalTicks, loaded: false, appeared: false, expired: false, tradeStarted: false });
+      setDeepScan({
+        ...selected,
+        side: selectedSide,
+        percentage: observedFrequency,
+        qualifies: digits.length >= 5,
+        highSignal: false,
+        sampleSize: digits.length,
+        strategyInsights,
+        scanTick: totalTicks,
+        loaded: false,
+        appeared: false,
+        expired: false,
+        tradeStarted: false
+      });
       setDeepScanning(false);
       setActiveTab('DEEPSCAN');
-    }, 700);
+    }, 350);
   };
 
   const handleDeposit = async () => {
