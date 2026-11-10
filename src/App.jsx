@@ -66,6 +66,7 @@ export default function App() {
   const [lastTradeResult, setLastTradeResult] = useState(null);
 
   const [priceHistory, setPriceHistory] = useState([]);
+  const [chartZoom, setChartZoom] = useState(1);
   const [lastDigit, setLastDigit] = useState(0);
   const [currentPrice, setCurrentPrice] = useState('Waiting for verified feed');
   const [feedStatus, setFeedStatus] = useState('CONNECTING');
@@ -1054,7 +1055,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-400' : 'text-amber-300'}`} role="status">{feedStatus === 'LIVE' ? 'VERTEX SIMULATED MARKET' : `FEED ${feedStatus}`}</span>
                 <span className="bg-[#1a2233] border border-gray-700 text-gray-300 font-mono text-xs px-2 py-1 rounded font-bold">50%</span>
-                <button className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded shadow">View</button>
+                <button type="button" onClick={() => setActiveTab('DEEPSCAN')} className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded shadow">Analyze</button>
               </div>
             </div>
 
@@ -1067,14 +1068,14 @@ export default function App() {
               </div>
 
               <svg className="absolute inset-0 w-full h-full text-red-500 overflow-visible" preserveAspectRatio="none" viewBox="0 0 400 150">
-                <polyline fill="none" stroke="currentColor" strokeWidth="2.5" points={svgPoints} />
-                <circle cx={lastSvgPoint.x} cy={lastSvgPoint.y} r="4.5" fill="#ffffff" stroke="#ef4444" strokeWidth="3" />
+                <polyline fill="none" stroke="currentColor" strokeWidth="2.5" points={svgPoints} transform={`translate(${200 * (1 - chartZoom)},${75 * (1 - chartZoom)}) scale(${chartZoom})`} />
+                <circle cx={lastSvgPoint.x} cy={lastSvgPoint.y} r="4.5" fill="#ffffff" stroke="#ef4444" strokeWidth="3" transform={`translate(${200 * (1 - chartZoom)},${75 * (1 - chartZoom)}) scale(${chartZoom})`} />
               </svg>
 
               <div className="absolute right-3 bottom-2 flex items-center gap-1 bg-[#121824]/90 border border-gray-700 rounded-md p-1 z-20">
-                <button className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-white font-bold">-</button>
-                <button className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-white font-bold">+</button>
-                <button className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-white">⊙</button>
+                <button type="button" aria-label="Zoom chart out" onClick={() => setChartZoom(value => Math.max(1, Number((value - 0.25).toFixed(2))))} className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-white font-bold">-</button>
+                <button type="button" aria-label="Zoom chart in" onClick={() => setChartZoom(value => Math.min(3, Number((value + 0.25).toFixed(2))))} className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-white font-bold">+</button>
+                <button type="button" aria-label="Reset chart zoom" onClick={() => setChartZoom(1)} className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-white">⊙</button>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2 rounded-md border border-orange-500/40 bg-orange-950/20 px-2 py-1.5" aria-live="polite" aria-label={activeTrade ? `Trade tick progress ${activeTrade.ticksElapsed} of ${duration}` : 'Current market tick indicator'}>
