@@ -72,6 +72,9 @@ export default function App() {
   const [feedStatus, setFeedStatus] = useState('CONNECTING');
   const [fairMarket, setFairMarket] = useState(null);
   const [fairMarketStatus, setFairMarketStatus] = useState('CONNECTING');
+  const [liveMarket, setLiveMarket] = useState(null);
+  const [liveMarketStatus, setLiveMarketStatus] = useState('NOT CONFIGURED');
+  const [liveMarketSymbol, setLiveMarketSymbol] = useState('EUR/USD');
   const [lastTickAt, setLastTickAt] = useState(null);
   const [stats, setStats] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
   const [digitCounts, setDigitCounts] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
@@ -673,6 +676,33 @@ export default function App() {
     return () => { disposed = true; clearInterval(timer); };
   }, []);
 
+  // Genuine external market quote display. Separate from the synthetic trading/settlement engine.
+  useEffect(() => {
+    let disposed = false;
+    let busy = false;
+    const pollLiveMarket = async () => {
+      if (disposed || busy) return;
+      busy = true;
+      try {
+        const response = await fetch('/api/market/live?symbol=' + encodeURIComponent(liveMarketSymbol), {
+          method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' }
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok || payload.mode !== 'LIVE_EXTERNAL_MARKET_DATA' || !Number.isFinite(Number(payload.price))) {
+          const message = payload?.error || 'Live provider is not configured.';
+          if (!disposed) setLiveMarketStatus(response.status === 503 ? 'SETUP REQUIRED' : 'UNAVAILABLE');
+          throw new Error(message);
+        }
+        if (!disposed) { setLiveMarket(payload); setLiveMarketStatus('LIVE · TWELVE DATA'); }
+      } catch (error) {
+        if (!disposed) console.warn('VELTEX external market feed:', error?.message || error);
+      } finally { busy = false; }
+    };
+    pollLiveMarket();
+    const timer = setInterval(pollLiveMarket, 5000);
+    return () => { disposed = true; clearInterval(timer); };
+  }, [liveMarketSymbol]);
+
   // Independent analysis panel: historical frequency only, not a guaranteed prediction.
   const runAccurateScan = () => {
     setAccurateScanning(true);
@@ -1097,6 +1127,22 @@ export default function App() {
             </div>
 
             <p className="text-[10px] text-amber-300 mb-2">VERTEX server-generated synthetic demo prices · not real-world asset prices. Last tick: {lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : 'Waiting for first tick'}.</p>
+
+            <section className="mb-3 rounded-xl border border-emerald-900/70 bg-[#0b1916] p-3" aria-label="External live market prices">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div><p className="text-[10px] font-black uppercase tracking-wider text-emerald-300">EXTERNAL LIVE MARKET DATA</p><p className="text-[10px] text-slate-400">Twelve Data · quote display only</p></div>
+                <span className={`rounded-md border px-2 py-1 text-[9px] font-black ${liveMarketStatus === 'LIVE · TWELVE DATA' ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300' : 'border-amber-800 bg-amber-950/40 text-amber-300'}`} role="status">{liveMarketStatus}</span>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="text-[10px] text-slate-300">Market
+                  <select value={liveMarketSymbol} onChange={event => { setLiveMarketSymbol(event.target.value); setLiveMarket(null); setLiveMarketStatus('CONNECTING'); }} className="ml-2 rounded border border-slate-700 bg-[#142333] px-2 py-1 text-xs text-white">
+                    <option value="EUR/USD">EUR/USD</option><option value="GBP/USD">GBP/USD</option><option value="USD/JPY">USD/JPY</option><option value="AUD/USD">AUD/USD</option><option value="BTC/USD">BTC/USD</option><option value="ETH/USD">ETH/USD</option>
+                  </select>
+                </label>
+                <div className="text-right"><p className="font-mono text-2xl font-black text-white">{liveMarket && liveMarket.symbol === liveMarketSymbol ? Number(liveMarket.price).toLocaleString(undefined, { maximumFractionDigits: 8 }) : '—'}</p><p className="text-[9px] text-slate-400">{liveMarket?.symbol === liveMarketSymbol ? 'Received ' + new Date(liveMarket.received_at).toLocaleTimeString() : 'Waiting for provider quote'}</p></div>
+              </div>
+              <p className="mt-2 text-[9px] leading-relaxed text-amber-300">External provider quote only. Provider delay and commercial display permissions depend on your subscription. This quote is not yet used for chart candles, trade outcomes or wallet settlement.</p>
+            </section>
 
             <section className="mb-3 rounded-xl border border-cyan-900/70 bg-[#0c1823] p-3" aria-label="Fair synthetic market proof">
               <div className="mb-2 flex items-center justify-between gap-2">
