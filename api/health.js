@@ -35,8 +35,9 @@ export default async function handler(req, res) {
   try {
     const parsed = new URL(callbackUrl);
     const token = String(process.env.MPESA_CALLBACK_TOKEN || "");
+    const normalizedPath = parsed.pathname.replace(/\\/+$/, "");
     mpesaCallbackUrlValid = parsed.protocol === "https:" && !parsed.search && !parsed.hash &&
-      token.length >= 24 && parsed.pathname === `/api/payments/callback/${encodeURIComponent(token)}`;
+      token.length >= 24 && normalizedPath === `/api/payments/callback/${encodeURIComponent(token)}`;
   } catch {}
   const withdrawalKeyText = String(process.env.WITHDRAWAL_ENCRYPTION_KEY || "");
   const withdrawalKeyBytes = Buffer.byteLength(withdrawalKeyText, "utf8") === 32
