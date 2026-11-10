@@ -31,14 +31,27 @@ export default async function handler(req, res) {
   }
 
   const callbackUrl = String(process.env.MPESA_CALLBACK_URL || "").trim();
-  let mpesaCallbackUrlValid = false;
+  const callbackToken = String(process.env.MPESA_CALLBACK_TOKEN || "");
+  const callbackDiagnostics = {
+    mpesaCallbackTokenPresent: Boolean(callbackToken),
+    mpesaCallbackTokenLengthValid: callbackToken.length >= 24,
+    mpesaCallbackUrlHttps: false,
+    mpesaCallbackUrlPathMatchesToken: false,
+    mpesaCallbackUrlHasNoQueryOrHash: false
+  };
   try {
     const parsed = new URL(callbackUrl);
-    const token = String(process.env.MPESA_CALLBACK_TOKEN || "");
     const normalizedPath = parsed.pathname.replace(/\/+$/, "");
-    mpesaCallbackUrlValid = parsed.protocol === "https:" && !parsed.search && !parsed.hash &&
-      token.length >= 24 && normalizedPath === `/api/payments/callback/${encodeURIComponent(token)}`;
+    callbackDiagnostics.mpesaCallbackUrlHttps = parsed.protocol === "https:";
+    callbackDiagnostics.mpesaCallbackUrlPathMatchesToken =
+      normalizedPath === `/api/payments/callback/${encodeURIComponent(callbackToken)}`;
+    callbackDiagnostics.mpesaCallbackUrlHasNoQueryOrHash = !parsed.search && !parsed.hash;
   } catch {}
+  const mpesaCallbackUrlValid = callbackDiagnostics.mpesaCallbackTokenPresent &&
+    callbackDiagnostics.mpesaCallbackTokenLengthValid &&
+    callbackDiagnostics.mpesaCallbackUrlHttps &&
+    callbackDiagnostics.mpesaCallbackUrlPathMatchesToken &&
+    callbackDiagnostics.mpesaCallbackUrlHasNoQueryOrHash;
   const withdrawalKeyText = String(process.env.WITHDRAWAL_ENCRYPTION_KEY || "");
   const withdrawalKeyBytes = Buffer.byteLength(withdrawalKeyText, "utf8") === 32
     ? Buffer.from(withdrawalKeyText, "utf8")
@@ -55,6 +68,7 @@ export default async function handler(req, res) {
     mpesaCallbackUrl: Boolean(process.env.MPESA_CALLBACK_URL),
     withdrawalEncryptionKey: Boolean(withdrawalKeyText),
     withdrawalEncryptionKeyValid: withdrawalKeyBytes.length === 32,
+    ...callbackDiagnostics,
     mpesaCallbackUrlValid
   };
 
