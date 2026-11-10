@@ -70,6 +70,8 @@ export default function App() {
   const [lastDigit, setLastDigit] = useState(0);
   const [currentPrice, setCurrentPrice] = useState('Waiting for verified feed');
   const [feedStatus, setFeedStatus] = useState('CONNECTING');
+  const [fairMarket, setFairMarket] = useState(null);
+  const [fairMarketStatus, setFairMarketStatus] = useState('CONNECTING');
   const [lastTickAt, setLastTickAt] = useState(null);
   const [stats, setStats] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
   const [digitCounts, setDigitCounts] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
@@ -649,6 +651,28 @@ export default function App() {
     };
   }, [duration, initialStake, multiplier, contractType, accountMode]);
 
+
+  // Read the published commit/reveal proof feed. Display-only; never settles customer-money trades.
+  useEffect(() => {
+    let disposed = false;
+    let busy = false;
+    const pollFairMarket = async () => {
+      if (disposed || busy) return;
+      busy = true;
+      try {
+        const response = await fetch('/api/market/fair', { method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' } });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok || !payload.current_round || !Array.isArray(payload.recent_rounds)) throw new Error(payload.error || 'Invalid fair market proof response');
+        if (!disposed) { setFairMarket(payload); setFairMarketStatus('VERIFIED FEED'); }
+      } catch (error) {
+        if (!disposed) { setFairMarketStatus('UNAVAILABLE'); console.error('VELTEX fair market proof feed:', error?.message || error); }
+      } finally { busy = false; }
+    };
+    pollFairMarket();
+    const timer = setInterval(pollFairMarket, 1000);
+    return () => { disposed = true; clearInterval(timer); };
+  }, []);
+
   // Independent analysis panel: historical frequency only, not a guaranteed prediction.
   const runAccurateScan = () => {
     setAccurateScanning(true);
@@ -1073,6 +1097,23 @@ export default function App() {
             </div>
 
             <p className="text-[10px] text-amber-300 mb-2">VERTEX server-generated synthetic demo prices · not real-world asset prices. Last tick: {lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : 'Waiting for first tick'}.</p>
+
+            <section className="mb-3 rounded-xl border border-cyan-900/70 bg-[#0c1823] p-3" aria-label="Fair synthetic market proof">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div><p className="text-[10px] font-black uppercase tracking-wider text-cyan-300">VELTEX FAIR SYNTHETIC PROOF</p><p className="text-[10px] text-slate-400">{fairMarket?.symbol || 'VELTEX-FAIR-SYNTH-1'} · 5-second rounds</p></div>
+                <span className={`rounded-md border px-2 py-1 text-[9px] font-black ${fairMarketStatus === 'VERIFIED FEED' ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300' : 'border-amber-800 bg-amber-950/40 text-amber-300'}`} role="status">{fairMarketStatus}</span>
+              </div>
+              {fairMarket ? <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg bg-[#142333] p-2"><p className="text-[9px] uppercase text-slate-400">Current round</p><p className="font-mono text-sm font-bold text-white">#{fairMarket.current_round.round_id}</p><p className="text-[10px] text-cyan-200">{fairMarket.current_round.status} · commitment published</p></div>
+                  <div className="rounded-lg bg-[#142333] p-2"><p className="text-[9px] uppercase text-slate-400">Latest settled result</p><p className={`text-lg font-black ${fairMarket.recent_rounds[0]?.outcome === 'EVEN' ? 'text-emerald-300' : 'text-rose-300'}`}>{fairMarket.recent_rounds[0]?.outcome || 'WAITING'}</p><p className="text-[10px] text-slate-300">{fairMarket.recent_rounds[0] ? 'Digit ' + fairMarket.recent_rounds[0].digit + ' · ' + Number(fairMarket.recent_rounds[0].quote).toFixed(3) : 'No settled round yet'}</p></div>
+                </div>
+                <div className="mt-2 space-y-1">
+                  {fairMarket.recent_rounds.slice(0, 4).map(round => <div key={round.round_id} className="flex items-center justify-between rounded-md bg-[#101e2b] px-2 py-1.5 text-[10px]"><span className="font-mono text-slate-400">#{round.round_id}</span><span className="text-slate-300">Digit {round.digit} · {Number(round.quote).toFixed(3)}</span><span className={`font-black ${round.outcome === 'EVEN' ? 'text-emerald-300' : 'text-rose-300'}`}>{round.outcome}</span><span className={round.verification?.commitment_matches_revealed_seed ? 'text-emerald-300' : 'text-rose-300'}>{round.verification?.commitment_matches_revealed_seed ? 'HASH OK' : 'CHECK FAILED'}</span></div>)}
+                </div>
+              </> : <p className="text-xs text-amber-300">Connecting to fair synthetic proof feed…</p>}
+              <p className="mt-2 text-[9px] leading-relaxed text-amber-300">Synthetic generated outcomes, not external asset prices. Hash checks verify published seed commitments only; this is not an independent fairness audit and does not place trades or debit customer funds.</p>
+            </section>
             <div className="h-48 w-full relative flex items-end justify-between overflow-hidden border-b border-gray-800/80 pb-2 bg-[#0c1017]/40">
               <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d_1px,transparent_1px),linear-gradient(to_bottom,#1f293d_1px,transparent_1px)] bg-[size:40px_35px] opacity-30"></div>
               
