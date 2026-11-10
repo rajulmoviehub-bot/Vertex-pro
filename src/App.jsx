@@ -104,6 +104,14 @@ export default function App() {
   const [withdrawalAdminBusy, setWithdrawalAdminBusy] = useState(false);
   const [startupShown, setStartupShown] = useState(false);
 
+  const openAdminSection = (section) => {
+    if (section === 'ACCOUNTS' && Number(mainWallet) < 20) {
+      alert(`Account Management requires a minimum VERTEX wallet balance of $20. Current balance: ${Number(mainWallet).toFixed(2)}.`);
+      return;
+    }
+    setAdminSection(section);
+  };
+
   const resetTradingSession = () => {
     if (activeTrade || tradeRequestRef.current || settlingTradeRef.current) {
       alert('Please wait until the active trade is fully settled before resetting the session.');
@@ -1378,7 +1386,7 @@ export default function App() {
                 ['CENTRAL','Central wallet withdrawal'],
                 ['MPESA','M-Pesa connection tests'],
                 ['SHARING','Bot sharing / licence transfer']
-              ].map(([key,label]) => <button key={key} onClick={() => setAdminSection(key)} aria-pressed={adminSection === key} className={`rounded-lg border px-3 py-3 text-left text-xs font-bold ${adminSection === key ? 'bg-cyan-800 border-cyan-500 text-white' : 'bg-[#090d14] border-gray-700 text-gray-200'}`}>{label}</button>)}
+              ].map(([key,label]) => <button key={key} onClick={() => openAdminSection(key)} aria-pressed={adminSection === key} className={`rounded-lg border px-3 py-3 text-left text-xs font-bold ${adminSection === key ? 'bg-cyan-800 border-cyan-500 text-white' : 'bg-[#090d14] border-gray-700 text-gray-200'}`}>{label}</button>)}
             </div>
             {adminSection === 'MPESA' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3">
               <h3 className="font-bold text-white">Daraja OAuth connection test</h3>
@@ -1432,7 +1440,7 @@ export default function App() {
                 </div>
               </div>)}
             </div>}
-            {adminSection === 'ACCOUNTS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VERTEX Account Management · Admin Only</h3><p className="text-xs text-gray-300">This section is for managing accounts registered on the VERTEX platform only. No broker account or external trading platform is used.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><p className="text-xs text-amber-200">Customer account directory and account actions must be connected to the secure VERTEX admin service before users can be listed, suspended, or edited here.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3">View my VERTEX account</button></div>}
+            {adminSection === 'ACCOUNTS' && (Number(mainWallet) < 20 ? <div className="rounded-lg border border-amber-700 bg-[#090d14] p-4 space-y-2"><h3 className="font-bold text-white">Account Management locked</h3><p className="text-sm text-amber-200">A minimum VERTEX wallet balance of $20 is required to access Account Management.</p><p className="text-xs text-gray-300">Current wallet balance: ${Number(mainWallet).toFixed(2)}. Add funds until your balance reaches $20.</p></div> : <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">VERTEX Account Management · Admin Only</h3><p className="text-xs text-gray-300">This section is for managing accounts registered on the VERTEX platform only. No broker account or external trading platform is used.</p><div className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="text-sm font-bold text-white">Platform owner</p><p className="text-xs text-gray-300">Signed-in admin: {displayUserName}</p><p className="text-xs text-gray-400">{user.email}</p></div><p className="text-xs text-amber-200">Customer account directory and account actions must be connected to the secure VERTEX admin service before users can be listed, suspended, or edited here.</p><button onClick={() => setActiveTab('ACCOUNT')} className="w-full rounded-lg bg-cyan-800 text-white font-bold text-sm py-3">View my VERTEX account</button></div>)}
             {adminSection === 'CENTRAL' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Central wallet withdrawal</h3><p className="text-xs text-gray-300">Central wallet balance: Not connected. No business wallet or payout provider is linked.</p><button disabled className="w-full rounded-lg bg-gray-700 text-gray-400 font-bold text-sm py-3 opacity-60">Request central withdrawal · unavailable</button><p className="text-[11px] text-amber-200">This panel cannot access or move customer or company funds.</p></div>}
             {adminSection === 'SHARING' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">MV6 AUTO BOT · Buyer activation</h3><p className="text-xs text-gray-300">Enter the email and mobile number already registered on the buyer's verified VERTEX account. Activation is tied to that account's unique ID; another account cannot use it.</p><label className="block text-xs text-gray-300" htmlFor="licence-buyer-email">Buyer VERTEX email</label><input id="licence-buyer-email" type="email" autoComplete="email" value={licenceEmail} onChange={e => setLicenceEmail(e.target.value)} placeholder="buyer@example.com" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><label className="block text-xs text-gray-300" htmlFor="licence-buyer-mobile">Registered mobile number</label><input id="licence-buyer-mobile" type="tel" autoComplete="tel" value={licenceMobile} onChange={e => setLicenceMobile(e.target.value)} placeholder="07XXXXXXXX or 2547XXXXXXXX" className="w-full rounded-lg bg-[#121824] border border-gray-700 p-3 text-sm text-white" /><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('activate')} className="w-full rounded-lg bg-emerald-700 text-white font-bold text-sm py-3 disabled:opacity-50">ACTIVATE & ASSIGN BOT</button><button disabled={licenceBusy || !licenceEmail.trim() || !licenceMobile.trim()} onClick={() => adminBotLicenceAction('revoke')} className="w-full rounded-lg bg-red-900 border border-red-700 text-red-100 font-bold text-sm py-3 disabled:opacity-50">REVOKE LICENCE</button><button disabled={licenceBusy} onClick={loadAdminLicences} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-2.5 disabled:opacity-50">{licenceBusy ? 'PLEASE WAIT…' : 'REFRESH LICENCE LIST'}</button><div className="space-y-2"><h4 className="text-xs font-bold text-white">Assigned bot licences ({licenceRows.length})</h4>{licenceRows.length === 0 ? <p className="text-xs text-gray-400">No licence records loaded. Press Refresh licence list.</p> : licenceRows.map(item => <div key={item.user_id} className="rounded-lg border border-gray-700 bg-[#121824] p-3 space-y-1"><p className="text-xs font-bold text-white">{item.customer_email}</p><p className="text-xs text-gray-300">Mobile: {item.mobile_number}</p><p className={`text-xs font-black ${item.status === 'active' ? 'text-emerald-300' : 'text-red-300'}`}>Status: {item.status.toUpperCase()}</p><p className="text-[10px] text-gray-400">Account ID: {item.user_id}</p></div>)}</div><p className="text-[11px] text-amber-200">Confirm payment before activation. This grants account access only; it does not connect a broker or execute trades.</p></div>}{adminSection === 'OVERVIEW' && <button onClick={resetTradingSession} disabled={!!activeTrade} className="w-full rounded-lg bg-amber-600 text-black font-bold text-sm py-3 disabled:opacity-50">Reset trading session (wallet unchanged)</button>}
             <button onClick={() => { setAdminUnlocked(false); setAdminSection('OVERVIEW'); setActiveTab('TRADE'); }} className="w-full rounded-lg bg-gray-700 text-white font-bold text-sm py-3">Lock Admin Panel</button>
@@ -1559,6 +1567,10 @@ export default function App() {
                 ].map(([section,label]) => (
                   <button key={section} onClick={async () => {
                     if (!adminUnlocked && !(await unlockAdmin())) return;
+                    if (section === 'ACCOUNTS' && Number(mainWallet) < 20) {
+                      alert(`Account Management requires a minimum VERTEX wallet balance of $20. Current balance: ${Number(mainWallet).toFixed(2)}.`);
+                      return;
+                    }
                     setAdminSection(section);
                     setActiveTab('ADMIN');
                     setMenuOpen(false);
