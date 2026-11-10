@@ -1,11 +1,11 @@
 export const config = { runtime: "nodejs" };
 
 const OWNER_EMAIL = "rajulmoviehub@gmail.com";
-const bearer = req => String(req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() || "";
+const bearer = req => String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 const cleanEmail = value => String(value || "").trim().toLowerCase();
 
 async function authenticateOwner(req) {
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\\/$/, "");
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const token = bearer(req);
   if (!url || !key) return { error: "Customer directory service is not configured.", status: 503 };
