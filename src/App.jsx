@@ -114,6 +114,7 @@ export default function App() {
       return;
     }
     setAdminSection(section);
+    if (section === 'CUSTOMERS') void loadAdminCustomers();
   };
 
   const resetTradingSession = () => {
@@ -1404,7 +1405,7 @@ export default function App() {
               {[
                 ['OVERVIEW','Dashboard overview'],
                 ['DEPOSITS','Customer deposits'],
-                ['REGISTRATIONS','Registered customers'],
+                ['CUSTOMERS','Registered customers'],
                 ['CAPITAL','Add customer capital'],
                 ['WITHDRAWALS','Withdrawal approvals'],
                 ['ACCOUNTS','Account management'],
@@ -1435,7 +1436,7 @@ export default function App() {
             </div>}
             {adminSection === 'OVERVIEW' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">System status</h3><p className="text-xs text-gray-300">Customer deposits: Not connected</p><p className="text-xs text-gray-300">Verified registrations: Not connected</p><p className="text-xs text-gray-300">Withdrawal requests: Manual review; manual refunds only</p><p className="text-xs text-gray-300">Central wallet: Not connected</p><p className="text-xs text-gray-300">MV6 bot licences: Owner-controlled, account-bound activation</p></div>}
             {adminSection === 'DEPOSITS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Customer deposits</h3><p className="text-xs text-amber-200">No customer deposit feed is connected. The records below, if any, are only local browser entries and are not proof of payment.</p>{transactions.filter(tx => tx.type === 'DEPOSIT').length === 0 ? <p className="text-sm text-gray-400">No local deposit entries.</p> : transactions.filter(tx => tx.type === 'DEPOSIT').map(tx => <p key={tx.id} className="text-xs text-gray-300">{tx.time} · ${tx.amount.toFixed(2)} · {tx.status}</p>)}</div>}
-            {adminSection === 'REGISTRATIONS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-2"><h3 className="font-bold text-white">Registered customers</h3><p className="text-2xl font-black text-white">Unavailable</p><p className="text-xs text-gray-400">Email registration and verification are not connected to a customer database, so a real registration count and customer list cannot be shown yet.</p></div>}
+            {adminSection === 'CUSTOMERS' && <div className="rounded-lg bg-[#090d14] p-3 space-y-3"><h3 className="font-bold text-white">Registered customers · Owner only</h3><p className="text-xs text-gray-300">Private contact details are returned only to the verified VERTEX owner.</p><button type="button" disabled={adminCustomersBusy} onClick={loadAdminCustomers} className="w-full rounded-lg bg-cyan-800 py-3 text-sm font-bold text-white disabled:opacity-50">{adminCustomersBusy ? 'LOADING CUSTOMERS…' : 'REFRESH CUSTOMER LIST'}</button>{adminCustomersLoaded ? <><p className="text-xs font-bold text-gray-300">Registered accounts: {adminCustomers.length}</p>{adminCustomers.length ? adminCustomers.map((customer,index)=><div key={customer.id || customer.email || index} className="rounded-lg border border-gray-700 bg-[#121824] p-3"><p className="break-all text-sm font-bold text-white">{customer.email || 'Email unavailable'}</p><p className="break-all text-xs text-gray-300">Phone: {customer.phone || 'Not provided'}</p></div>) : <p className="text-xs text-gray-400">No customer accounts found.</p>}</> : <p className="text-xs text-gray-400">Press refresh to load the customer list.</p>}</div>}
             {adminSection === 'CAPITAL' && <div className="rounded-lg border border-emerald-800 bg-[#090d14] p-4 space-y-3">
               <h3 className="font-bold text-white">Add customer capital · USD</h3>
               <p className="text-xs text-gray-300">Enter the customer's registered email. The credit is recorded against that customer's VERTEX wallet and in the wallet ledger.</p>
