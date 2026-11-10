@@ -48,6 +48,7 @@ function describeRound(master, roundId, now) {
     seed: revealedSeed,
     verification: {
       commitment_matches_revealed_seed: verified,
+      quote_rule: "HMAC-SHA256(seed, VELTEX|price|v1); interpret first 4 bytes as unsigned big-endian integer n; quote=round((10000 + (n/4294967295)*100), 3)",
       outcome_rule: "Take the final decimal digit of the published 3-decimal quote; even=EVEN, odd=ODD"
     }
   };
