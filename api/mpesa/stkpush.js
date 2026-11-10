@@ -42,7 +42,7 @@ export default async function handler(req, res) {
   try {
     const callback = new URL(callbackUrl);
     const expectedPath = `/api/payments/callback/${encodeURIComponent(callbackToken)}`;
-    if (callback.protocol !== "https:" || callback.pathname.replace(/\\/+$/, "") !== expectedPath || callback.search || callback.hash) {
+    if (callback.protocol !== "https:" || callback.pathname.replace(/\/+$/, "") !== expectedPath || callback.search || callback.hash) {
       return json(res, 503, { ok:false, error:"MPESA_CALLBACK_URL must be the HTTPS VERTEX callback URL ending in /api/payments/callback/<MPESA_CALLBACK_TOKEN>, with no query string or fragment." });
     }
   } catch {
