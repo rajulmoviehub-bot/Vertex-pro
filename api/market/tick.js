@@ -4,8 +4,8 @@ export const config = { runtime: "nodejs" };
 
 const TICK_MS = 1000;
 const BASE_PRICE = 10000;
-const SYMBOL = "VELTEX-SIM-1";
-const SOURCE = "VERTEX proprietary simulated market";
+const SYMBOL = "VERTEX-SYNTH-1";
+const SOURCE = "VERTEX proprietary synthetic demo engine";
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const bearer = req => String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 
@@ -89,9 +89,11 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       market: {
-        symbol: SYMBOL, name: "VERTEX Synthetic Index", source: SOURCE,
+        symbol: SYMBOL, market_id: "vertex-synth-1", name: "VERTEX Synthetic Index", source: SOURCE,
+        engine: "VERTEX_OWN_ENGINE", engine_version: "1.0.0", feed_mode: "DEMO",
         market_type: "synthetic_demo", real_world_asset_price: false,
-        real_money_trading_enabled: false,
+        real_money_trading_enabled: false, automatic_real_money_execution: false,
+        price_precision: 3, algorithm_version: "sine-noise-v1",
         algorithm: "Deterministic published formula: multi-frequency sine waves plus sequence-hashed bounded noise",
         tick_interval_ms: TICK_MS
       },
