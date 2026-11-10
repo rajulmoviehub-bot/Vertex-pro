@@ -35,7 +35,7 @@ export default async function handler(req, res) {
   try {
     const parsed = new URL(callbackUrl);
     const token = String(process.env.MPESA_CALLBACK_TOKEN || "");
-    const normalizedPath = parsed.pathname.replace(/\\/+$/, "");
+    const normalizedPath = parsed.pathname.replace(/\/+$/, "");
     mpesaCallbackUrlValid = parsed.protocol === "https:" && !parsed.search && !parsed.hash &&
       token.length >= 24 && normalizedPath === `/api/payments/callback/${encodeURIComponent(token)}`;
   } catch {}
