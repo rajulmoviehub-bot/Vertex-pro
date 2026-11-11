@@ -1025,8 +1025,8 @@ export default function App() {
     const password = authInput.password;
     try {
       if (authModal === 'signup' && authAwaitingVerification) {
-        const token = authOtp.trim().replace(/\\s/g, '');
-        if (!/^\\d{6}$/.test(token)) {
+        const token = authOtp.trim().replace(/\s/g, '');
+        if (!/^\d{6}$/.test(token)) {
           alert('Enter the 6-digit verification code sent to your email.');
           return;
         }
@@ -1849,7 +1849,7 @@ export default function App() {
                 <p className="text-xs text-gray-300">Enter the 6-digit signup code sent to <strong className="text-white">{authInput.email}</strong>.</p>
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">Email verification code</label>
-                  <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={authOtp} onChange={(e) => setAuthOtp(e.target.value.replace(/\\D/g, '').slice(0, 6))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 text-center text-lg tracking-[0.5em]" />
+                  <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={authOtp} onChange={(e) => setAuthOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 text-center text-lg tracking-[0.5em]" />
                 </div>
                 <button type="button" onClick={resendRegistrationCode} className="w-full text-xs font-bold text-cyan-300 underline py-2">Resend verification email</button>
               </>
