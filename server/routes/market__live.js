@@ -61,6 +61,7 @@ export default async function handler(req, res) {
       provider: "Twelve Data",
       symbol: requested,
       price,
+      price_text: String(payload.price),
       provider_timestamp: null,
       received_at: new Date().toISOString(),
       market_data_only: true,
