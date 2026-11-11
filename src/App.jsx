@@ -212,7 +212,8 @@ export default function App() {
     if (!deepScan || deepScan.source !== 'LIVE_EXTERNAL' || !deepScan.loaded || deepScan.expired || deepScan.tradeStarted) return;
     const latest = liveMarketHistory[liveMarketHistory.length - 1];
     if (!latest || latest.sequence <= (deepScan.scanTick || 0)) return;
-    if (deepScan.chosenSide && latest.sequence > (deepScan.choiceSequence || 0)) {
+    if (deepScan.chosenSide) {
+      if (latest.sequence <= (deepScan.choiceSequence || 0)) return;
       const resultQuote = latest;
       const resultSide = resultQuote.digit % 2 === 0 ? 'EVEN' : 'ODD';
       const won = resultSide === deepScan.chosenSide;
