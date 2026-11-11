@@ -120,9 +120,11 @@ export default async function handler(req, res) {
       if (!Number.isFinite(stake) || stake <= 0 || stake > 10000) return res.status(400).json({ ok: false, error: "Demo stake must be between 0 and 10,000." });
       if (!Number.isInteger(duration) || duration < 1 || duration > 100) return res.status(400).json({ ok: false, error: "Tick duration must be between 1 and 100." });
       const sequence = Math.floor(Date.now() / 1000);
-      const trade = await rpc(url, key, "veltex_open_demo_trade", {
+      const entryPrice = priceAt(sequence);
+      const trade = await rpc(url, key, "veltex_open_demo_contract", {
         p_trade_id: randomUUID(), p_user_id: user.id, p_contract: contract,
-        p_stake: stake, p_duration_ticks: duration, p_entry_sequence: sequence, p_entry_digit: digitAt(sequence)
+        p_stake: stake, p_duration_ticks: duration, p_entry_sequence: sequence,
+        p_entry_digit: digitAt(sequence), p_entry_price: entryPrice
       });
       return res.status(201).json({ ok: true, engine: "VELTEX_DEMO", trade });
     }
@@ -142,8 +144,10 @@ export default async function handler(req, res) {
       const sequence = Math.floor(Date.now() / 1000);
       const dueSequence = Number(rows[0].entry_sequence) + Number(rows[0].duration_ticks);
       if (sequence < dueSequence) return res.status(409).json({ ok: false, error: "Trade duration has not elapsed.", remainingTicks: dueSequence - sequence });
-      const trade = await rpc(url, key, "veltex_settle_demo_trade", {
-        p_trade_id: tradeId, p_exit_sequence: sequence, p_exit_digit: digitAt(sequence)
+      const exitPrice = priceAt(sequence);
+      const trade = await rpc(url, key, "veltex_settle_demo_contract", {
+        p_trade_id: tradeId, p_exit_sequence: sequence,
+        p_exit_digit: digitAt(sequence), p_exit_price: exitPrice
       });
       return res.status(200).json({ ok: true, engine: "VELTEX_DEMO", trade });
     }
