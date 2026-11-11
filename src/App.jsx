@@ -1173,7 +1173,7 @@ export default function App() {
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label className="text-[10px] text-slate-300">Market
-                  <select value={liveMarketSymbol} onChange={event => { setLiveMarketSymbol(event.target.value); setLiveMarket(null); setLiveMarketHistory([]); setLiveMarketStatus('CONNECTING'); }} className="ml-2 rounded border border-slate-700 bg-[#142333] px-2 py-1 text-xs text-white">
+                  <select value={liveMarketSymbol} onChange={event => { setLiveMarketSymbol(event.target.value); setLiveMarket(null); setLiveMarketHistory([]); setLiveMarketStatus('CONNECTING'); setDeepScan(null); }} className="ml-2 rounded border border-slate-700 bg-[#142333] px-2 py-1 text-xs text-white">
                     <option value="EUR/USD">EUR/USD</option><option value="GBP/USD">GBP/USD</option><option value="USD/JPY">USD/JPY</option><option value="AUD/USD">AUD/USD</option><option value="BTC/USD">BTC/USD</option><option value="ETH/USD">ETH/USD</option>
                   </select>
                 </label>
@@ -1418,7 +1418,7 @@ export default function App() {
                   {deepScan.qualifies && !deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: liveMarketHistory.length } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
                   {deepScan.loaded && (
                     <div className="rounded-xl border border-cyan-800 bg-[#09131d] p-3 space-y-2">
-                      <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-black tracking-wide text-cyan-200">LIVE MARKET GRAPH</span><span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-300' : 'text-amber-300'}`}>{feedStatus}</span></div>
+                      <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-black tracking-wide text-cyan-200">LIVE MARKET GRAPH</span><span className={`text-[10px] font-bold ${liveMarketStatus.includes('LIVE') ? 'text-emerald-300' : 'text-amber-300'}`}>{liveMarketStatus}</span></div>
                       <div className="relative h-36 w-full overflow-hidden rounded-lg border border-slate-800 bg-[#0c1017]">
                         <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(to right,#334155 1px,transparent 1px),linear-gradient(to bottom,#334155 1px,transparent 1px)', backgroundSize: '32px 28px' }} />
                         <svg className="absolute inset-0 h-full w-full text-cyan-400" preserveAspectRatio="none" viewBox="0 0 400 150" role="img" aria-label="Twelve Data external quote history graph"><polyline fill="none" stroke="currentColor" strokeWidth="2.5" points={liveSvgPoints} /><circle cx={liveLastSvgPoint.x} cy={liveLastSvgPoint.y} r="4" fill="#ffffff" stroke="#22d3ee" strokeWidth="2" /></svg>
