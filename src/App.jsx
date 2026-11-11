@@ -76,6 +76,8 @@ export default function App() {
   const [liveMarketStatus, setLiveMarketStatus] = useState('NOT CONFIGURED');
   const [liveMarketSymbol, setLiveMarketSymbol] = useState('EUR/USD');
   const [liveMarketHistory, setLiveMarketHistory] = useState([]);
+  const liveMarketSequenceRef = useRef(0);
+  const lastLiveMarketPriceRef = useRef(null);
   const [lastTickAt, setLastTickAt] = useState(null);
   const [stats, setStats] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
   const [digitCounts, setDigitCounts] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
@@ -209,21 +211,21 @@ export default function App() {
   useEffect(() => {
     if (!deepScan || deepScan.source !== 'LIVE_EXTERNAL' || !deepScan.loaded || deepScan.expired || deepScan.tradeStarted) return;
     const latest = liveMarketHistory[liveMarketHistory.length - 1];
-    if (!latest || liveMarketHistory.length <= (deepScan.scanTick || 0)) return;
-    if (deepScan.chosenSide && liveMarketHistory.length > (deepScan.choiceIndex || 0)) {
-      const resultQuote = liveMarketHistory[deepScan.choiceIndex] || latest;
+    if (!latest || latest.sequence <= (deepScan.scanTick || 0)) return;
+    if (deepScan.chosenSide && latest.sequence > (deepScan.choiceSequence || 0)) {
+      const resultQuote = latest;
       const resultSide = resultQuote.digit % 2 === 0 ? 'EVEN' : 'ODD';
       const won = resultSide === deepScan.chosenSide;
       setDeepScan(previous => previous ? { ...previous, tradeStarted: true, manualResult: won ? 'WIN' : 'LOSS', resultDigit: resultQuote.digit, resultSide } : previous);
       playSound(won ? 'win' : 'loss');
       return;
     }
-    if (latest.digit === deepScan.digit && liveMarketHistory.length > (deepScan.matchedIndex || deepScan.scanTick || 0)) {
-      setDeepScan(previous => previous ? { ...previous, appeared: true, appearances: (previous.appearances || 0) + 1, matchedIndex: liveMarketHistory.length } : previous);
+    if (latest.digit === deepScan.digit && latest.sequence > (deepScan.matchedSequence || deepScan.scanTick || 0)) {
+      setDeepScan(previous => previous ? { ...previous, appeared: true, appearances: (previous.appearances || 0) + 1, matchedSequence: latest.sequence } : previous);
       playSound('win');
       return;
     }
-    if (deepScan.appeared && (deepScan.appearances || 0) >= 2 && liveMarketHistory.length > (deepScan.matchedIndex || 0)) setDeepScan(previous => previous ? { ...previous, expired: true } : previous);
+    if (deepScan.appeared && (deepScan.appearances || 0) >= 2 && latest.sequence > (deepScan.matchedSequence || 0)) setDeepScan(previous => previous ? { ...previous, expired: true } : previous);
   }, [liveMarketHistory, deepScan]);
 
   useEffect(() => {
@@ -718,14 +720,16 @@ export default function App() {
         if (!disposed) {
           setLiveMarket(payload);
           setLiveMarketStatus('LIVE · TWELVE DATA');
-          const rawPrice = String(payload.price);
+          const rawPrice = String(payload.price_text ?? payload.price);
           const decimals = rawPrice.includes('.') ? rawPrice.split('.')[1] : '';
           const digit = Number((decimals || rawPrice).slice(-1));
-          const observed = { price: Number(payload.price), digit, receivedAt: Date.now(), symbol: payload.symbol };
-          if (Number.isFinite(observed.price) && Number.isInteger(digit)) setLiveMarketHistory(previous => {
-            if (previous.length && previous[previous.length - 1].price === observed.price) return previous;
-            return [...previous.slice(-59), observed];
-          });
+          const observedPrice = Number(payload.price);
+          if (Number.isFinite(observedPrice) && observedPrice > 0 && Number.isInteger(digit) && lastLiveMarketPriceRef.current !== observedPrice) {
+            lastLiveMarketPriceRef.current = observedPrice;
+            const sequence = ++liveMarketSequenceRef.current;
+            const observed = { price: observedPrice, digit, receivedAt: Date.now(), symbol: payload.symbol, sequence };
+            setLiveMarketHistory(previous => [...previous.slice(-59), observed]);
+          }
         }
       } catch (error) {
         if (!disposed) console.warn('VELTEX external market feed:', error?.message || error);
@@ -787,7 +791,7 @@ export default function App() {
         highSignal: false,
         sampleSize: digits.length,
         strategyInsights,
-        scanTick: liveMarketHistory.length,
+        scanTick: liveMarketSequenceRef.current,
         source: 'LIVE_EXTERNAL',
         loaded: false,
         appeared: false,
@@ -1173,7 +1177,7 @@ export default function App() {
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label className="text-[10px] text-slate-300">Market
-                  <select value={liveMarketSymbol} onChange={event => { setLiveMarketSymbol(event.target.value); setLiveMarket(null); setLiveMarketHistory([]); setLiveMarketStatus('CONNECTING'); setDeepScan(null); }} className="ml-2 rounded border border-slate-700 bg-[#142333] px-2 py-1 text-xs text-white">
+                  <select value={liveMarketSymbol} onChange={event => { setLiveMarketSymbol(event.target.value); setLiveMarket(null); setLiveMarketHistory([]); liveMarketSequenceRef.current = 0; lastLiveMarketPriceRef.current = null; setLiveMarketStatus('CONNECTING'); setDeepScan(null); }} className="ml-2 rounded border border-slate-700 bg-[#142333] px-2 py-1 text-xs text-white">
                     <option value="EUR/USD">EUR/USD</option><option value="GBP/USD">GBP/USD</option><option value="USD/JPY">USD/JPY</option><option value="AUD/USD">AUD/USD</option><option value="BTC/USD">BTC/USD</option><option value="ETH/USD">ETH/USD</option>
                   </select>
                 </label>
@@ -1415,7 +1419,7 @@ export default function App() {
                     <span className="shrink-0 rounded-lg bg-rose-950/70 px-3 py-2 text-base font-black text-rose-300">{deepScan.percentage}%<small className="block text-[9px] font-semibold">sample</small></span>
                   </div>
                   <p className="text-[10px] leading-relaxed text-slate-500">Observed frequency from {deepScan.sampleSize} external quote observations. This is descriptive history, not a predictive probability or guarantee.</p>
-                  {deepScan.qualifies && !deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: liveMarketHistory.length } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
+                  {deepScan.qualifies && !deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: liveMarketSequenceRef.current } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
                   {deepScan.loaded && (
                     <div className="rounded-xl border border-cyan-800 bg-[#09131d] p-3 space-y-2">
                       <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-black tracking-wide text-cyan-200">LIVE MARKET GRAPH</span><span className={`text-[10px] font-bold ${liveMarketStatus.includes('LIVE') ? 'text-emerald-300' : 'text-amber-300'}`}>{liveMarketStatus}</span></div>
@@ -1441,8 +1445,8 @@ export default function App() {
                       <p role="status" aria-live="polite" className="text-center text-xs font-black text-emerald-300">TARGET {deepScan.digit} · OPPORTUNITY {Math.min(deepScan.appearances || 1, 2)} OF 2 · CHOOSE NOW</p>
                       <p className="text-center text-[10px] text-slate-300">Choose EVEN or ODD manually. The next distinct external quote determines the observation result; no stake or wallet is involved.</p>
                       <div className="grid grid-cols-2 gap-2">
-                        <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, chosenSide: 'EVEN', choiceIndex: liveMarketHistory.length, waitingChoiceResult: true } : previous)} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={!!deepScan.chosenSide || deepScan.tradeStarted || deepScan.expired}>EVEN</button>
-                        <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, chosenSide: 'ODD', choiceIndex: liveMarketHistory.length, waitingChoiceResult: true } : previous)} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={!!deepScan.chosenSide || deepScan.tradeStarted || deepScan.expired}>ODD</button>
+                        <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, chosenSide: 'EVEN', choiceSequence: liveMarketSequenceRef.current, waitingChoiceResult: true } : previous)} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={!!deepScan.chosenSide || deepScan.tradeStarted || deepScan.expired}>EVEN</button>
+                        <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, chosenSide: 'ODD', choiceSequence: liveMarketSequenceRef.current, waitingChoiceResult: true } : previous)} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={!!deepScan.chosenSide || deepScan.tradeStarted || deepScan.expired}>ODD</button>
                       </div>
                     </div>
                   )}
