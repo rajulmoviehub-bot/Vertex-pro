@@ -33,6 +33,9 @@ export default function App() {
   const [user, setUser] = useState({ loggedIn: false, email: '', fullName: '', refCode: 'VERTEX-7892' });
   const [authModal, setAuthModal] = useState(null);
   const [authInput, setAuthInput] = useState({ fullName: '', email: '', password: '', mobileNumber: '', ref: '' });
+  const [authAwaitingVerification, setAuthAwaitingVerification] = useState(false);
+  const [authOtp, setAuthOtp] = useState('');
+  const [registrationTermsAccepted, setRegistrationTermsAccepted] = useState(false);
   const [botLicence, setBotLicence] = useState(null);
   const [licenceEmail, setLicenceEmail] = useState('');
   const [licenceMobile, setLicenceMobile] = useState('');
@@ -1018,28 +1021,58 @@ export default function App() {
       alert('Secure login is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel, then redeploy.');
       return;
     }
-    const email = authInput.email.trim();
+    const email = authInput.email.trim().toLowerCase();
     const password = authInput.password;
-    if (!email || !password || (authModal === 'signup' && (!authInput.fullName.trim() || !authInput.mobileNumber.trim()))) {
-      alert(authModal === 'signup' ? 'Enter your full name, email, mobile number and password.' : 'Enter your email and password.');
-      return;
-    }
     try {
+      if (authModal === 'signup' && authAwaitingVerification) {
+        const token = authOtp.trim().replace(/\\s/g, '');
+        if (!/^\\d{6}$/.test(token)) {
+          alert('Enter the 6-digit verification code sent to your email.');
+          return;
+        }
+        const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
+        if (error) throw error;
+        setUser({ loggedIn: true, email: data.user?.email || email, fullName: data.user?.user_metadata?.full_name || authInput.fullName.trim(), refCode: 'VERTEX-7892' });
+        setLoginWelcome(true);
+        setAuthModal(null);
+        setAuthAwaitingVerification(false);
+        setAuthOtp('');
+        setRegistrationTermsAccepted(false);
+        setAuthInput({ fullName: '', email: '', password: '', mobileNumber: '', ref: '' });
+        alert('Email verified. Your VERTEX account is ready.');
+        return;
+      }
+
+      if (!email || !password || (authModal === 'signup' && (!authInput.fullName.trim() || !authInput.mobileNumber.trim()))) {
+        alert(authModal === 'signup' ? 'Enter your full name, email, mobile number and password.' : 'Enter your email and password.');
+        return;
+      }
+      if (authModal === 'signup' && !registrationTermsAccepted) {
+        alert('Please accept the Terms and Conditions before creating your account.');
+        return;
+      }
+
       if (authModal === 'signup') {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: 'https://vertexpromax.vercel.app',            data: { full_name: authInput.fullName.trim(), name: authInput.fullName.trim(), mobile_number: authInput.mobileNumber.trim(), referral_code: authInput.ref.trim() || null }
+            emailRedirectTo: 'https://www.vertexprobinary.online',
+            data: { full_name: authInput.fullName.trim(), name: authInput.fullName.trim(), mobile_number: authInput.mobileNumber.trim(), referral_code: authInput.ref.trim() || null }
           }
         });
         if (error) throw error;
         if (data.session) {
           setUser({ loggedIn: true, email: data.user?.email || email, fullName: data.user?.user_metadata?.full_name || authInput.fullName.trim(), refCode: 'VERTEX-7892' });
-        setLoginWelcome(true);
-          alert('Your account was created. Your wallet will show once the database migration is applied.');
+          setLoginWelcome(true);
+          setAuthModal(null);
+          setRegistrationTermsAccepted(false);
+          setAuthInput({ fullName: '', email: '', password: '', mobileNumber: '', ref: '' });
+          alert('Your account was created successfully.');
         } else {
-          alert('Registration submitted. Check your email and verify your address before logging in.');
+          setAuthAwaitingVerification(true);
+          setAuthOtp('');
+          alert('A verification email has been sent. Enter the 6-digit code here to activate your account.');
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -1057,11 +1090,22 @@ export default function App() {
         } else {
           setMainWallet(Number(wallet?.available_balance || 0));
         }
+        setAuthModal(null);
+        setAuthInput({ fullName: '', email: '', password: '', mobileNumber: '', ref: '' });
       }
-      setAuthModal(null);
-      setAuthInput({ fullName: '', email: '', password: '', mobileNumber: '', ref: '' });
     } catch (error) {
       alert(error?.message || 'Authentication failed. Please try again.');
+    }
+  };
+
+  const resendRegistrationCode = async () => {
+    if (!supabase || !authInput.email.trim()) return;
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email: authInput.email.trim().toLowerCase() });
+      if (error) throw error;
+      alert('A new verification email has been requested.');
+    } catch (error) {
+      alert(error?.message || 'Could not resend the verification email. Please wait and try again.');
     }
   };
 
@@ -1792,44 +1836,63 @@ export default function App() {
         </div>
       )}
 
-      {/* LOGIN MODAL */}
+      {/* LOGIN / REGISTRATION MODAL */}
       {authModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#121824] border border-gray-800 rounded-xl p-5 w-full max-w-sm space-y-4">
+          <div className="bg-[#121824] border border-gray-800 rounded-xl p-5 w-full max-w-sm max-h-[90vh] overflow-y-auto space-y-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               {authModal === 'login' ? <LogIn className="w-5 h-5 text-red-500" /> : <UserPlus className="w-5 h-5 text-red-500" />}
-              {authModal === 'login' ? 'Login' : 'Create Customer Account'}
+              {authModal === 'login' ? 'Login' : authAwaitingVerification ? 'Verify Your Email' : 'Create Customer Account'}
             </h3>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Email</label>
-              <input type="email" placeholder="name@example.com" value={authInput.email} onChange={(e) => setAuthInput({ ...authInput, email: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Password</label>
-              <input type="password" placeholder="••••••••" value={authInput.password} onChange={(e) => setAuthInput({ ...authInput, password: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
-            </div>
-            {authModal === 'signup' && (
+            {authModal === 'signup' && authAwaitingVerification ? (
               <>
+                <p className="text-xs text-gray-300">Enter the 6-digit signup code sent to <strong className="text-white">{authInput.email}</strong>.</p>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Full name</label>
-                  <input type="text" autoComplete="name" placeholder="Enter your full name" value={authInput.fullName} onChange={(e) => setAuthInput({ ...authInput, fullName: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
+                  <label className="text-xs text-gray-400 block mb-1">Email verification code</label>
+                  <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={authOtp} onChange={(e) => setAuthOtp(e.target.value.replace(/\\D/g, '').slice(0, 6))} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-3 text-center text-lg tracking-[0.5em]" />
+                </div>
+                <button type="button" onClick={resendRegistrationCode} className="w-full text-xs font-bold text-cyan-300 underline py-2">Resend verification email</button>
+              </>
+            ) : (
+              <>
+                {authModal === 'signup' && (
+                  <>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Full name</label>
+                      <input type="text" autoComplete="name" placeholder="Enter your full name" value={authInput.fullName} onChange={(e) => setAuthInput({ ...authInput, fullName: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Mobile number (required for bot licence)</label>
+                      <input type="tel" inputMode="tel" autoComplete="tel" placeholder="07XXXXXXXX" value={authInput.mobileNumber} onChange={(e) => setAuthInput({ ...authInput, mobileNumber: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Email</label>
+                  <input type="email" autoComplete="email" placeholder="name@example.com" value={authInput.email} onChange={(e) => setAuthInput({ ...authInput, email: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Mobile number (required for bot licence)</label>
-                  <input type="tel" inputMode="tel" autoComplete="tel" placeholder="07XXXXXXXX" value={authInput.mobileNumber} onChange={(e) => setAuthInput({ ...authInput, mobileNumber: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
+                  <label className="text-xs text-gray-400 block mb-1">Password</label>
+                  <input type="password" autoComplete={authModal === 'signup' ? 'new-password' : 'current-password'} placeholder="At least 8 characters" value={authInput.password} onChange={(e) => setAuthInput({ ...authInput, password: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs" />
                 </div>
+                {authModal === 'signup' && (
+                  <>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Referral Code (optional)</label>
+                      <input type="text" placeholder="VERTEX-XXXX" value={authInput.ref} onChange={(e) => setAuthInput({ ...authInput, ref: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-mono" />
+                    </div>
+                    <label className="flex items-start gap-2 text-[11px] text-gray-300">
+                      <input type="checkbox" checked={registrationTermsAccepted} onChange={(e) => setRegistrationTermsAccepted(e.target.checked)} className="mt-0.5 accent-red-600" />
+                      <span>I have read and agree to the <button type="button" onClick={() => { setAuthModal(null); setActiveTab('INFO'); }} className="text-cyan-300 underline">Terms and Conditions</button>, including the risk and privacy notices.</span>
+                    </label>
+                  </>
+                )}
               </>
             )}
-            {authModal === 'signup' && (
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Referral Code</label>
-                <input type="text" placeholder="VERTEX-XXXX" value={authInput.ref} onChange={(e) => setAuthInput({ ...authInput, ref: e.target.value })} className="w-full bg-[#090d14] border border-gray-700 text-white rounded-lg p-2.5 text-xs font-mono" />
-              </div>
-            )}
-            <p className="text-[11px] text-amber-300">Registration and login use secure Supabase authentication. New customers must verify their email before signing in.</p>
+            <p className="text-[11px] text-amber-300">Secure registration uses Supabase authentication. Email verification is required before a new customer can sign in.</p>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setAuthModal(null)} className="w-1/2 bg-gray-800 text-gray-300 text-xs font-bold py-2 rounded-lg">Cancel</button>
-              <button onClick={handleAuth} className="w-1/2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-2 rounded-lg shadow">Continue</button>
+              <button onClick={() => { setAuthModal(null); setAuthAwaitingVerification(false); setAuthOtp(''); }} className="w-1/2 bg-gray-800 text-gray-300 text-xs font-bold py-2 rounded-lg">Cancel</button>
+              <button onClick={handleAuth} disabled={authModal === 'signup' && !authAwaitingVerification && !registrationTermsAccepted} className="w-1/2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold py-2 rounded-lg shadow">{authModal === 'signup' && authAwaitingVerification ? 'Verify Email' : 'Continue'}</button>
             </div>
           </div>
         </div>
