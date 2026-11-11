@@ -75,6 +75,7 @@ export default function App() {
   const [liveMarket, setLiveMarket] = useState(null);
   const [liveMarketStatus, setLiveMarketStatus] = useState('NOT CONFIGURED');
   const [liveMarketSymbol, setLiveMarketSymbol] = useState('EUR/USD');
+  const [liveMarketHistory, setLiveMarketHistory] = useState([]);
   const [lastTickAt, setLastTickAt] = useState(null);
   const [stats, setStats] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
   const [digitCounts, setDigitCounts] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 });
@@ -183,7 +184,7 @@ export default function App() {
   }, [autoBotRunning, accountMode, feedStatus, activeTrade, totalTicks, sessionPL, target, stopLoss, demoWallet, stake, digitCounts]);
 
   useEffect(() => {
-    if (!deepScan || !deepScan.loaded || deepScan.tradeStarted || deepScan.expired) return;
+    if (!deepScan || deepScan.source === 'LIVE_EXTERNAL' || !deepScan.loaded || deepScan.tradeStarted || deepScan.expired) return;
     if (totalTicks <= deepScan.scanTick) return;
 
     const appearances = deepScan.appearances || 0;
@@ -203,6 +204,27 @@ export default function App() {
       setDeepScan(previous => previous ? { ...previous, expired: true } : previous);
     }
   }, [totalTicks, lastDigit, deepScan]);
+
+  // External quote observations power manual-only Deep Scan; no orders or wallet debits.
+  useEffect(() => {
+    if (!deepScan || deepScan.source !== 'LIVE_EXTERNAL' || !deepScan.loaded || deepScan.expired || deepScan.tradeStarted) return;
+    const latest = liveMarketHistory[liveMarketHistory.length - 1];
+    if (!latest || liveMarketHistory.length <= (deepScan.scanTick || 0)) return;
+    if (deepScan.chosenSide && liveMarketHistory.length > (deepScan.choiceIndex || 0)) {
+      const resultQuote = liveMarketHistory[deepScan.choiceIndex] || latest;
+      const resultSide = resultQuote.digit % 2 === 0 ? 'EVEN' : 'ODD';
+      const won = resultSide === deepScan.chosenSide;
+      setDeepScan(previous => previous ? { ...previous, tradeStarted: true, manualResult: won ? 'WIN' : 'LOSS', resultDigit: resultQuote.digit, resultSide } : previous);
+      playSound(won ? 'win' : 'loss');
+      return;
+    }
+    if (latest.digit === deepScan.digit && liveMarketHistory.length > (deepScan.matchedIndex || deepScan.scanTick || 0)) {
+      setDeepScan(previous => previous ? { ...previous, appeared: true, appearances: (previous.appearances || 0) + 1, matchedIndex: liveMarketHistory.length } : previous);
+      playSound('win');
+      return;
+    }
+    if (deepScan.appeared && (deepScan.appearances || 0) >= 2 && liveMarketHistory.length > (deepScan.matchedIndex || 0)) setDeepScan(previous => previous ? { ...previous, expired: true } : previous);
+  }, [liveMarketHistory, deepScan]);
 
   useEffect(() => {
     if (startupShown) return undefined;
@@ -693,7 +715,18 @@ export default function App() {
           if (!disposed) setLiveMarketStatus(response.status === 503 ? 'SETUP REQUIRED' : 'UNAVAILABLE');
           throw new Error(message);
         }
-        if (!disposed) { setLiveMarket(payload); setLiveMarketStatus('LIVE · TWELVE DATA'); }
+        if (!disposed) {
+          setLiveMarket(payload);
+          setLiveMarketStatus('LIVE · TWELVE DATA');
+          const rawPrice = String(payload.price);
+          const decimals = rawPrice.includes('.') ? rawPrice.split('.')[1] : '';
+          const digit = Number((decimals || rawPrice).slice(-1));
+          const observed = { price: Number(payload.price), digit, receivedAt: Date.now(), symbol: payload.symbol };
+          if (Number.isFinite(observed.price) && Number.isInteger(digit)) setLiveMarketHistory(previous => {
+            if (previous.length && previous[previous.length - 1].price === observed.price) return previous;
+            return [...previous.slice(-59), observed];
+          });
+        }
       } catch (error) {
         if (!disposed) console.warn('VELTEX external market feed:', error?.message || error);
       } finally { busy = false; }
@@ -718,14 +751,14 @@ export default function App() {
     }, 900);
   };
   const runDeepScan = () => {
-    if (priceHistory.length < 5) {
-      alert('Deep Scan needs at least 5 market ticks. Wait for the feed, then scan again.');
+    if (liveMarketHistory.length < 5) {
+      alert('Deep Scan needs at least 5 distinct external quote observations. Keep the Twelve Data feed connected and try again.');
       return;
     }
     setDeepScanning(true);
     setDeepScan(null);
     setTimeout(() => {
-      const digits = priceHistory.slice(-12).map(value => Number(value).toFixed(3).slice(-1)).map(Number).filter(Number.isInteger);
+      const digits = liveMarketHistory.slice(-12).map(item => item.digit).filter(Number.isInteger);
       const evenDigits = digits.filter(value => value % 2 === 0);
       const oddDigits = digits.filter(value => value % 2 === 1);
       const selectedSide = evenDigits.length >= oddDigits.length ? 'EVEN' : 'ODD';
@@ -754,7 +787,8 @@ export default function App() {
         highSignal: false,
         sampleSize: digits.length,
         strategyInsights,
-        scanTick: totalTicks,
+        scanTick: liveMarketHistory.length,
+        source: 'LIVE_EXTERNAL',
         loaded: false,
         appeared: false,
         expired: false,
@@ -1026,18 +1060,22 @@ export default function App() {
     }
   };
 
-  const minPrice = priceHistory.length ? Math.min(...priceHistory) : 0;
-  const maxPrice = priceHistory.length ? Math.max(...priceHistory) : 1;
-  const priceRange = maxPrice - minPrice || 0.001;
-  const svgPoints = priceHistory.map((p, i) => {
-    const x = (i / (priceHistory.length - 1)) * 400;
-    const y = 130 - ((p - minPrice) / priceRange) * 110;
-    return `${x},${y}`;
-  }).join(' ');
-  const lastSvgPoint = priceHistory.length > 0 ? {
-    x: 400,
-    y: 130 - ((priceHistory[priceHistory.length - 1] - minPrice) / priceRange) * 110
-  } : { x: 400, y: 70 };
+  const chartUsesExternal = liveMarketHistory.length > 1 && liveMarket?.symbol === liveMarketSymbol;
+  const chartValues = chartUsesExternal ? liveMarketHistory.slice(-30).map(item => item.price) : priceHistory;
+  const minPrice = chartValues.length ? Math.min(...chartValues) : 0;
+  const maxPrice = chartValues.length ? Math.max(...chartValues) : 1;
+  const priceRange = maxPrice - minPrice || Math.max(Math.abs(maxPrice) * 0.00001, 0.001);
+  const svgPoints = chartValues.map((p, i) => `${chartValues.length > 1 ? (i / (chartValues.length - 1)) * 400 : 400},${130 - ((p - minPrice) / priceRange) * 110}`).join(' ');
+  const lastSvgPoint = chartValues.length > 0 ? { x: 400, y: 130 - ((chartValues[chartValues.length - 1] - minPrice) / priceRange) * 110 } : { x: 400, y: 70 };
+  const chartLastDigit = chartUsesExternal ? liveMarketHistory[liveMarketHistory.length - 1].digit : lastDigit;
+  const chartDisplayPrice = chartUsesExternal ? Number(liveMarket.price).toLocaleString(undefined, { maximumFractionDigits: 8 }) : currentPrice;
+  const chartDisplayStatus = chartUsesExternal ? 'LIVE · TWELVE DATA' : feedStatus;
+  const chartDigitStats = chartUsesExternal ? Object.fromEntries(Array.from({length:10},(_,digit)=>[digit,Math.round(liveMarketHistory.filter(item=>item.digit===digit).length / liveMarketHistory.length * 100)])) : stats;
+  const liveSvgValues = liveMarketHistory.slice(-30).map(item => item.price);
+  const liveSvgMin = liveSvgValues.length ? Math.min(...liveSvgValues) : 0;
+  const liveSvgRange = (liveSvgValues.length ? Math.max(...liveSvgValues) - liveSvgMin : 0) || Math.max(Math.abs(liveSvgMin) * 0.00001, 0.001);
+  const liveSvgPoints = liveSvgValues.map((value,index)=>`${liveSvgValues.length > 1 ? index/(liveSvgValues.length-1)*400 : 400},${130-((value-liveSvgMin)/liveSvgRange)*110}`).join(' ');
+  const liveLastSvgPoint = liveSvgValues.length ? {x:400,y:130-((liveSvgValues[liveSvgValues.length-1]-liveSvgMin)/liveSvgRange)*110} : {x:400,y:70};
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#090d14] text-gray-100 font-sans flex flex-col pb-32">
@@ -1114,19 +1152,19 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="bg-[#1a2233] text-red-400 text-xs font-mono font-bold px-2 py-1 rounded border border-gray-700">1T</span>
                 <div className="bg-[#1a2233] border border-gray-700 px-2.5 py-1 rounded flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${feedStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
-                  <span className="text-xs font-bold text-white">{market}</span>
+                  <span className={`w-2 h-2 rounded-full ${chartDisplayStatus.includes('LIVE') ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
+                  <span className="text-xs font-bold text-white">{chartUsesExternal ? liveMarketSymbol : market}</span>
                   <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-400' : 'text-amber-300'}`} role="status">{feedStatus === 'LIVE' ? 'VERTEX SIMULATED MARKET' : `FEED ${feedStatus}`}</span>
+                <span className={`text-[10px] font-bold ${chartDisplayStatus.includes('LIVE') ? 'text-emerald-400' : 'text-amber-300'}`} role="status">{chartDisplayStatus}</span>
                 <span className="bg-[#1a2233] border border-gray-700 text-gray-300 font-mono text-xs px-2 py-1 rounded font-bold">50%</span>
                 <button type="button" onClick={() => setActiveTab('DEEPSCAN')} className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded shadow">Analyze</button>
               </div>
             </div>
 
-            <p className="text-[10px] text-amber-300 mb-2">VERTEX server-generated synthetic demo prices · not real-world asset prices. Last tick: {lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : 'Waiting for first tick'}.</p>
+            <p className="text-[10px] text-amber-300 mb-2">{chartUsesExternal ? `Twelve Data external quote history · display and analysis only. ${liveMarketHistory.length} distinct observations collected.` : `VERTEX server-generated synthetic demo prices · not real-world asset prices. Last tick: ${lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : 'Waiting for first tick'}.`}</p>
 
             <section className="mb-3 rounded-xl border border-emerald-900/70 bg-[#0b1916] p-3" aria-label="External live market prices">
               <div className="mb-2 flex items-center justify-between gap-2">
@@ -1135,13 +1173,13 @@ export default function App() {
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label className="text-[10px] text-slate-300">Market
-                  <select value={liveMarketSymbol} onChange={event => { setLiveMarketSymbol(event.target.value); setLiveMarket(null); setLiveMarketStatus('CONNECTING'); }} className="ml-2 rounded border border-slate-700 bg-[#142333] px-2 py-1 text-xs text-white">
+                  <select value={liveMarketSymbol} onChange={event => { setLiveMarketSymbol(event.target.value); setLiveMarket(null); setLiveMarketHistory([]); setLiveMarketStatus('CONNECTING'); }} className="ml-2 rounded border border-slate-700 bg-[#142333] px-2 py-1 text-xs text-white">
                     <option value="EUR/USD">EUR/USD</option><option value="GBP/USD">GBP/USD</option><option value="USD/JPY">USD/JPY</option><option value="AUD/USD">AUD/USD</option><option value="BTC/USD">BTC/USD</option><option value="ETH/USD">ETH/USD</option>
                   </select>
                 </label>
                 <div className="text-right"><p className="font-mono text-2xl font-black text-white">{liveMarket && liveMarket.symbol === liveMarketSymbol ? Number(liveMarket.price).toLocaleString(undefined, { maximumFractionDigits: 8 }) : '—'}</p><p className="text-[9px] text-slate-400">{liveMarket?.symbol === liveMarketSymbol ? 'Received ' + new Date(liveMarket.received_at).toLocaleTimeString() : 'Waiting for provider quote'}</p></div>
               </div>
-              <p className="mt-2 text-[9px] leading-relaxed text-amber-300">External provider quote only. Provider delay and commercial display permissions depend on your subscription. This quote is not yet used for chart candles, trade outcomes or wallet settlement.</p>
+              <p className="mt-2 text-[9px] leading-relaxed text-amber-300">Twelve Data external quotes now power chart history and manual Deep Scan observations. They do not place orders, determine cash payouts or settle customer wallets. Provider delay and commercial display permissions depend on your subscription.</p>
             </section>
 
             <section className="mb-3 rounded-xl border border-cyan-900/70 bg-[#0c1823] p-3" aria-label="Fair synthetic market proof">
@@ -1164,7 +1202,7 @@ export default function App() {
               <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d_1px,transparent_1px),linear-gradient(to_bottom,#1f293d_1px,transparent_1px)] bg-[size:40px_35px] opacity-30"></div>
               
               <div className="absolute right-4 top-1/3 bg-white text-black font-mono font-bold text-xs px-2.5 py-1 rounded shadow-2xl flex items-center gap-1.5 z-10">
-                {currentPrice} {feedStatus === 'LIVE' && <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>}
+                {chartDisplayPrice} {chartDisplayStatus.includes('LIVE') && <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>}
               </div>
 
               <svg className="absolute inset-0 w-full h-full text-red-500 overflow-visible" preserveAspectRatio="none" viewBox="0 0 400 150">
@@ -1188,9 +1226,9 @@ export default function App() {
 
             {/* Live Dynamic 0-9 Digit Highlights */}
             <div className="grid grid-cols-10 gap-1 mt-1 pt-1">
-              {Object.entries(stats).map(([digit, val]) => (
+              {Object.entries(chartDigitStats).map(([digit, val]) => (
                 <div key={digit} className="flex flex-col items-center gap-1">
-                  <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-mono font-bold text-sm transition-all duration-200 ${Number(digit) === lastDigit ? 'border-red-500 bg-red-950 text-red-400 shadow-lg shadow-red-600 scale-110' : 'border-gray-700 bg-[#090d14] text-gray-300'}`}>
+                  <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-mono font-bold text-sm transition-all duration-200 ${Number(digit) === chartLastDigit ? 'border-red-500 bg-red-950 text-red-400 shadow-lg shadow-red-600 scale-110' : 'border-gray-700 bg-[#090d14] text-gray-300'}`}>
                     {digit}
                   </div>
                   <span className={`text-[10px] font-mono font-medium ${Number(digit) === lastDigit ? 'text-red-400 font-bold' : 'text-gray-400'}`}>{val}%</span>
@@ -1356,14 +1394,14 @@ export default function App() {
               <button aria-label="Close DeepScan" onClick={() => setActiveTab('TRADE')} className="p-2 text-gray-400 hover:text-white"><span className="text-2xl leading-none">×</span></button>
             </header>
             <div className="space-y-4 p-5">
-              <div className="rounded-xl bg-[#132331] p-4 text-sm leading-relaxed text-slate-300">Choose a market category. VERTEX scans the latest 12 observed ticks for EVEN/ODD patterns.</div>
+              <div className="rounded-xl bg-[#132331] p-4 text-sm leading-relaxed text-slate-300">VELTEX scans the latest 12 distinct Twelve Data quote observations for EVEN/ODD digit patterns. Results are historical observations, not predictions.</div>
               <div className="space-y-2"><label className="block text-xs font-bold text-slate-300">Market</label><select value={deepScanMarket} onChange={e => setDeepScanMarket(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#08131d] p-4 text-sm font-bold text-white"><option>Even / Odd</option></select></div>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-slate-300"><span>{deepScanning ? 'Scanning market ticks' : 'Ready to scan'}</span><span className="font-mono font-bold text-white">{Math.min(priceHistory.length, 12)}/12</span></div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: (Math.min(priceHistory.length / 12, 1) * 100) + '%' }} /></div>
+                <div className="flex justify-between text-sm text-slate-300"><span>{deepScanning ? 'Scanning market ticks' : 'Ready to scan'}</span><span className="font-mono font-bold text-white">{Math.min(liveMarketHistory.length, 12)}/12</span></div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: (Math.min(liveMarketHistory.length / 12, 1) * 100) + '%' }} /></div>
                 
               </div>
-              <button onClick={runDeepScan} disabled={deepScanning || !!activeTrade} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-4 text-sm font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
+              <button onClick={runDeepScan} disabled={deepScanning || !!activeTrade || liveMarketHistory.length < 5} className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-4 text-sm font-black text-white shadow-lg shadow-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><ScanLine className="h-5 w-5" />{deepScanning ? 'SCANNING…' : 'Deep Scan for Best Market'}</button>
               <p className="rounded-lg border border-slate-700 bg-[#101d29] p-3 text-center text-xs text-slate-400">Deep Scan is manual-only. It does not load a bot or place automatic trades.</p>
               {deepScan && (
                 <div className="rounded-xl border border-rose-900/70 bg-[#171b27] p-4 space-y-2">
@@ -1376,22 +1414,22 @@ export default function App() {
                     </div>
                     <span className="shrink-0 rounded-lg bg-rose-950/70 px-3 py-2 text-base font-black text-rose-300">{deepScan.percentage}%<small className="block text-[9px] font-semibold">sample</small></span>
                   </div>
-                  <p className="text-[10px] leading-relaxed text-slate-500">{deepScan.qualifies ? 'Random demo score generated for display.' : 'Random demo score generated for display.'} Randomly generated 75–100 demo score; not a real probability or prediction.</p>
-                  {deepScan.qualifies && !deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: totalTicks } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
+                  <p className="text-[10px] leading-relaxed text-slate-500">Observed frequency from {deepScan.sampleSize} external quote observations. This is descriptive history, not a predictive probability or guarantee.</p>
+                  {deepScan.qualifies && !deepScan.loaded && <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, loaded: true, scanTick: liveMarketHistory.length } : previous)} className="w-full rounded-lg bg-cyan-700 py-3 text-xs font-black text-white">LOAD MARKET</button>}
                   {deepScan.loaded && (
                     <div className="rounded-xl border border-cyan-800 bg-[#09131d] p-3 space-y-2">
                       <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-black tracking-wide text-cyan-200">LIVE MARKET GRAPH</span><span className={`text-[10px] font-bold ${feedStatus === 'LIVE' ? 'text-emerald-300' : 'text-amber-300'}`}>{feedStatus}</span></div>
                       <div className="relative h-36 w-full overflow-hidden rounded-lg border border-slate-800 bg-[#0c1017]">
                         <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(to right,#334155 1px,transparent 1px),linear-gradient(to bottom,#334155 1px,transparent 1px)', backgroundSize: '32px 28px' }} />
-                        <svg className="absolute inset-0 h-full w-full text-cyan-400" preserveAspectRatio="none" viewBox="0 0 400 150" role="img" aria-label="VERTEX simulated market price graph"><polyline fill="none" stroke="currentColor" strokeWidth="2.5" points={svgPoints} /><circle cx={lastSvgPoint.x} cy={lastSvgPoint.y} r="4" fill="#ffffff" stroke="#22d3ee" strokeWidth="2" /></svg>
-                        <span className="absolute right-2 top-2 rounded bg-white px-2 py-1 font-mono text-[10px] font-bold text-black">{currentPrice}</span>
+                        <svg className="absolute inset-0 h-full w-full text-cyan-400" preserveAspectRatio="none" viewBox="0 0 400 150" role="img" aria-label="Twelve Data external quote history graph"><polyline fill="none" stroke="currentColor" strokeWidth="2.5" points={liveSvgPoints} /><circle cx={liveLastSvgPoint.x} cy={liveLastSvgPoint.y} r="4" fill="#ffffff" stroke="#22d3ee" strokeWidth="2" /></svg>
+                        <span className="absolute right-2 top-2 rounded bg-white px-2 py-1 font-mono text-[10px] font-bold text-black">{liveMarket ? Number(liveMarket.price).toLocaleString(undefined, {maximumFractionDigits:8}) : 'Waiting'}</span>
                       </div>
-                      <p className="text-[9px] text-slate-400">VERTEX simulated demo prices · graph updates as new market ticks arrive.</p>
+                      <p className="text-[9px] text-slate-400">Twelve Data external quotes · distinct observations update approximately every 5 seconds. No orders or wallet settlement.</p>
                       <div className="grid grid-cols-10 gap-1 pt-1" aria-label="Live digits zero to nine">
                         {Array.from({ length: 10 }, (_, digit) => (
                           <div key={digit} className="flex min-w-0 flex-col items-center gap-1">
-                            <span className={`flex h-7 w-7 items-center justify-center rounded-full border font-mono text-[11px] font-black ${digit === lastDigit ? 'border-cyan-400 bg-cyan-950 text-cyan-200' : 'border-slate-700 bg-[#0c1017] text-slate-300'}`}>{digit}</span>
-                            <span className="text-[8px] font-mono text-slate-400">{stats[digit] ?? 0}%</span>
+                            <span className={`flex h-7 w-7 items-center justify-center rounded-full border font-mono text-[11px] font-black ${digit === (liveMarketHistory[liveMarketHistory.length - 1]?.digit ?? -1) ? 'border-cyan-400 bg-cyan-950 text-cyan-200' : 'border-slate-700 bg-[#0c1017] text-slate-300'}`}>{digit}</span>
+                            <span className="text-[8px] font-mono text-slate-400">{(liveMarketHistory.length ? Math.round(liveMarketHistory.filter(item=>item.digit===digit).length/liveMarketHistory.length*100) : 0)}%</span>
                           </div>
                         ))}
                       </div>
@@ -1401,27 +1439,16 @@ export default function App() {
                   {deepScan.appeared && !deepScan.tradeStarted && !deepScan.expired && (
                     <div className="space-y-2">
                       <p role="status" aria-live="polite" className="text-center text-xs font-black text-emerald-300">TARGET {deepScan.digit} · OPPORTUNITY {Math.min(deepScan.appearances || 1, 2)} OF 2 · CHOOSE NOW</p>
-                      <p className="text-center text-[10px] text-slate-300">Stake: ${Number(stake).toFixed(2)} · Demo manual trade</p>
+                      <p className="text-center text-[10px] text-slate-300">Choose EVEN or ODD manually. The next distinct external quote determines the observation result; no stake or wallet is involved.</p>
                       <div className="grid grid-cols-2 gap-2">
-                        <button type="button" onClick={() => {
-                          if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
-                          if (activeTrade || deepScan.tradeStarted || deepScan.expired || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
-                          void startServerDemoTrade('Even', 'DEEP_SCAN').then(opened => {
-                            if (opened) setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'EVEN' } : previous);
-                          });
-                        }} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted || deepScan.expired}>EVEN</button>
-                        <button type="button" onClick={() => {
-                          if (accountMode !== 'DEMO') { alert('Live broker trading is not connected. Deep Scan manual trades are available in Demo only.'); return; }
-                          if (activeTrade || deepScan.tradeStarted || deepScan.expired || !Number.isFinite(Number(stake)) || Number(stake) <= 0 || demoWallet < Number(stake)) { alert('Check your demo balance and stake, then try again.'); return; }
-                          void startServerDemoTrade('Odd', 'DEEP_SCAN').then(opened => {
-                            if (opened) setDeepScan(previous => previous ? { ...previous, tradeStarted: true, chosenSide: 'ODD' } : previous);
-                          });
-                        }} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={accountMode !== 'DEMO' || !!activeTrade || deepScan.tradeStarted || deepScan.expired}>ODD</button>
+                        <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, chosenSide: 'EVEN', choiceIndex: liveMarketHistory.length, waitingChoiceResult: true } : previous)} className="rounded-lg bg-emerald-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={!!deepScan.chosenSide || deepScan.tradeStarted || deepScan.expired}>EVEN</button>
+                        <button type="button" onClick={() => setDeepScan(previous => previous ? { ...previous, chosenSide: 'ODD', choiceIndex: liveMarketHistory.length, waitingChoiceResult: true } : previous)} className="rounded-lg bg-rose-700 py-3 text-xs font-black text-white disabled:opacity-50" disabled={!!deepScan.chosenSide || deepScan.tradeStarted || deepScan.expired}>ODD</button>
                       </div>
                     </div>
                   )}
                   {deepScan.expired && <div className="space-y-2"><p role="status" className="text-center text-xs font-black text-rose-300">TARGET PASSED · SIGNAL MISSED</p><button type="button" onClick={runDeepScan} disabled={deepScanning || !!activeTrade} className="w-full rounded-lg bg-rose-600 py-3 text-xs font-black text-white disabled:opacity-40">SCAN AGAIN</button></div>}
-                  {deepScan.tradeStarted && <p role="status" className="text-center text-xs font-bold text-cyan-200">Manual {deepScan.chosenSide} trade running…</p>}
+                  {deepScan.chosenSide && !deepScan.tradeStarted && <p role="status" className="text-center text-xs font-bold text-cyan-200">Manual {deepScan.chosenSide} selected · waiting for next external quote…</p>}
+                  {deepScan.tradeStarted && <p role="status" aria-live="assertive" className={`text-center text-lg font-black ${deepScan.manualResult === 'WIN' ? 'text-emerald-300' : 'text-rose-300'}`}>{deepScan.manualResult} · next quote digit {deepScan.resultDigit} ({deepScan.resultSide})</p>}
                 </div>
               )}
             </div>
